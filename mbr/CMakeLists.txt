@@ -3,4 +3,4 @@ project(mbr C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(mbr main.c mbr.h)
+add_executable(mbr main.c mbr.h util.h)
