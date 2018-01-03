@@ -10,6 +10,9 @@ int main() {
     assert(box.maxx == 2.4);
     assert(box.maxy == 2.8);
     assert(mbr_equals(&box, &box_clone));
-    printf("%s", "All Tests Passed !");
+    printf("%s\n", "All Tests Passed !");
+    char buf[1000];
+    assert(mbr_wkt(&box, buf) > 0);
+    printf("%s\n", buf);
     return 0;
 }
