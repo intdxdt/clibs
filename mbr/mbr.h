@@ -189,7 +189,7 @@ mbr *mbr_expand_to_include_mbr(mbr *self, mbr *other) {
 
 
 //computes dx and dy for computing hypot
-mbr *_mbr_distance_dxdy(mbr *self, mbr *other, double *dx, double *dy) {
+mbr *mbr_distance_dxdy(mbr *self, mbr *other, double *dx, double *dy) {
 
     // find closest edge by x
     *dx = (self->maxx < other->minx) ?
@@ -210,7 +210,7 @@ double mbr_distance(mbr *self, mbr *other) {
         return 0;
     }
     double dx = 0, dy = 0;
-    _mbr_distance_dxdy(self, other, &dx, &dy);
+    mbr_distance_dxdy(self, other, &dx, &dy);
     hypot(dx, dy);
 }
 
@@ -221,7 +221,7 @@ double mbr_distance_square(mbr *self, mbr *other) {
         return 0;
     }
     double dx = 0, dy = 0;
-    _mbr_distance_dxdy(self, other, &dx, &dy);
+    mbr_distance_dxdy(self, other, &dx, &dy);
     return (dx * dx) + (dy * dy); //Note this can overflow
 }
 
