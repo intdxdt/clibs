@@ -168,4 +168,13 @@ bool disjoint(mbr *self, mbr *other) {
     return !intersects(self, other);
 }
 
+int wkt(mbr *self, char *buffer) {
+    double lx = self->minx;
+    double ly = self->miny;
+    double ux = self->maxx;
+    double uy = self->maxy;
+    return sprintf(buffer, "POLYGON ((%f %f ,%f  %f ,%f  %f ,%f  %f ,%f  %f))",
+                   lx, ly, lx, uy, ux, uy, ux, ly, lx, ly);
+}
+
 #endif //MBR_MBR_H
