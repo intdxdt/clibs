@@ -3,8 +3,10 @@
 //
 #ifndef MBR_UTIL_H
 #define MBR_UTIL_H
+#include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #define EPSILON  1.0e-12
 

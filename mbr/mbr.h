@@ -3,7 +3,6 @@
 //
 #ifndef MBR_MBR_H
 #define MBR_MBR_H
-
 #include "util.h"
 
 typedef struct {
@@ -190,7 +189,6 @@ mbr *mbr_expand_to_include_mbr(mbr *self, mbr *other) {
 
 //computes dx and dy for computing hypot
 mbr *mbr_distance_dxdy(mbr *self, mbr *other, double *dx, double *dy) {
-
     // find closest edge by x
     *dx = (self->maxx < other->minx) ?
           other->minx - self->maxx :
