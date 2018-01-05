@@ -3,6 +3,7 @@
 //
 #ifndef MBR_MBR_H
 #define MBR_MBR_H
+
 #include "util.h"
 
 typedef struct {
@@ -33,7 +34,7 @@ double mbr_height(mbr *self) {
 
 //Area of bounding box.
 double mbr_area(mbr *self) {
-    return mbr_height(self) * mbr_height(self);
+    return mbr_height(self) * mbr_width(self);
 }
 
 //Bounding box as a closed polygon array.
@@ -176,16 +177,6 @@ int mbr_wkt(mbr *self, char *buffer) {
                    lx, ly, lx, uy, ux, uy, ux, ly, lx, ly);
 }
 
-//Expand include other bounding box
-mbr *mbr_expand_to_include_mbr(mbr *self, mbr *other) {
-    (other->minx < self->minx) ? self->minx = other->minx : 0;
-    (other->maxx > self->maxx) ? self->maxx = other->maxx : 0;
-
-    (other->miny < self->miny) ? self->miny = other->miny : 0;
-    (other->maxy > self->maxy) ? self->maxy = other->maxy : 0;
-    return self;
-}
-
 
 //computes dx and dy for computing hypot
 mbr *mbr_distance_dxdy(mbr *self, mbr *other, double *dx, double *dy) {
@@ -222,6 +213,29 @@ double mbr_distance_square(mbr *self, mbr *other) {
     mbr_distance_dxdy(self, other, &dx, &dy);
     return (dx * dx) + (dy * dy); //Note this can overflow
 }
+
+
+//Expand by delta in x and y
+mbr mbr_union(mbr *self, mbr *other) {
+    return (mbr) {
+        fmin(self->minx, other->minx),
+        fmin(self->miny, other->miny),
+        fmax(self->maxx, other->maxx),
+        fmax(self->maxy, other->maxy),
+    };
+}
+
+
+//Expand include other bounding box
+mbr *mbr_expand_to_include_mbr(mbr *self, mbr *other) {
+    (other->minx < self->minx) ? self->minx = other->minx : 0;
+    (other->maxx > self->maxx) ? self->maxx = other->maxx : 0;
+
+    (other->miny < self->miny) ? self->miny = other->miny : 0;
+    (other->maxy > self->maxy) ? self->maxy = other->maxy : 0;
+    return self;
+}
+
 
 //Expand by delta in x and y
 mbr *mbr_expand_by_delta(mbr *self, double dx, double dy) {
