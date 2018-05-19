@@ -1,6 +1,4 @@
-//
-// Created by titus on 03/01/18.
-//
+
 #ifndef MBR_TEST_H
 #define MBR_TEST_H
 #include <assert.h>

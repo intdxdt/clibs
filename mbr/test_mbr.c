@@ -7,8 +7,8 @@
 void test_mbr();
 
 int main() {
-    mbr box = new_mbr(2.4, 2.8, 1, 1.6);
-    mbr box_clone = new_mbr(2.4, 2.8, 1, 1.6);
+    MBR box = new_mbr(2.4, 2.8, 1, 1.6);
+    MBR box_clone = new_mbr(2.4, 2.8, 1, 1.6);
     check(box.minx == 1.0 && box.miny == 1.6);
     check(box.maxx == 2.4 && box.maxy == 2.8);
     check(mbr_equals(&box, &box_clone));
@@ -22,22 +22,22 @@ int main() {
 }
 
 void test_mbr() {
-    printf("\n%s\n\n", "------------test mbr --------------");
-    mbr m0 = new_mbr(0.0, 0.0, 0.5, 0.2);
-    mbr m1 = new_mbr(2.0, 2.0, -0.5, -0.2);
-    mbr m = mbr_union(&m0, &m1);
+    printf("\n%s\n\n", "------------test MBR --------------");
+    MBR m0 = new_mbr(0.0, 0.0, 0.5, 0.2);
+    MBR m1 = new_mbr(2.0, 2.0, -0.5, -0.2);
+    MBR m = mbr_union(&m0, &m1);
     check(m.minx == -0.5);
     check(m.miny == -0.2);
     check(m.maxx == 2.0);
     check(m.maxy == 2.0);
 
-    mbr mr = new_mbr_raw(2.0, 2.0, -0.5, -0.2);
+    MBR mr = new_mbr_raw(2.0, 2.0, -0.5, -0.2);
     check(mr.minx == 2.0);
     check(mr.miny == 2.0);
     check(mr.maxx == -0.5);
     check(mr.maxy == -0.2);
 
-    mbr m3 = new_mbr(2.0, 2.0, 0.5, 0.2);
+    MBR m3 = new_mbr(2.0, 2.0, 0.5, 0.2);
     check(m3.minx == 0.5);
     check(m3.miny == 0.2);
     check(m3.maxx == 2.0);

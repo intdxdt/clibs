@@ -1,6 +1,4 @@
-//
-// Created by titus on 01/01/18.
-//
+
 #ifndef MBR_UTIL_H
 #define MBR_UTIL_H
 #include <stdio.h>
