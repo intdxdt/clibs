@@ -15,51 +15,6 @@ class MBR {
 
 };
 
-/*
-
-    xmbr(double x1, double y1, double x2, double y2) :
-            minx(std::min(x1, x2)), miny(std::min(y1, y2)),
-            maxx(std::max(x1, x2)), maxy(std::max(y1, y2)) {}
-
-    inline double width() {
-        return maxx - minx;
-    }
-
-    inline double height() {
-        return maxy - miny;
-    }
-
-    inline double area() {
-        return height() * width();
-    }
-
-    std::string wkt() {
-        std::ostringstream ss;
-        ss << "POLYGON (("
-           << minx << " " << miny << ","
-           << minx << " " << maxy << ","
-           << maxx << " " << maxy << ","
-           << maxx << " " << miny << ","
-           << minx << " " << miny
-           << "))";
-        return std::move(ss.str());
-    }
-
-    std::vector<double> center() {
-        return {(minx + maxx) / 2.0, (miny + maxy) / 2.0};
-    }
-
-    double operator[](const int index) {
-        assert(index >= 0 && index < 4);
-        return index == 0 ? minx :
-               index == 1 ? miny :
-               index == 2 ? maxx :
-               index == 3 ? maxy : std::nan("-9");
-    }
-};
-
-*/
-
 
 MBR new_mbr(double minx, double miny, double maxx, double maxy) {
     return (MBR) {
@@ -88,119 +43,14 @@ double mbr_area(MBR *self) {
 }
 
 //Bounding box as a closed polygon array.
-void mbr_as_poly_array(MBR *self, double poly[5][2]) {
-    poly[0][0] = self->minx;
-    poly[0][1] = self->miny;
-    poly[1][0] = self->minx;
-    poly[1][1] = self->maxy;
-    poly[2][0] = self->maxx;
-    poly[2][1] = self->maxy;
-    poly[3][0] = self->maxx;
-    poly[3][1] = self->miny;
-    poly[4][0] = self->minx;
-    poly[4][1] = self->miny;
-}
 
-//Lower left and upper right corners as a array double[minx, miny, maxx, maxy]
-void mbr_as_array(MBR *self, double arr[4]) {
-    arr[0] = self->minx;
-    arr[1] = self->miny;
-    arr[2] = self->maxx;
-    arr[3] = self->maxy;
-}
-
-//lower left and upper right as tuple ((minx,miny),(maxx,maxy))
-void mbr_llur(MBR *self, double ll[2], double ur[2]) {
-    ll[0] = self->minx;
-    ll[1] = self->miny;
-    ur[0] = self->maxx;
-    ur[1] = self->maxy;
-}
-
-//Compare equality of two bounding boxes
-bool mbr_equals(MBR *a, MBR *b) {
-    return (
-            feq(a->maxx, b->maxx) &&
-            feq(a->maxy, b->maxy) &&
-            feq(a->minx, b->minx) &&
-            feq(a->miny, b->miny));
-}
-
-
-//Checks if bounding box can be represented as a point.
-bool mbr_is_point(MBR *self) {
-    return (
-            feq(mbr_height(self), 0.0) &&
-            feq(mbr_width(self), 0.0));
-}
-
-//contains x, y
-bool mbr_contains_xy(MBR *self, double x, double y) {
-    return (
-            (x >= self->minx) &&
-            (x <= self->maxx) &&
-            (y >= self->miny) &&
-            (y <= self->maxy));
-}
 
 
 //completely_contains_xy is true if MBR
 //completely contains location with {x, y}
-//without touching boundaries
-bool mbr_completely_contains_xy(MBR *self, double x, double y) {
-    return (
-            (x > self->minx) &&
-            (x < self->maxx) &&
-            (y > self->miny) &&
-            (y < self->maxy));
-}
 
 //Contains bonding box
-//is true if MBR completely contains other, boundaries may touch
-bool mbr_contains(MBR *self, MBR *other) {
-    return (
-            (other->minx >= self->minx) &&
-            (other->miny >= self->miny) &&
-            (other->maxx <= self->maxx) &&
-            (other->maxy <= self->maxy));
-}
-//Completely contains bonding box
-//is true if MBR completely contains other without touching boundaries
-bool mbr_completely_contains(MBR *self, MBR *other) {
-    return (
-            (other->minx > self->minx) &&
-            (other->miny > self->miny) &&
-            (other->maxx < self->maxx) &&
-            (other->maxy < self->maxy));
-}
 
-//Translate bounding box by change in dx and dy.
-MBR mbr_translate(MBR *self, double dx, double dy) {
-    return new_mbr(
-            self->minx + dx, self->miny + dy,
-            self->maxx + dx, self->maxy + dy);
-}
-
-//Computes the center of minimum bounding box - (x, y)
-void mbr_center(MBR *self, double ctr[2]) {
-    ctr[0] = (self->minx + self->maxx) / 2.0;
-    ctr[1] = (self->miny + self->maxy) / 2.0;
-}
-
-//Checks if bounding box intersects other
-bool mbr_intersects(MBR *self, MBR *other) {
-    //not disjoint
-    return !(
-            other->minx > self->maxx ||
-            other->maxx < self->minx ||
-            other->miny > self->maxy ||
-            other->maxy < self->miny);
-}
-
-//intersects point
-bool mbr_intersects_xy(MBR *self, double x, double y) {
-    return mbr_contains_xy(self, x, y);
-}
 
 //Computes the intersection of two bounding box
 MBR mbr_intersection(MBR *self, MBR *other) {
@@ -219,14 +69,7 @@ bool mbr_disjoint(MBR *self, MBR *other) {
     return !mbr_intersects(self, other);
 }
 
-int mbr_wkt(MBR *self, char *buffer) {
-    double lx = self->minx;
-    double ly = self->miny;
-    double ux = self->maxx;
-    double uy = self->maxy;
-    return sprintf(buffer, "POLYGON ((%f %f ,%f  %f ,%f  %f ,%f  %f ,%f  %f))",
-                   lx, ly, lx, uy, ux, uy, ux, ly, lx, ly);
-}
+
 
 
 //computes dx and dy for computing hypot
