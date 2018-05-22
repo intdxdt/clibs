@@ -11,11 +11,6 @@
 #ifndef MBR_MBR_H
 #define MBR_MBR_H
 namespace mbr {
-    const int x1 = 0;
-    const int y1 = 1;
-    const int x2 = 2;
-    const int y2 = 3;
-
     struct MBR {
         double minx;
         double miny;
