@@ -47,6 +47,7 @@ TEST_CASE("mbr", "[mbr]") {
         std::vector<double> b2 = {2, 2};
         std::vector<double> b3 = {2, 0.2};
         std::vector<double> b4 = {0.5, 0.2};
+
         REQUIRE(b.size() == 5);
         REQUIRE(b[0] == b0);
         REQUIRE(b[1] == b1);
@@ -59,7 +60,5 @@ TEST_CASE("mbr", "[mbr]") {
         REQUIRE(m1.area() == m.area());
         REQUIRE(m1.equals(m));
         REQUIRE(m1 == m);
-
-
     }
 }
