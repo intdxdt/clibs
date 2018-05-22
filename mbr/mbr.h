@@ -246,6 +246,7 @@ namespace mbr {
             return (pt.x * pt.x) + (pt.y * pt.y);
         }
 
+        ///WKT : wkt string of mbr as polygon
         std::string wkt() const {
             std::ostringstream ss;
             ss << "POLYGON (("
@@ -258,7 +259,7 @@ namespace mbr {
             return std::move(ss.str());
         }
 
-        ///operator : +
+        ///Operator : +
         MBR operator+(const MBR& other) {
             return {
                     fmin(other.minx, minx),
@@ -269,17 +270,25 @@ namespace mbr {
             };
         }
 
-        ///operator : | or +
-        MBR operator|(const MBR& other) { return *this + other; }
+        ///Operator : | or +
+        MBR operator|(const MBR& other) {
+            return *this + other;
+        }
 
-        ///operator : & : intersection
-        std::optional<MBR> operator&(const MBR& other) { return intersection(other); }
+        ///Operator : & : intersection
+        std::optional<MBR> operator&(const MBR& other) {
+            return intersection(other);
+        }
 
-        ///operator : equals
-        bool operator==(const MBR& other) { return equals(other); }
+        ///Operator : equals
+        bool operator==(const MBR& other) {
+            return equals(other);
+        }
 
-        ///operator : not equal
-        bool operator!=(const MBR& other) { return !(*this == other); }
+        ///Operator : not equal
+        bool operator!=(const MBR& other) {
+            return !(*this == other);
+        }
 
     };
 
