@@ -5,30 +5,23 @@
 #include <cassert>
 #include <functional>
 #include <optional>
+#include "../pt/pt.h"
+#include "../mutil/mutil.h"
 
 #ifndef MBR_MBR_H
 #define MBR_MBR_H
 namespace mbr {
-    using f64 = double;
-    const f64 EPSILON = 1.0e-12;
-    using xy = std::tuple<f64, f64>;
-
-
-    bool feq(f64 a, f64 b) {
-        return a == b || fabs(a - b) < EPSILON;
-    }
-
     struct MBR {
-        f64 minx;
-        f64 miny;
-        f64 maxx;
-        f64 maxy;
+        double minx;
+        double miny;
+        double maxx;
+        double maxy;
 
-        MBR(f64 minx, f64 miny, f64 maxx, f64 maxy) :
+        MBR(double minx, double miny, double maxx, double maxy) :
                 minx(fmin(minx, maxx)), miny(fmin(miny, maxy)),
                 maxx(fmax(minx, maxx)), maxy(fmax(miny, maxy)) {}
 
-        MBR(f64 minx, f64 miny, f64 maxx, f64 maxy, bool raw) :
+        MBR(double minx, double miny, double maxx, double maxy, bool raw) :
                 minx(minx), miny(miny), maxx(maxx), maxy(maxy) {}
 
         double operator[](const int index) {
@@ -39,13 +32,13 @@ namespace mbr {
                    index == 3 ? maxy : std::nan("-9");
         }
 
-        f64 width() const { return maxx - minx; }
+        double width() const { return maxx - minx; }
 
-        f64 height() const { return maxy - miny; }
+        double height() const { return maxy - miny; }
 
-        f64 area() const { return height() * width(); }
+        double area() const { return height() * width(); }
 
-        std::vector<std::vector<f64>> as_poly_array() {
+        std::vector<std::vector<double>> as_poly_array() {
             return {
                     {minx, miny},
                     {minx, maxy},
@@ -55,19 +48,19 @@ namespace mbr {
             };
         }
 
-        std::array<f64, 4> as_array() {
+        std::array<double, 4> as_array() {
             return {minx, miny, maxx, maxy};
         }
 
-        std::tuple<f64, f64, f64, f64> as_tuple() {
-            return std::tuple<f64, f64, f64, f64>{
+        std::tuple<double, double, double, double> as_tuple() {
+            return std::tuple<double, double, double, double>{
                     minx, miny, maxx, maxy
             };
         }
 
-        std::tuple<xy, xy> llur() {
-            return std::tuple<xy, xy>{
-                    xy{minx, miny}, xy{maxx, maxy}
+        std::tuple<Pt2D, Pt2D> llur() {
+            return std::tuple<Pt2D, Pt2D>{
+                    Pt2D{minx, miny}, Pt2D{maxx, maxy}
             };
         }
 
@@ -95,7 +88,7 @@ namespace mbr {
         }
 
         ///contains x, y
-        bool contains(f64 x, f64 y) const {
+        bool contains(double x, double y) const {
             return (x >= minx) &&
                    (x <= maxx) &&
                    (y >= miny) &&
@@ -114,7 +107,7 @@ namespace mbr {
 
         ///completely_contains_xy is true if mbr completely
         /// contains location with {x, y} without touching boundary
-        bool completely_contains(f64 x, f64 y) const {
+        bool completely_contains(double x, double y) const {
             return (x > minx) &&
                    (x < maxx) &&
                    (y > miny) &&
@@ -122,7 +115,7 @@ namespace mbr {
         }
 
         ///Create new bounding box by translating by dx and dy.
-        MBR translate(f64 dx, f64 dy) const {
+        MBR translate(double dx, double dy) const {
             return {
                     minx + dx, miny + dy,
                     maxx + dx, maxy + dy
@@ -130,7 +123,7 @@ namespace mbr {
         }
 
         ///Computes the center of minimum bounding box - (x, y)
-        std::vector<f64> center() const {
+        std::vector<double> center() const {
             return {(minx + maxx) / 2.0, (miny + maxy) / 2.0};
         }
 
@@ -144,7 +137,7 @@ namespace mbr {
         }
 
         ///intersects point
-        bool intersects(f64 x, f64 y) const {
+        bool intersects(double x, double y) const {
             return contains(x, y);
         }
 
@@ -158,38 +151,27 @@ namespace mbr {
             if (disjoint(other)) {
                 return std::nullopt;
             }
-            f64 minx_ = minx > other.minx ? minx : other.minx;
-            f64 miny_ = miny > other.miny ? miny : other.miny;
-            f64 maxx_ = maxx < other.maxx ? maxx : other.maxx;
-            f64 maxy_ = maxy < other.maxy ? maxy : other.maxy;
+            double minx_ = minx > other.minx ? minx : other.minx;
+            double miny_ = miny > other.miny ? miny : other.miny;
+            double maxx_ = maxx < other.maxx ? maxx : other.maxx;
+            double maxy_ = maxy < other.maxy ? maxy : other.maxy;
             return MBR{minx_, miny_, maxx_, maxy_};
         }
 
 
         ///Expand include other bounding box
         MBR& expand_to_include(const MBR& other) {
-            if (other.minx < minx) {
-                minx = other.minx;
-            }
+            minx = fmin(other.minx, minx);
+            miny = fmin(other.miny, miny);
 
-            if (other.maxx > maxx) {
-                maxx = other.maxx;
-            }
-
-            if (other.miny < miny) {
-                miny = other.miny;
-            }
-
-            if (other.maxy > maxy) {
-                maxy = other.maxy;
-            }
-
+            maxx = fmax(other.maxx, maxx);
+            maxy = fmax(other.maxy, maxy);
             return *this;
         }
 
 
         ///Expand to include x,y
-        MBR& expand_to_include(f64 x, f64 y) {
+        MBR& expand_to_include(double x, double y) {
             if (x < minx) {
                 minx = x;
             }
@@ -207,9 +189,9 @@ namespace mbr {
         }
 
         ///Expand by delta in x and y
-        MBR& expand_by_delta(f64 dx, f64 dy) {
-            f64 minx_ = minx - dx, miny_ = miny - dy;
-            f64 maxx_ = maxx + dx, maxy_ = maxy + dy;
+        MBR& expand_by_delta(double dx, double dy) {
+            double minx_ = minx - dx, miny_ = miny - dy;
+            double maxx_ = maxx + dx, maxy_ = maxy + dy;
 
             minx = fmin(minx_, maxx_);
             miny = fmin(miny_, maxy_);
@@ -221,9 +203,9 @@ namespace mbr {
 
 
         ///computes dx and dy for computing hypot
-        xy distance_dxdy(const MBR& other) {
-            f64 dx = 0.0;
-            f64 dy = 0.0;
+        Pt2D distance_dxdy(const MBR& other) {
+            double dx = 0.0;
+            double dy = 0.0;
 
             // find closest edge by x
             if (maxx < other.minx) {
@@ -241,28 +223,27 @@ namespace mbr {
                 dy = miny - other.maxy;
             }
 
-            return xy{dx, dy};
+            return Pt2D{dx, dy};
         }
 
 
         ///Distance computes the distance between two mbrs
-        f64 distance(const MBR& other) {
+        double distance(const MBR& other) {
             if (intersects(other)) {
                 return 0.0;
             }
-            auto dxdy = distance_dxdy(other);
-            return std::hypot(std::get<0>(dxdy), std::get<1>(dxdy));
+            auto pt = distance_dxdy(other);
+            return std::hypot(pt.x, pt.y);
         }
 
         ///distance square computes the squared distance
         ///between bounding boxes
-        f64 distance_square(const MBR& other) {
+        double distance_square(const MBR& other) {
             if (intersects(other)) {
                 return 0.0;
             }
-            auto dxdy = distance_dxdy(other);
-            f64 dx = std::get<0>(dxdy), dy = std::get<1>(dxdy);
-            return (dx * dx) + (dy * dy);
+            auto pt = distance_dxdy(other);
+            return (pt.x * pt.x) + (pt.y * pt.y);
         }
 
         std::string wkt() const {
@@ -278,10 +259,18 @@ namespace mbr {
         }
 
         ///operator : +
-        MBR& operator+(const MBR& other) { return expand_to_include(other); }
+        MBR operator+(const MBR& other) {
+            return {
+                    fmin(other.minx, minx),
+                    fmin(other.miny, miny),
+                    fmax(other.maxx, maxx),
+                    fmax(other.maxy, maxy),
+                    true
+            };
+        }
 
         ///operator : | or +
-        MBR& operator|(const MBR& other) { return *this + other; }
+        MBR operator|(const MBR& other) { return *this + other; }
 
         ///operator : & : intersection
         std::optional<MBR> operator&(const MBR& other) { return intersection(other); }
