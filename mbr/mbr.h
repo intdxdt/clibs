@@ -21,8 +21,12 @@ namespace mbr {
                 minx(fmin(minx, maxx)), miny(fmin(miny, maxy)),
                 maxx(fmax(minx, maxx)), maxy(fmax(miny, maxy)) {}
 
-        MBR(double minx, double miny, double maxx, double maxy, bool raw) :
-                minx(minx), miny(miny), maxx(maxx), maxy(maxy) {}
+        MBR(double minx_, double miny_, double maxx_, double maxy_, bool raw) {
+            minx = raw ? minx_ : fmin(minx_, maxx_);
+            maxx = raw ? maxx_ : fmax(minx_, maxx_);
+            miny = raw ? miny_ : fmin(miny_, maxy_);
+            maxy = raw ? maxy_ : fmax(miny_, maxy_);
+        }
 
         double operator[](const int index) {
             assert(index >= 0 && index < 4);

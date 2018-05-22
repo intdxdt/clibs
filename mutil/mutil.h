@@ -1,4 +1,3 @@
-// Created on 22/05/18.
 #include <cmath>
 
 #ifndef MUTIL_MUTIL_H
@@ -12,7 +11,7 @@ const double Pi = M_PI;
 const double Tau = 2.0 * Pi;
 
 bool feq(double a, double b, double eps = EPSILON) {
-    return a == b || fabs(a - b) < eps;
+    return (a == b) || (fabs(a - b) < eps);
 }
 
 #endif //MUTIL_MUTIL_H
