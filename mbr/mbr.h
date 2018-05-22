@@ -120,10 +120,7 @@ namespace mbr {
 
         ///Create new bounding box by translating by dx and dy.
         MBR translate(double dx, double dy) const {
-            return {
-                    minx + dx, miny + dy,
-                    maxx + dx, maxy + dy
-            };
+            return {minx + dx, miny + dy, maxx + dx, maxy + dy};
         }
 
         ///Computes the center of minimum bounding box - (x, y)
