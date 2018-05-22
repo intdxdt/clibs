@@ -1,8 +1,8 @@
 #include <cmath>
+#include <cassert>
 #include <array>
 #include <vector>
 #include <sstream>
-#include <cassert>
 #include <functional>
 #include <optional>
 #include "../pt/pt.h"
@@ -11,6 +11,11 @@
 #ifndef MBR_MBR_H
 #define MBR_MBR_H
 namespace mbr {
+    const int x1 = 0;
+    const int y1 = 1;
+    const int x2 = 2;
+    const int y2 = 3;
+
     struct MBR {
         double minx;
         double miny;
@@ -35,6 +40,8 @@ namespace mbr {
                    index == 2 ? maxx :
                    index == 3 ? maxy : std::nan("-9");
         }
+
+        MBR& bbox() { return *this; }
 
         double width() const { return maxx - minx; }
 
@@ -124,7 +131,7 @@ namespace mbr {
         }
 
         ///Computes the center of minimum bounding box - (x, y)
-        std::vector<double> center() const {
+        Pt2D center() const {
             return {(minx + maxx) / 2.0, (miny + maxy) / 2.0};
         }
 
@@ -140,6 +147,22 @@ namespace mbr {
         ///intersects point
         bool intersects(double x, double y) const {
             return contains(x, y);
+        }
+
+        ///intersects point
+        bool intersects(const Pt2D& pt1, const Pt2D& pt2) const {
+            auto minq = fmin(pt1.x, pt2.x);
+            auto maxq = fmax(pt1.x, pt2.x);
+
+            if (minx > maxq || maxx < minq) {
+                return false;
+            }
+
+            minq = fmin(pt1.y, pt2.y);
+            maxq = fmax(pt1.y, pt2.y);
+
+            // not disjoint
+            return !(miny > maxq || maxy < minq);
         }
 
         ///Test for disjoint between two mbrs

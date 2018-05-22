@@ -14,4 +14,16 @@ bool feq(double a, double b, double eps = EPSILON) {
     return (a == b) || (fabs(a - b) < eps);
 }
 
+//Rounds a float to the nearest whole number float
+double round_floor(double f) {
+    return std::trunc(f + std::copysign(0.5, f));
+}
+
+//Rounds a number to the nearest decimal place
+double round(double x, int digits = 0) {
+    auto m = std::pow(10.0, digits);
+    return round_floor(x * m) / m;
+}
+
+
 #endif //MUTIL_MUTIL_H
