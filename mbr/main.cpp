@@ -95,12 +95,13 @@ TEST_CASE("mbr 2", "[mbr 2]") {
 
 
     SECTION("equals") {
-        std::array<double, 4> r1{0, 0, 2, 2};
+        std::array<double, 4> r1{{0, 0, 2, 2}};
         REQUIRE(m1.as_array() == r1);
         REQUIRE(clone_m0123 == m0123);
         REQUIRE(m0.equals(m1));
         REQUIRE(m0.bbox() == m0);
         REQUIRE(m00.equals(m1));
+        REQUIRE(m1 != m2);
     }
 
     SECTION("intersects , distance") {
@@ -242,9 +243,9 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         REQUIRE(m1c == pt);
         pt = Pt2D{2, 2};
         REQUIRE(mtc == pt);
-        arr = {1, 1, 3, 3};
+        arr = {{1, 1, 3, 3}};
         REQUIRE(mt.as_array() == arr);
-        arr = {-1, -1, 3, 3};
+        arr = {{-1, -1, 3, 3}};
         REQUIRE(mby.as_array() == arr);
     }
 

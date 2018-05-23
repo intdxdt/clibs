@@ -45,17 +45,15 @@ namespace mbr {
         double area() const { return height() * width(); }
 
         std::vector<std::vector<double>> as_poly_array() {
-            return {
-                    {minx, miny},
+            return {{minx, miny},
                     {minx, maxy},
                     {maxx, maxy},
                     {maxx, miny},
-                    {minx, miny},
-            };
+                    {minx, miny}};
         }
 
         std::array<double, 4> as_array() {
-            return {minx, miny, maxx, maxy};
+            return {{minx, miny, maxx, maxy}};
         }
 
         std::tuple<double, double, double, double> as_tuple() {
@@ -275,7 +273,7 @@ namespace mbr {
                << maxx << " " << miny << ","
                << minx << " " << miny
                << "))";
-            return std::move(ss.str());
+            return ss.str();
         }
 
         ///Operator : +

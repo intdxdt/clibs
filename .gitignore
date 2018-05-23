@@ -1,5 +1,7 @@
+sandbox
 # Prerequisites
 *.d
+*.profraw
 
 # Object files
 *.o
