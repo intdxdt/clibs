@@ -39,10 +39,11 @@ namespace rtree {
     std::shared_ptr<Node> NewNode(Object *item, int height, bool leaf,
                                   std::vector<std::shared_ptr<Node>> children) {
         Node node;
+        Bounds bounds = (item == nullptr) ? emptyBounds() : item->bounds();
         node.item = item;
         node.height = height;
         node.leaf = leaf;
-        node.bbox = std::make_shared<MBR>(item->bounds());
+        node.bbox = std::make_shared<MBR>(std::move(MBR{bounds, true}));
         node.children = std::move(children);
         return std::make_shared<Node>(std::move(node));
     }

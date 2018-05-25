@@ -11,30 +11,33 @@
 
 namespace rtree {
 
-
-
     //RTree type
     struct RTree {
-        int maxEntries;
-        int minEntries;
-        std::shared_ptr<Node> Data;
-
-        RTree(int cap) {
-            this.Clear();
-
-            if (cap <= 0) {
-                cap = 9;
-            }
-            // max entries in a node is 9 by default min node fill is 40% for best performance
-            maxEntries = std::max(4, cap);
-            minEntries = std::min(2, int(std::ceil(cap * 0.4)));
-        }
+        int maxEntries = 9;
+        int minEntries = 4;
+        std::shared_ptr<Node> Data = nullptr;
 
         RTree& Clear() {
-            auto node = Node(&universe, 1, true, std::vector<std::shared_ptr<Node>>{});
+            auto universe = Universe{};
+            auto node = NewNode(&universe, 1, true, std::vector<std::shared_ptr<Node>>{});
             Data = std::make_shared<Node>(node);
+            return *this;
         }
     };
+
+    RTree NewRTree(int cap) {
+        RTree tree;
+        tree.Clear();
+
+        if (cap <= 0) {
+            cap = 9;
+        }
+        // max entries in a node is 9 by default min node fill is 40% for best performance
+        tree.maxEntries = std::max(4, cap);
+        tree.minEntries = std::min(2, int(std::ceil(cap * 0.4)));
+        return std::move(tree);
+    }
+
 
 //
 //     const []Node& emptyChildren(int length) const {
