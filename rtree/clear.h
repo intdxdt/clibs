@@ -1,10 +1,5 @@
-#include "../mutil/mutil.h"
-#include "../mbr/mbr.h"
-#include "util.h"
 
-namespace rtree {
 
-}
 
 //universe type with bounds [+inf +inf -inf -inf]
 //

@@ -7,7 +7,6 @@
 #include <cmath>
 #include <memory>
 #include "node.h"
-#include "clear.h"
 
 namespace rtree {
 
@@ -19,8 +18,9 @@ namespace rtree {
 
         RTree& Clear() {
             auto universe = Universe{};
-            auto node = NewNode(&universe, 1, true, std::vector<std::shared_ptr<Node>>{});
-            Data = std::make_shared<Node>(node);
+            auto ch = std::vector<std::shared_ptr<Node>>{};
+            auto node = NewNode(&universe, 1, true, ch);
+            Data = std::move(node);
             return *this;
         }
     };
