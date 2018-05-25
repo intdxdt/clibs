@@ -8,22 +8,22 @@
 
 TEST_CASE("mbr 1", "[mbr 1]") {
     SECTION("construction") {
-        mbr::MBR m0 = {0, 0, 0.5, 0.2};
-        mbr::MBR m1 = {2, 2, -0.5, -0.2};
-        mbr::MBR m = m0 + m1;
+        MBR m0 = {0, 0, 0.5, 0.2};
+        MBR m1 = {2, 2, -0.5, -0.2};
+        MBR m = m0 + m1;
         REQUIRE(m.minx == -0.5);
         REQUIRE(m.miny == -0.2);
         REQUIRE(m.maxx == 2);
         REQUIRE(m.maxy == 2);
 
-        m1 = mbr::MBR{2, 2, -0.5, -0.2, true};
+        m1 = MBR{2, 2, -0.5, -0.2, true};
         REQUIRE(m1.minx == 2);
         REQUIRE(m1.miny == 2);
         REQUIRE(m1.maxx == -0.5);
         REQUIRE(m1.maxy == -0.2);
 
-        m = mbr::MBR{-0.5, -0.2, 2, 2, true};
-        m1 = mbr::MBR{2, 2, -0.5, -0.2, false};
+        m = MBR{-0.5, -0.2, 2, 2, true};
+        m1 = MBR{2, 2, -0.5, -0.2, false};
         REQUIRE(m == m1);
 
 
@@ -32,10 +32,22 @@ TEST_CASE("mbr 1", "[mbr 1]") {
         REQUIRE(m.miny == 0.2);
         REQUIRE(m.maxx == 2.0);
         REQUIRE(m.maxy == 2.0);
+
+        std::array<double, 4> bounds = {2, 2, 0.5, 0.2};
+        auto marr = MBR(bounds);
+        REQUIRE(m.equals(marr));
+        marr = MBR(bounds, false);
+        REQUIRE(m.equals(marr));
+        marr = MBR(bounds, true);
+
+        REQUIRE(marr.minx == 2);
+        REQUIRE(marr.miny == 2);
+        REQUIRE(marr.maxx == 0.5);
+        REQUIRE(marr.maxy == 0.2);
     }
 
     SECTION("methods") {
-        mbr::MBR m = {2, 2, 0.5, 0.2};
+        MBR m = {2, 2, 0.5, 0.2};
         REQUIRE(m.height() == 1.8);
         REQUIRE(m.width() == 1.5);
         REQUIRE(m.area() == 1.5 * 1.8);
@@ -66,28 +78,28 @@ TEST_CASE("mbr 1", "[mbr 1]") {
 }
 
 TEST_CASE("mbr 2", "[mbr 2]") {
-    mbr::MBR m00{0, 0, 0, 0};
+    MBR m00{0, 0, 0, 0};
     m00.expand_to_include(2, 2);
 
-    mbr::MBR n00{0, 0, 0, 0};
+    MBR n00{0, 0, 0, 0};
     n00.expand_to_include(-2, -2);
 
-    auto m0 = mbr::MBR(1, 1, 1, 1);
+    auto m0 = MBR(1, 1, 1, 1);
     m0.expand_by_delta(1, 1);
 
-    mbr::MBR m1{0, 0, 2, 2};
-    mbr::MBR m2{4, 5, 8, 9};
-    mbr::MBR m3{1.7, 1.5, 5, 9};
-    mbr::MBR m4{5, 0, 8, 2};
-    mbr::MBR m5{5, 11, 8, 9};
-    mbr::MBR m6{0, 0, 2, -2};
-    mbr::MBR m7{-2, 1, 4, -2};
-    mbr::MBR m8{-1, 0, 1, -1.5};
+    MBR m1{0, 0, 2, 2};
+    MBR m2{4, 5, 8, 9};
+    MBR m3{1.7, 1.5, 5, 9};
+    MBR m4{5, 0, 8, 2};
+    MBR m5{5, 11, 8, 9};
+    MBR m6{0, 0, 2, -2};
+    MBR m7{-2, 1, 4, -2};
+    MBR m8{-1, 0, 1, -1.5};
 
     std::vector<double> p = {1.7, 1.5, 3.4};// POINT(1.7 1.5, 3.4)
     std::vector<double> p0 = {1.7};         // POINT(1.7 1.5)
 
-    mbr::MBR m0123{0, 2, 1, 3};
+    MBR m0123{0, 2, 1, 3};
     auto clone_m0123 = m0123;
 
     const int x1 = 0;
@@ -97,6 +109,7 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     SECTION("equals") {
         std::array<double, 4> r1{{0, 0, 2, 2}};
         REQUIRE(m1.as_array() == r1);
+        REQUIRE(m1.bounds() == r1);
         REQUIRE(clone_m0123 == m0123);
         REQUIRE(m0.equals(m1));
         REQUIRE(m0.bbox() == m0);
@@ -130,7 +143,9 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         std::array<double, 4> _m23{4, 5, 5, 9};
 
         REQUIRE(_m13 == m13.value().as_array());
+        REQUIRE(_m13 == m13.value().bounds());
         REQUIRE(_m23 == m23.value().as_array());
+        REQUIRE(_m23 == m23.value().bounds());
 
         REQUIRE(m3.intersects(m4));
         REQUIRE(m2.intersects(m5));
@@ -160,13 +175,13 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         REQUIRE(m1.distance(m3) == 0.0);
         REQUIRE(m1.distance_square(m3) == 0.0);
 
-        mbr::MBR a{
+        MBR a{
                 -7.703505430214746, 3.0022503796012305,
                 -5.369812194018422, 5.231449888803689};
         REQUIRE(m1.distance(a) == std::hypot(-5.369812194018422, 3.0022503796012305 - 2));
 
-        mbr::MBR b{-4.742849832055231, -4.1033230559816065,
-                   -1.9563504455521576, -2.292098454754609};
+        MBR b{-4.742849832055231, -4.1033230559816065,
+              -1.9563504455521576, -2.292098454754609};
         REQUIRE(m1.distance(b) == std::hypot(-1.9563504455521576, -2.292098454754609));
     }
 
@@ -176,8 +191,8 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         Pt2D p3{3.58, 11.79};
         Pt2D p4{-1.16, 14.71};
 
-        mbr::MBR mp12 = {p1[x1], p1[y1], p2[x1], p2[y1]};
-        mbr::MBR mp34 = {p3[x1], p3[y1], p4[x1], p4[y1]};
+        MBR mp12 = {p1[x1], p1[y1], p2[x1], p2[y1]};
+        MBR mp34 = {p3[x1], p3[y1], p4[x1], p4[y1]};
 
         // intersects but segment are disjoint
         REQUIRE(mp12.intersects(mp34));
@@ -186,10 +201,10 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         REQUIRE(!mp12.intersects(p3.x, p3.y));
         REQUIRE(m1.contains(1, 1));
 
-        mbr::MBR mbr11{1, 1, 1.5, 1.5};
-        mbr::MBR mbr12{1, 1, 2, 2};
-        mbr::MBR mbr13{1, 1, 2.000045, 2.00001};
-        mbr::MBR mbr14{2.000045, 2.00001, 4.000045, 4.00001};
+        MBR mbr11{1, 1, 1.5, 1.5};
+        MBR mbr12{1, 1, 2, 2};
+        MBR mbr13{1, 1, 2.000045, 2.00001};
+        MBR mbr14{2.000045, 2.00001, 4.000045, 4.00001};
 
         REQUIRE(m1.contains(mbr11));
         REQUIRE(m1.contains(mbr12));
@@ -209,10 +224,10 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     }
 
     SECTION("translate, expand by, area") {
-        mbr::MBR ma = {0, 0, 2, 2};
-        mbr::MBR mb = {-1, -1, 1.5, 1.9};
-        mbr::MBR mc = {1.7, 1.5, 5, 9};
-        mbr::MBR md = ma;
+        MBR ma = {0, 0, 2, 2};
+        MBR mb = {-1, -1, 1.5, 1.9};
+        MBR mc = {1.7, 1.5, 5, 9};
+        MBR md = ma;
         ma.expand_to_include(mc);
         md.expand_to_include(mb);
 

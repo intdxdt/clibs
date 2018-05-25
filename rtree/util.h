@@ -1,25 +1,18 @@
-package rtree;
+#include <cmath>
+#include <limits>
+#include "../mbr/mbr.h"
 
-//split at index
- const ([]Node, []Node)& splitAtIndex(const []Node& nodes, int index) const {
-    auto ln = len(nodes);
-    auto newNodes = make([]*Node, ln - index);
-    copy(newNodes, nodes[index:]);
-    auto for (i = index; i < ln; i++ ) {
-        nodes[i] = nullptr;
-    }
-    nodes = nodes[:index];
-    return nodes, newNodes;
+#ifndef RTREE_CPP_UTIL_H
+#define RTREE_CPP_UTIL_H
+
+std::array<double, 4> emptyBounds() {
+    auto inf = std::numeric_limits<double>::infinity();
+    auto neginf = -std::numeric_limits<double>::infinity();
+    return {inf, inf, neginf, neginf};
 }
 
-//slice index
- int sliceIndex(int limit, bool int) (i predicate) const {
-    auto for (i = 0; i < limit; i++ ) {
-        if (predicate(i)) {
-            return i;
-        }
-    }
-    return -1;
+MBR emptyMbr() {
+    return {emptyBounds(), true};
 }
 
-
+#endif //RTREE_CPP_UTIL_H
