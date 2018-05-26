@@ -16,13 +16,19 @@ namespace rtree {
         int minEntries = 4;
         std::shared_ptr<Node> Data = nullptr;
 
-        RTree& Clear() {
-            auto universe = Universe{};
-            auto ch = std::vector<std::shared_ptr<Node>>{};
+        RTree &Clear() {
+            Universe universe;
+            std::vector<std::shared_ptr<Node>> ch{};
             auto node = NewNode(&universe, 1, true, ch);
             Data = std::move(node);
             return *this;
         }
+
+        //IsEmpty checks for empty tree
+        bool IsEmpty() {
+            return this->Data.get()->children.empty();
+        }
+
     };
 
     RTree NewRTree(int cap) {

@@ -15,4 +15,6 @@ MBR emptyMbr() {
     return {emptyBounds(), true};
 }
 
+
+
 #endif //RTREE_CPP_UTIL_H

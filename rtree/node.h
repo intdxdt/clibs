@@ -6,6 +6,10 @@
 #include "util.h"
 
 namespace rtree {
+    struct Node;
+    struct Universe;
+    using Nodes = std::vector<Node>;
+
 //universe type with bounds [+inf +inf -inf -inf]
     struct Universe : Object {
         Bounds bounds() override {
@@ -66,5 +70,21 @@ namespace rtree {
         }
         return chs;
     }
+
+    std::vector<std::shared_ptr<Node>> emptyChildren(std::size_t length) {
+        std::vector<std::shared_ptr<Node>> chs;
+        chs.reserve(length);
+        return std::move(chs);
+    }
+
+
+    //split at index
+    template <typename T>
+    std::vector<T> splitAtIndex(std::vector<T>& nodes, std::size_t index) {
+        std::vector<T> newNodes(nodes.begin() + index, nodes.end());
+        nodes.resize(index);
+        return std::move(newNodes);
+    }
+
 
 }
