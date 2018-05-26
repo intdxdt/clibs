@@ -47,6 +47,16 @@ namespace rtree {
         }
     };
 
+    struct XYNodePath {
+        inline bool operator()(const std::shared_ptr<Node>& a, const std::shared_ptr<Node>& b) {
+            auto d = a->bbox[0] - b->bbox[0] ;
+            if (feq(d , 0)){
+                d = a->bbox[1] - b->bbox[1];
+            }
+            return d < 0;
+        }
+    };
+
     //compareNodeMinX computes change in minimum x
     double compareNodeMinX(const Node& a, const Node& b) {
         return a.bbox.minx - b.bbox.minx;

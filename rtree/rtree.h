@@ -29,8 +29,8 @@ namespace rtree {
         }
 
 
-//allDistMargin computes total margin of all possible split distributions.
-//Each node is at least m full.
+        //allDistMargin computes total margin of all possible split distributions.
+        //Each node is at least m full.
         double allDistMargin(std::shared_ptr<Node>& node, std::size_t m, std::size_t M, SortBy sortBy) const {
             if (sortBy == ByX) {
                 std::sort(node->children.begin(), node->children.end(), XNodePath());
@@ -165,7 +165,7 @@ namespace rtree {
         }
 
         //insert - private
-        void insert(Object *item, size_t level) {
+        void insert(Object *item, int level) {
             auto bbox = MBR{item->bounds()};
             std::vector<std::shared_ptr<Node>> insertPath{};
 
@@ -185,7 +185,7 @@ namespace rtree {
         }
 
         //insert - private
-        void insert(std::shared_ptr<Node>& item, size_t level) {
+        void insert(std::shared_ptr<Node>& item, int level) {
             auto bbox = item->bbox;
             std::vector<std::shared_ptr<Node>> insertPath{};
 
@@ -209,6 +209,51 @@ namespace rtree {
             }
             insert(item, (*this).Data->height - 1);
             return *this;
+        }
+
+        //Load implements bulk loading
+        RTree& Load(std::vector<Object *>& objects) {
+            if (objects.empty()) {
+                return *this;
+            }
+
+            if (objects.size() < minEntries) {
+                for (auto o : objects) {
+                    Insert(o);
+                }
+                return *this;
+            }
+
+            std::vector<Object *> data(objects.begin(), objects.end());
+
+            // recursively build the tree with the given data from stratch using OMT algorithm
+            auto node = _build(data, 0, data.size() - 1, 0);
+
+            if (Data->children.empty()) {
+                // save as is if tree is empty
+                Data = std::move(node);
+            }
+            else if (Data->height == node.height) {
+                // split root if trees have the same height
+                splitRoot(Data, node);
+            }
+            else {
+                if (Data->height < node.height) {
+                    // swap trees if inserted one is bigger
+                    std::swap(Data, node);
+                }
+
+                // insert the small tree into the large tree at appropriate level
+                insert(node, Data->height - node.height - 1);
+            }
+
+            return *this;
+        }
+
+        //LoadBoxes loads bounding boxes
+        RTree& LoadBoxes(std::vector<MBR>& data) {
+            std::vector<Object *> items(data.begin(), data.end());
+            return Load(items);
         }
     };
 
