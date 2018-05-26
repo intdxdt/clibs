@@ -3,8 +3,11 @@ project(rtree_cpp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(rtree_cpp main.cpp
+add_executable(rtree_cpp
+        main.cpp
         rtree.h
         node.h
         clear.h
-        util.h insert.h core.h)
+        util.h
+        core.h
+        )

@@ -15,10 +15,10 @@ namespace rtree {
 
     ///Node type for internal node
     struct Node : Object {
-        Object *item = nullptr;
-        int height = -1;
-        bool leaf = false;
-        MBR bbox = emptyMbr();
+        Object *item    = nullptr;
+        int height      = -1;
+        bool leaf       = false;
+        MBR bbox        = emptyMbr();
         std::vector<std::shared_ptr<Node>> children{};
 
         Bounds bounds() override {
@@ -33,10 +33,6 @@ namespace rtree {
         void addChild(std::shared_ptr<Node> child) {
             children.emplace_back(child);
         }
-
-        // bool operator < (const Node& str) const {
-        //     return (key < str.key);
-        // }
     };
 
     struct XNodePath {

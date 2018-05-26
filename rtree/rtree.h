@@ -12,8 +12,8 @@ namespace rtree {
 
     //RTree type
     struct RTree {
-        size_t maxEntries = 9;
-        size_t minEntries = 4;
+        int maxEntries = 9;
+        int minEntries = 4;
         std::shared_ptr<Node> Data = nullptr;
 
         RTree& Clear() {
@@ -61,8 +61,8 @@ namespace rtree {
             return margin;
         }
 
-//_chooseSplitAxis selects split axis : sorts node children
-//by the best axis for split.
+        //_chooseSplitAxis selects split axis : sorts node children
+        //by the best axis for split.
         void chooseSplitAxis(std::shared_ptr<Node>& node, std::size_t m, std::size_t M) {
             auto xMargin = allDistMargin(node, m, M, ByX);
             auto yMargin = allDistMargin(node, m, M, ByY);
@@ -74,7 +74,7 @@ namespace rtree {
             }
         }
 
-//_chooseSplitIndex selects split index.
+        //_chooseSplitIndex selects split index.
         std::size_t chooseSplitIndex(std::shared_ptr<Node>& node, std::size_t m, std::size_t M) const {
             std::size_t i = 0, index = 0;
             double overlap, area, minOverlap, minArea;
@@ -122,7 +122,7 @@ namespace rtree {
 
 
         //_split overflowed node into two
-        void split(std::vector<std::shared_ptr<Node>> insertPath, int level) {
+        void split(std::vector<std::shared_ptr<Node>>& insertPath, int level) {
             auto node = insertPath[level];
             auto newNode = NewNode(
                     nullptr,
@@ -150,25 +150,8 @@ namespace rtree {
             }
         }
 
-        //insert - private
-        void insert(Object *item, int level) {
-            auto bbox = MBR{item->bounds()};
-            std::vector<std::shared_ptr<Node>> insertPath{};
-
-            // find the best node for accommodating the item, saving all nodes along the path too
-            auto node = chooseSubtree(bbox, Data, level, insertPath);
-
-            if (typeid(item) == typeid(Node)) {
-                auto o = dynamic_cast<Node*> (item);
-                node->children.emplace_back(o);
-            }
-            else {
-                // put the item into the node item_bbox
-                node->addChild(newLeafNode(item));
-            }
-            extend(node->bbox, bbox);
-
-            // split on node overflow propagate upwards if necessary
+        // split on node overflow propagate upwards if necessary
+        void split_on_overflow(int level, std::vector<std::shared_ptr<Node>>& insertPath) {
             while (level >= 0) {
                 //fmt.Printf("size of insert path: %v\n", insertPath[level].Size())
                 if (insertPath[level]->children.size() > maxEntries) {
@@ -179,13 +162,48 @@ namespace rtree {
                     break;
                 }
             }
+        }
+
+        //insert - private
+        void insert(Object *item, size_t level) {
+            auto bbox = MBR{item->bounds()};
+            std::vector<std::shared_ptr<Node>> insertPath{};
+
+            // find the best node for accommodating the item, saving all nodes along the path too
+            auto node = chooseSubtree(bbox, Data, level, insertPath);
+
+
+            //put the item into the node item_bbox
+            node->addChild(newLeafNode(item));
+            extend(node->bbox, bbox);
+
+            // split on node overflow propagate upwards if necessary
+            split_on_overflow(level, insertPath);
 
             // adjust bboxes along the insertion path
             adjustParentBBoxes(bbox, insertPath, level);
         }
 
+        //insert - private
+        void insert(std::shared_ptr<Node>& item, size_t level) {
+            auto bbox = item->bbox;
+            std::vector<std::shared_ptr<Node>> insertPath{};
+
+            // find the best node for accommodating the item, saving all nodes along the path too
+            auto node = chooseSubtree(bbox, Data, level, insertPath);
+
+            node->children.emplace_back(item);
+            extend(node->bbox, bbox);
+
+            // split on node overflow propagate upwards if necessary
+            split_on_overflow(level, insertPath);
+
+            //adjust bboxes along the insertion path
+            adjustParentBBoxes(bbox, insertPath, level);
+        }
+
         //Insert item
-        const RTree& Insert(Object *item) {
+        RTree& Insert(Object *item) {
             if (item == nullptr) {
                 return *this;
             }
