@@ -37,7 +37,7 @@ struct MBR : Object {
         *this = MBR{bounds[0], bounds[1], bounds[2], bounds[3], raw};
     }
 
-    double operator[](const int index) {
+    double operator[](std::size_t index) const {
         assert(index >= 0 && index < 4);
         return index == 0 ? minx :
                index == 1 ? miny :
