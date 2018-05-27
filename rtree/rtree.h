@@ -91,7 +91,72 @@ namespace rtree {
             return LoadBoxes(data);
         }
 
+        //Search item
+        std::vector<std::shared_ptr<Node>> Search(const MBR& bbox) {
+            auto node = Data;
+            std::vector<std::shared_ptr<Node>> result;
+
+            if (!intersects(bbox, node->bbox)) {
+                return result;
+            }
+
+            std::vector<std::shared_ptr<Node>> nodesToSearch;
+
+            while (true) {
+                for (size_t i = 0, length = node->children.size(); i < length; i++) {
+                    std::shared_ptr<Node>& child = node->children[i];
+                    const MBR& childBBox = child->bbox;
+
+                    if (intersects(bbox, childBBox)) {
+                        if (node->leaf) {
+                            result.emplace_back(child);
+                        }
+                        else if (contains(bbox, childBBox)) {
+                            all(child, result);
+                        }
+                        else {
+                            nodesToSearch.emplace_back(child);
+                        }
+                    }
+                }
+                node = pop(nodesToSearch);
+                if (node == nullptr) {
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        //All items from  root node
+        std::vector<std::shared_ptr<Node>> All() {
+            std::vector<std::shared_ptr<Node>> result{};
+            all(Data, result);
+            return std::move(result);
+        }
+
     private:
+        //all - fetch all items from node
+       void all(std::shared_ptr<Node> node, std::vector<std::shared_ptr<Node>>& result) {
+            std::vector<std::shared_ptr<Node>> nodesToSearch;
+            while (true) {
+                if (node->leaf) {
+                    for (auto& o : node->children) {
+                        result.emplace_back(o);
+                    }
+                }
+                else {
+                    for (auto& o : node->children) {
+                        nodesToSearch.emplace_back(o);
+                    }
+                }
+                node = pop(nodesToSearch);
+                if (node == nullptr) {
+                    break;
+                }
+            }
+        }
+
         //insert - private
         void insert(Object item, int level) {
             auto bbox = item.bbox;

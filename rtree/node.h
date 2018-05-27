@@ -81,7 +81,7 @@ namespace rtree {
     }
 
 
-    std::shared_ptr<Node> NewNode(Object item, size_t height, bool leaf,
+    std::shared_ptr<Node> NewNode(Object item, int height, bool leaf,
                                   std::vector<std::shared_ptr<Node>>&& children) {
         Node node{};
         node.item = item;

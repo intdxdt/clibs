@@ -48,6 +48,17 @@ T max(T a, T b) {
     return b > a ? b : a;
 };
 
+
+template<typename T>
+T pop(std::vector<T>& a) {
+    if (a.empty()) {
+        return nullptr;
+    }
+    auto v = a.back();
+    a.resize(a.size() - 1);
+    return v;
+}
+
 void swapItem(std::vector<Object>& arr, std::size_t i, std::size_t j) {
     std::swap(arr[i], arr[j]);
 }
