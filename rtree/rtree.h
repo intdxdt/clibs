@@ -104,7 +104,7 @@ namespace rtree {
 
             while (true) {
                 for (size_t i = 0, length = node->children.size(); i < length; i++) {
-                    std::shared_ptr<Node>& child = node->children[i];
+                    std::shared_ptr<Node> child = node->children[i];
                     const MBR& childBBox = child->bbox;
 
                     if (intersects(bbox, childBBox)) {
@@ -141,14 +141,10 @@ namespace rtree {
             std::vector<std::shared_ptr<Node>> nodesToSearch;
             while (true) {
                 if (node->leaf) {
-                    for (auto& o : node->children) {
-                        result.emplace_back(o);
-                    }
+                    result.insert(result.end(), node->children.begin(), node->children.end());
                 }
                 else {
-                    for (auto& o : node->children) {
-                        nodesToSearch.emplace_back(o);
-                    }
+                    nodesToSearch.insert(nodesToSearch.end(), node->children.begin(), node->children.end());
                 }
                 node = pop(nodesToSearch);
                 if (node == nullptr) {
@@ -178,7 +174,7 @@ namespace rtree {
         }
 
         //insert - private
-        void insert(std::shared_ptr<Node>& item, int level) {
+        void insert(std::shared_ptr<Node> item, int level) {
             auto bbox = item->bbox;
             std::vector<std::shared_ptr<Node>> insertPath{};
 
@@ -387,7 +383,7 @@ namespace rtree {
         }
 
         //_splitRoot splits the root of tree.
-        void splitRoot(std::shared_ptr<Node>& node, std::shared_ptr<Node>& newNode) {
+        void splitRoot(const std::shared_ptr<Node>& node, std::shared_ptr<Node>& newNode) {
             // split root node
             auto path = std::vector<std::shared_ptr<Node>>{node, newNode};
             auto root = NewNode(Object{}, node->height + 1, false, std::move(path));
@@ -480,7 +476,7 @@ namespace rtree {
 
     };
 
-    RTree NewRTree(int cap) {
+    RTree NewRTree(size_t cap) {
         RTree tree;
         tree.Clear();
 
@@ -488,8 +484,8 @@ namespace rtree {
             cap = 9;
         }
         // max entries in a node is 9 by default min node fill is 40% for best performance
-        tree.maxEntries = (size_t) std::max(4, cap);
-        tree.minEntries = (size_t) std::min(2, int(std::ceil(cap * 0.4)));
+        tree.maxEntries = max(size_t(4), cap);
+        tree.minEntries = max(size_t(2), size_t(std::ceil(cap * 0.4)));
         return std::move(tree);
     }
 

@@ -59,6 +59,12 @@ T pop(std::vector<T>& a) {
     return v;
 }
 
+template<typename T>
+std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
+    std::vector<T> s(v.begin() + i, v.begin() + j);
+    return std::move(s);
+}
+
 void swapItem(std::vector<Object>& arr, std::size_t i, std::size_t j) {
     std::swap(arr[i], arr[j]);
 }

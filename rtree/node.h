@@ -143,13 +143,13 @@ namespace rtree {
     // adjust bboxes along the given tree path
     void adjustParentBBoxes(const MBR& bbox, std::vector<std::shared_ptr<Node>>& path, int level) {
         for (int i = level; i >= 0; i--) {
-            extend((*path[i]).bbox, bbox);
+            extend(path[i]->bbox, bbox);
         }
     }
 
     //_chooseSubtree select child of node and updates path to selected node.
     std::shared_ptr<Node>
-    chooseSubtree(const MBR& bbox, std::shared_ptr<Node>& node, int level, std::vector<std::shared_ptr<Node>>& path) {
+    chooseSubtree(const MBR& bbox, std::shared_ptr<Node> node, int level, std::vector<std::shared_ptr<Node>>& path) {
 
         std::shared_ptr<Node> child;
         std::shared_ptr<Node> targetNode;
