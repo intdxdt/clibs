@@ -3,14 +3,52 @@
 #include <algorithm>
 #include "../mbr/mbr.h"
 
+#ifndef RTREE_CPP_UTIL_PROTOS
+#define RTREE_CPP_UTIL_PROTOS
+//@formatter:off
+MBR emptyMbr();
+struct Object;
+double bboxArea(const MBR&);
+MBR& extend(MBR&, const MBR&);
+double bboxMargin(const MBR&);
+std::array<double, 4> emptyBounds();
+bool contains(const MBR& , const MBR&) ;
+bool intersects(const MBR&, const MBR&);
+double enlargedArea(const MBR&, const MBR&);
+double intersectionArea(const MBR& , const MBR& );
+int sliceIndex(std::size_t, const std::function<bool(int)>&);
+void swapItem(std::vector<Object>&, std::size_t, std::size_t);
+//@formatter:on
+#endif
+
+#ifndef RTREE_CPP_OBJECT_H
+#define RTREE_CPP_OBJECT_H
+
+struct Object {
+    size_t id = 0;
+    MBR bbox = emptyMbr();
+    void* object = nullptr;
+    size_t meta = 0;
+};
+#endif //RTREE_CPP_OBJECT_H
+
 #ifndef RTREE_CPP_UTIL_H
 #define RTREE_CPP_UTIL_H
 using SortBy = std::size_t;
 const SortBy ByX = 0;
 const SortBy ByY = 1;
 
+template<typename T>
+T min(T a, T b) {
+    return b < a ? b : a;
+};
 
-void swapItem(std::vector<Object *>& arr, std::size_t i, std::size_t j) {
+template<typename T>
+T max(T a, T b) {
+    return b > a ? b : a;
+};
+
+void swapItem(std::vector<Object>& arr, std::size_t i, std::size_t j) {
     std::swap(arr[i], arr[j]);
 }
 
@@ -107,5 +145,6 @@ double intersectionArea(const MBR& a, const MBR& b) {
 
     return (maxx - minx) * (maxy - miny);
 }
+
 
 #endif //RTREE_CPP_UTIL_H

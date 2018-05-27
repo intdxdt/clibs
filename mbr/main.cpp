@@ -109,7 +109,6 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     SECTION("equals") {
         std::array<double, 4> r1{{0, 0, 2, 2}};
         REQUIRE(m1.as_array() == r1);
-        REQUIRE(m1.bounds() == r1);
         REQUIRE(clone_m0123 == m0123);
         REQUIRE(m0.equals(m1));
         REQUIRE(m0.bbox() == m0);
@@ -143,9 +142,7 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         std::array<double, 4> _m23{4, 5, 5, 9};
 
         REQUIRE(_m13 == m13.value().as_array());
-        REQUIRE(_m13 == m13.value().bounds());
         REQUIRE(_m23 == m23.value().as_array());
-        REQUIRE(_m23 == m23.value().bounds());
 
         REQUIRE(m3.intersects(m4));
         REQUIRE(m2.intersects(m5));

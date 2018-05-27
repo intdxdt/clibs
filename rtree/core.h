@@ -6,6 +6,5 @@
 namespace rtree {
     struct Node;
     struct Universe;
-    struct RTree;
 }
 #endif //RTREE_CPP_CORE_H

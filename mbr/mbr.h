@@ -7,16 +7,15 @@
 #include <optional>
 #include "../pt/pt.h"
 #include "../mutil/mutil.h"
-#include "../object/object.h"
 
 #ifndef MBR_MBR_H
 #define MBR_MBR_H
 
-struct MBR : Object {
-    double minx{};
-    double miny{};
-    double maxx{};
-    double maxy{};
+struct MBR {
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
 
     MBR(double minx, double miny, double maxx, double maxy) :
             minx(fmin(minx, maxx)), miny(fmin(miny, maxy)),
@@ -45,9 +44,6 @@ struct MBR : Object {
                index == 3 ? maxy : std::nan("-9");
     }
 
-    Bounds bounds() override {
-        return as_array();
-    }
 
     MBR& bbox() { return *this; }
 
