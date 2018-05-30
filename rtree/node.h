@@ -120,6 +120,14 @@ namespace rtree {
             return bbox;
         }
 
+
+        std::shared_ptr<Node> node_at_index(const std::vector<std::shared_ptr<Node>>& a, size_t i) {
+            if (a.empty() || (i > a.size() - 1)) {
+                return nullptr;
+            }
+            return a[i];
+        }
+
         //calculate_bbox calculates its bbox from bboxes of its children.
         void calculate_bbox(std::shared_ptr<Node>& node) {
             node->bbox = dist_bbox(node, 0, node->children.size());

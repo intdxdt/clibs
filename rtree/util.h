@@ -17,7 +17,7 @@ bool contains(const MBR& , const MBR&) ;
 bool intersects(const MBR&, const MBR&);
 double enlarged_area(const MBR&, const MBR&);
 double intersection_area(const MBR&, const MBR&);
-int slice_index(std::size_t, const std::function<bool(int)>&);
+std::optional<size_t> slice_index(size_t, const std::function<bool(size_t)>&);
 void swap_item(std::vector<Object>&, std::size_t, std::size_t);
 template<typename T>
 std::vector<T> split_at_index(std::vector<T>& v, std::size_t index);
@@ -42,12 +42,17 @@ const SortBy ByX = 0;
 const SortBy ByY = 1;
 
 template<typename T>
-const T& min(const T& a, const T& b) {
+inline size_t len(const std::vector<T>& v) {
+    return v.size();
+};
+
+template<typename T>
+inline const T& min(const T& a, const T& b) {
     return b < a ? b : a;
 };
 
 template<typename T>
-const T& max(const T& a, const T& b) {
+inline const T& max(const T& a, const T& b) {
     return b > a ? b : a;
 };
 
@@ -61,23 +66,13 @@ T pop(std::vector<T>& a) {
     return std::move(v);
 }
 
-
-template<typename T>
-T nodeAtIndex(const std::vector<T>& a, size_t i) {
-    auto n = a.size();
-    if (i > n - 1 || i < 0 || n == 0) {
-        return nullptr;
-    }
-    return a[i];
-}
-
-size_t popIndex(std::vector<size_t>& indxs) const {
-    assert(!indxs.empty());
-    size_t v = indxs.back();
-    indxs.resize(indxs.size() - 1);
+///std::optional<size_t>
+size_t pop_index(std::vector<size_t>& indexes) {
+    assert(!indexes.empty());
+    size_t v = indexes.back();
+    indexes.resize(indexes.size() - 1);
     return v;
 }
-
 
 template<typename T>
 std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
@@ -93,7 +88,7 @@ std::vector<T> split_at_index(std::vector<T>& v, std::size_t index) {
     return std::move(part);
 }
 
-void swap_item(std::vector<Object>& arr, std::size_t i, std::size_t j) {
+void swap_item(std::vector<Object>& arr, size_t i, size_t j) {
     std::swap(arr[i], arr[j]);
 }
 
@@ -107,13 +102,13 @@ MBR empty_mbr() {
     return {empty_bounds(), true};
 }
 
-
 //slice index
-int slice_index(std::size_t limit, const std::function<bool(int)>& predicate) {
-    for (auto i = 0; i < limit; ++i) {
-        if (predicate(i)) return i;
+std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
+    for (size_t i = 0; i < limit; ++i) {
+        if (predicate(i))
+            return i;
     }
-    return -1;
+    return std::nullopt;
 }
 
 

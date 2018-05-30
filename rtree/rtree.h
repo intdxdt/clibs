@@ -4,10 +4,10 @@
  https://github.com/mourner/rbush;
  @after  (c) 2015, Vladimir Agafonkin;
 */
+
 #include <cmath>
 #include <memory>
 #include "node.h"
-
 
 namespace rtree {
     //RTree type
@@ -134,40 +134,63 @@ namespace rtree {
             return std::move(result);
         }
 
+        RTree remove(const Object& item) {
+            remove_item(item.bbox , [&](const std::shared_ptr<Node>& node, size_t i) {
+                        return node->children[i]->bbox.equals(item.bbox);
+                    });
+            return *this;
+        }
+
+        RTree remove(const MBR& item) {
+            remove_item(item , [&](const std::shared_ptr<Node>& node, size_t i) {
+                        return node->children[i]->bbox.equals(item);
+                    });
+            return *this;
+        }
+
+        RTree remove(const std::shared_ptr<Node>& item) {
+            remove_item(item->bbox , [&](const std::shared_ptr<Node>& node, size_t i) {
+                        return node->children[i] == item;
+                    });
+            return *this;
+        }
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
-         RTree Remove(Object& item) const {
-
-            std::shared_ptr<Node> node  = data;
+        RTree remove_item(const MBR& bbox,
+                          const std::function<bool(const std::shared_ptr<Node>&, size_t)>& predicate) {
+//            const MBR& bbox = item.bbox;
+            std::shared_ptr<Node> node = data;
             std::shared_ptr<Node> parent = nullptr;
-            MBR bbox = item.bbox;
-            std::vector<std::shared_ptr<Node>> path{};
-            std::vector<size_t> indexes{};
-            int i, index ;
-            bool goingUp ;
+            std::vector<std::shared_ptr<Node>> path;
+            std::vector<size_t> indexes;
+            std::optional<size_t> index;
 
-            // depth-first iterative this traversal
-            while ((node != nullptr ) || !path.empty()) {
+            size_t i = 0;
+            bool goingUp = false;
+
+            //depth-first iterative this traversal
+            while ((node != nullptr) || !path.empty()) {
                 if (node == nullptr) {
-                    // go up
+                    //go up
                     node = pop(path);
-                    parent = nodeAtIndex(path, path.size() - 1);
-                    i = popIndex(indexes);
+                    parent = node_at_index(path, path.size() - 1);
+                    i = pop_index(indexes);
                     goingUp = true;
                 }
 
                 if (node->leaf) {
-                    // check current node
+                    //check current node
                     //index = node.children.indexOf(item)
-                    index = slice_index(node->children.size(), [&](int i) {
-                        return node->children[i]->bbox.equals(item.bbox);
+                    index = slice_index(node->children.size(), [&](size_t i) {
+                        return predicate(node, i);
+                        //return node->children[i]->bbox.equals(item.bbox);
                     });
 
                     //if found
-                    if (index != -1) {
+                    if (index.has_value()) {
                         //item found, remove the item and condense this upwards
                         //node.children.splice(index, 1)
-                        node->children.erase(node->children.begin() + index);
+                        node->children.erase(node->children.begin() + index.value());
                         path.push_back(node);
                         condense(path);
                         return *this;
@@ -175,25 +198,49 @@ namespace rtree {
                 }
 
                 if (!goingUp && !node->leaf && contains(node->bbox, bbox)) {
-                    // go down
+                    //go down
                     path.push_back(node);
                     indexes.push_back(i);
                     i = 0;
                     parent = node;
                     node = node->children[0];
-                } else if (parent != nullptr) {
-                    // go right
+                }
+                else if (parent != nullptr) {
+                    //go right
                     i++;
-                    node = nodeAtIndex(parent->children, i);;
+                    node = node_at_index(parent->children, i);;
                     goingUp = false;
-                } else {
+                }
+                else {
                     node = nullptr;
-                } // nothing found;
+                } //nothing found;
             }
             return *this;
         }
 
+        bool collides(const MBR& bbox) {
+            auto node = data;
+            if (!intersects(bbox, node->bbox)) {
+                return false;
+            }
 
+            bool bln  = false;
+            std::shared_ptr<Node> child;
+            std::vector<std::shared_ptr<Node>> searchList;
+
+            while (!bln && node != nullptr) {
+                size_t i = 0, length = node->children.size();
+                for (; !bln && i < length; ++i) {
+                    child = node->children[i];
+                    if (intersects(bbox, child->bbox)) {
+                        bln =  node->leaf || contains(bbox, child->bbox);
+                        searchList.emplace_back(child);
+                    }
+                }
+                node = pop(searchList);
+            }
+            return bln;
+        }
 
     private:
         //all - fetch all items from node
@@ -363,7 +410,6 @@ namespace rtree {
 
         //build
         std::shared_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, int height) {
-
             auto N = double(right - left + 1);
             auto M = double(maxEntries);
             std::shared_ptr<Node> node;
@@ -449,6 +495,39 @@ namespace rtree {
             auto root = new_Node(Object{}, node->height + 1, false, std::move(path));
             data = root;
             calculate_bbox(data);
+        }
+
+        //condense node and its path from the root
+        void condense(std::vector<std::shared_ptr<Node>>& path) {
+            std::shared_ptr<Node> parent;
+            size_t i = !path.empty() ? path.size() - 1 : 0;
+            //go through the path, removing empty nodes and updating bboxes
+            while (!path.empty()) {
+                if (path[i]->children.empty()) {
+                    //go through the path, removing empty nodes and updating bboxes
+                    if (i > 0) {
+                        parent = path[i - 1];
+                        auto index = slice_index(parent->children.size(), [&](size_t j) {
+                            return path[i] == parent->children[j];
+                        });
+                        if (index.has_value()) {
+                            parent->children.erase(parent->children.begin() + index.value());
+                        }
+                    }
+                    else {
+                        //root is empty, rest root
+                        this->clear();
+                    }
+                }
+                else {
+                    calculate_bbox(path[i]);
+                }
+
+                if (i == 0) {
+                    break;
+                }
+                i--;
+            }
         }
 
         //_chooseSplitAxis selects split axis : sorts node children
@@ -540,12 +619,12 @@ namespace rtree {
         RTree tree;
         tree.clear();
 
-        if (cap <= 0) {
+        if (cap == 0) {
             cap = 9;
         }
         // max entries in a node is 9 by default min node fill is 40% for best performance
-        tree.maxEntries = max(size_t(4), cap);
-        tree.minEntries = max(size_t(2), size_t(std::ceil(cap * 0.4)));
+        tree.maxEntries = max(4ul, cap);
+        tree.minEntries = max(2ul, static_cast<size_t>(std::ceil(cap * 0.4)));
         return std::move(tree);
     }
 
