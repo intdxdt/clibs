@@ -19,7 +19,7 @@ namespace rtree {
 
         RTree& clear() {
             std::vector<std::shared_ptr<Node>> ch{};
-            auto node = NewNode(Object{}, 1, true, std::move(ch));
+            auto node = new_Node(Object{}, 1, true, std::move(ch));
             data = std::move(node);
             return *this;
         }
@@ -158,7 +158,7 @@ namespace rtree {
             std::vector<std::shared_ptr<Node>> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
-            auto node = chooseSubtree(bbox, data, level, insertPath);
+            auto node = choose_subtree(bbox, data, level, insertPath);
 
 
             //put the item into the node item_bbox
@@ -169,7 +169,7 @@ namespace rtree {
             split_on_overflow(level, insertPath);
 
             // adjust bboxes along the insertion path
-            adjustParentBBoxes(bbox, insertPath, level);
+            adjust_parent_bboxes(bbox, insertPath, level);
         }
 
         //insert - private
@@ -178,7 +178,7 @@ namespace rtree {
             std::vector<std::shared_ptr<Node>> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
-            auto node = chooseSubtree(bbox, data, level, insertPath);
+            auto node = choose_subtree(bbox, data, level, insertPath);
 
             node->children.emplace_back(item);
             extend(node->bbox, bbox);
@@ -187,7 +187,7 @@ namespace rtree {
             split_on_overflow(level, insertPath);
 
             //adjust bboxes along the insertion path
-            adjustParentBBoxes(bbox, insertPath, level);
+            adjust_parent_bboxes(bbox, insertPath, level);
         }
 
         // split on node overflow propagate upwards if necessary
@@ -309,7 +309,7 @@ namespace rtree {
             if (N <= M) {
                 std::vector<Object> chs(items.begin() + left, items.begin() + right + 1);
                 // reached leaf level return leaf
-                node = NewNode(Object(), 1, true, make_children(chs));
+                node = new_Node(Object(), 1, true, make_children(chs));
                 calculate_bbox(node);
                 return node;
             }
@@ -324,7 +324,7 @@ namespace rtree {
 
             // TODO eliminate recursion?
 
-            node = NewNode(Object{}, height, false, std::vector<std::shared_ptr<Node>>{});
+            node = new_Node(Object{}, height, false, std::vector<std::shared_ptr<Node>>{});
 
             // split the items into M mostly square tiles
 
@@ -332,8 +332,8 @@ namespace rtree {
             auto N1 = N2 * size_t(std::ceil(std::sqrt(M)));
             size_t i, j, right2, right3;
 
-            std::function<double(const MBR&, const MBR&)> cmpX = compareMinX;
-            std::function<double(const MBR&, const MBR&)> cmpY = compareMinY;
+            std::function<double(const MBR&, const MBR&)> cmpX = compare_minx;
+            std::function<double(const MBR&, const MBR&)> cmpY = compare_miny;
             multi_select(items, left, right, N1, cmpX);
 
             for (i = left; i <= right; i += N1) {
@@ -355,7 +355,7 @@ namespace rtree {
         //_split overflowed node into two
         void split(std::vector<std::shared_ptr<Node>>& insertPath, int level) {
             auto node = insertPath[level];
-            auto newNode = NewNode(
+            auto newNode = new_Node(
                     Object{},
                     node->height,
                     node->leaf,
@@ -385,7 +385,7 @@ namespace rtree {
         void split_root(const std::shared_ptr<Node>& node, std::shared_ptr<Node>& newNode) {
             // split root node
             auto path = std::vector<std::shared_ptr<Node>>{node, newNode};
-            auto root = NewNode(Object{}, node->height + 1, false, std::move(path));
+            auto root = new_Node(Object{}, node->height + 1, false, std::move(path));
             data = root;
             calculate_bbox(data);
         }

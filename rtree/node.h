@@ -3,7 +3,8 @@
 #include "../mutil/mutil.h"
 #include "../mbr/mbr.h"
 #include "util.h"
-namespace rtree{
+
+namespace rtree {
     namespace {
         ///Node type for internal node
         struct Node {
@@ -64,18 +65,18 @@ namespace rtree{
         };
 
         //compareNodeMinX computes change in minimum x
-        double compareMinX(const MBR& a, const MBR& b) {
+        double compare_minx(const MBR& a, const MBR& b) {
             return a.minx - b.minx;
         }
 
         //compareNodeMinY computes change in minimum y
-        double compareMinY(const MBR& a, const MBR& b) {
+        double compare_miny(const MBR& a, const MBR& b) {
             return a.miny - b.miny;
         }
 
 
-        std::shared_ptr<Node> NewNode(Object item, int height, bool leaf,
-                                      std::vector<std::shared_ptr<Node>>&& children) {
+        std::shared_ptr<Node> new_Node(Object item, int height, bool leaf,
+                                       std::vector<std::shared_ptr<Node>>&& children) {
             Node node{};
             node.item = item;
             node.height = height;
@@ -85,9 +86,11 @@ namespace rtree{
             return std::make_shared<Node>(std::move(node));
         }
 
-        //NewNode creates a new node
+        //new_Node creates a new node
         std::shared_ptr<Node> new_leaf_Node(Object item) {
-            return NewNode(item, 1, true, std::move(std::vector<std::shared_ptr<Node>>{}));
+            return std::move(new_Node(
+                    item, 1, true, std::vector<std::shared_ptr<Node>>{}
+            ));
         }
 
 
@@ -124,7 +127,7 @@ namespace rtree{
 
 
         // adjust bboxes along the given tree path
-        void adjustParentBBoxes(const MBR& bbox, std::vector<std::shared_ptr<Node>>& path, int level) {
+        void adjust_parent_bboxes(const MBR& bbox, std::vector<std::shared_ptr<Node>>& path, int level) {
             for (int i = level; i >= 0; i--) {
                 extend(path[i]->bbox, bbox);
             }
@@ -132,8 +135,8 @@ namespace rtree{
 
         //_chooseSubtree select child of node and updates path to selected node.
         std::shared_ptr<Node>
-        chooseSubtree(const MBR& bbox, std::shared_ptr<Node> node, int level,
-                      std::vector<std::shared_ptr<Node>>& path) {
+        choose_subtree(const MBR& bbox, std::shared_ptr<Node> node, int level,
+                       std::vector<std::shared_ptr<Node>>& path) {
 
             std::shared_ptr<Node> child;
             std::shared_ptr<Node> targetNode;
