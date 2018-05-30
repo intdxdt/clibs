@@ -4,10 +4,10 @@
 //universe type with bounds [+inf +inf -inf -inf]
 //
 // (u *universe) BBox() *mbr.MBR {
-//    return emptyMbr();
+//    return empty_mbr();
 //}
 //
-// emptyMbr() *mbr.MBR {
+// empty_mbr() *mbr.MBR {
 //    return &mbr.MBR{
 //        math::.Inf(1), math::.Inf(1),
 //        math::.Inf(-1), math::.Inf(-1),

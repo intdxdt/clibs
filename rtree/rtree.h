@@ -134,6 +134,67 @@ namespace rtree {
             return std::move(result);
         }
 
+        //Remove Item from RTree
+        //NOTE:if item is a bbox , then first found bbox is removed
+         RTree Remove(Object& item) const {
+
+            std::shared_ptr<Node> node  = data;
+            std::shared_ptr<Node> parent = nullptr;
+            MBR bbox = item.bbox;
+            std::vector<std::shared_ptr<Node>> path{};
+            std::vector<size_t> indexes{};
+            int i, index ;
+            bool goingUp ;
+
+            // depth-first iterative this traversal
+            while ((node != nullptr ) || !path.empty()) {
+                if (node == nullptr) {
+                    // go up
+                    node = pop(path);
+                    parent = nodeAtIndex(path, path.size() - 1);
+                    i = popIndex(indexes);
+                    goingUp = true;
+                }
+
+                if (node->leaf) {
+                    // check current node
+                    //index = node.children.indexOf(item)
+                    index = slice_index(node->children.size(), [&](int i) {
+                        return node->children[i]->bbox.equals(item.bbox);
+                    });
+
+                    //if found
+                    if (index != -1) {
+                        //item found, remove the item and condense this upwards
+                        //node.children.splice(index, 1)
+                        node->children.erase(node->children.begin() + index);
+                        path.push_back(node);
+                        condense(path);
+                        return *this;
+                    }
+                }
+
+                if (!goingUp && !node->leaf && contains(node->bbox, bbox)) {
+                    // go down
+                    path.push_back(node);
+                    indexes.push_back(i);
+                    i = 0;
+                    parent = node;
+                    node = node->children[0];
+                } else if (parent != nullptr) {
+                    // go right
+                    i++;
+                    node = nodeAtIndex(parent->children, i);;
+                    goingUp = false;
+                } else {
+                    node = nullptr;
+                } // nothing found;
+            }
+            return *this;
+        }
+
+
+
     private:
         //all - fetch all items from node
         void all(std::shared_ptr<Node> node, std::vector<std::shared_ptr<Node>>& result) {

@@ -11,7 +11,7 @@ namespace rtree {
             Object item{};
             int height = 0;
             bool leaf = false;
-            MBR bbox = emptyMbr();
+            MBR bbox = empty_mbr();
             std::vector<std::shared_ptr<Node>> children{};
 
 
@@ -113,7 +113,7 @@ namespace rtree {
 
         //dist_bbox computes min bounding rectangle of node children from k to p-1.
         MBR dist_bbox(std::shared_ptr<Node>& node, size_t k, size_t p) {
-            auto bbox = emptyMbr();
+            auto bbox = empty_mbr();
             for (auto i = k; i < p; i++) {
                 extend(bbox, node->children[i]->bbox);
             }

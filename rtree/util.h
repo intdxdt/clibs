@@ -7,7 +7,7 @@
 #define RTREE_CPP_UTIL_PROTOS
 
 //@formatter:off
-MBR emptyMbr();
+MBR empty_mbr();
 struct Object;
 double bbox_area(const MBR&);
 MBR& extend(MBR&, const MBR&);
@@ -29,7 +29,7 @@ std::vector<T> split_at_index(std::vector<T>& v, std::size_t index);
 
 struct Object {
     size_t id = 0;
-    MBR bbox = emptyMbr();
+    MBR bbox = empty_mbr();
     void* object = nullptr;
     size_t meta = 0;
 };
@@ -51,7 +51,6 @@ const T& max(const T& a, const T& b) {
     return b > a ? b : a;
 };
 
-
 template<typename T>
 T pop(std::vector<T>& a) {
     if (a.empty()) {
@@ -61,6 +60,24 @@ T pop(std::vector<T>& a) {
     a.resize(a.size() - 1);
     return std::move(v);
 }
+
+
+template<typename T>
+T nodeAtIndex(const std::vector<T>& a, size_t i) {
+    auto n = a.size();
+    if (i > n - 1 || i < 0 || n == 0) {
+        return nullptr;
+    }
+    return a[i];
+}
+
+size_t popIndex(std::vector<size_t>& indxs) const {
+    assert(!indxs.empty());
+    size_t v = indxs.back();
+    indxs.resize(indxs.size() - 1);
+    return v;
+}
+
 
 template<typename T>
 std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
@@ -86,7 +103,7 @@ std::array<double, 4> empty_bounds() {
     return {inf, inf, neginf, neginf};
 }
 
-MBR emptyMbr() {
+MBR empty_mbr() {
     return {empty_bounds(), true};
 }
 
