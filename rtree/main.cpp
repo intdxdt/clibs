@@ -27,8 +27,8 @@ namespace rtest {
     }
 
     void  testResults(std::vector<std::shared_ptr<rtree::Node>>&& nodes, std::vector<MBR>&& boxes) {
-        std::sort(nodes.begin(), nodes.end(), rtree::XYNodePath());
-        std::sort(boxes.begin(), boxes.end(), rtree::XYBoxes());
+        std::sort(nodes.begin(), nodes.end(), rtree::xy_node_path());
+        std::sort(boxes.begin(), boxes.end(), rtree::xy_boxes());
          REQUIRE(nodes.size() == boxes.size());
         for (int i =0; i < nodes.size(); i++) {
              REQUIRE(nodes[i]->bbox.equals(boxes[i]));
@@ -82,73 +82,63 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     using namespace rtest;
 
     SECTION("should test load 9 & 10") {
-        auto tree0 = rtree::NewRTree(0).LoadBoxes(someData(0));
-        REQUIRE(tree0.Data->height ==1);
+        auto tree0 = rtree::new_RTree(0).load_boxes(someData(0));
+        REQUIRE(tree0.data->height == 1);
 
-        auto tree1 = NewRTree(9).LoadBoxes(someData(9));
-        REQUIRE(tree1.Data->height == 1);
+        auto tree1 = new_RTree(9).load_boxes(someData(9));
+        REQUIRE(tree1.data->height == 1);
 
-        auto  tree2 = NewRTree(9).LoadBoxes(someData(10));
-        REQUIRE(tree2.Data->height ==2);
+        auto  tree2 = new_RTree(9).load_boxes(someData(10));
+        REQUIRE(tree2.data->height == 2);
     }
     SECTION("tests search with some other") {
         vector<MBR> data {
-            {-115, 45, -105, 55},
-            {105, 45, 115, 55},
-            {105, -55, 115, -45},
-            {-115, -55, -105, -45},
+            {-115, 45, -105, 55}, {105, 45, 115, 55}, {105, -55, 115, -45}, {-115, -55, -105, -45},
         };
-            auto tree = NewRTree(4);
-            tree.LoadBoxes(data);
-            testResults( tree.Search({-180, -90, 180, 90}), std::vector<MBR>{
-                {-115, 45, -105, 55},
-                {105, 45, 115, 55},
-                {105, -55, 115, -45},
-                {-115, -55, -105, -45},
+            auto tree = new_RTree(4);
+            tree.load_boxes(data);
+            testResults( tree.search({-180, -90, 180, 90}), std::vector<MBR>{
+                {-115, 45, -105, 55}, {105, 45, 115, 55}, {105, -55, 115, -45}, {-115, -55, -105, -45},
             });
 
-            testResults(tree.Search(MBR(-180, -90, 0, 90)), std::vector<MBR>{
-                {-115, 45, -105, 55},
-                {-115, -55, -105, -45},
+            testResults(tree.search(MBR(-180, -90, 0, 90)), std::vector<MBR>{
+                {-115, 45, -105, 55}, {-115, -55, -105, -45},
             });
 
-            testResults(tree.Search(MBR(0, -90, 180, 90)), std::vector<MBR>{
-                {105, 45, 115, 55},
-                {105, -55, 115, -45},
+            testResults(tree.search(MBR(0, -90, 180, 90)), std::vector<MBR>{
+                {105, 45, 115, 55}, {105, -55, 115, -45},
             });
-            testResults(tree.Search(MBR(-180, 0, 180, 90)), std::vector<MBR>{
-                {-115, 45, -105, 55},
-                {105, 45, 115, 55},
+            testResults(tree.search(MBR(-180, 0, 180, 90)), std::vector<MBR>{
+                {-115, 45, -105, 55}, {105, 45, 115, 55},
             });
-            testResults(tree.Search(MBR(-180, -90, 180, 0)), std::vector<MBR>{
-                {105, -55, 115, -45},
-                {-115, -55, -105, -45},
+            testResults(tree.search(MBR(-180, -90, 180, 0)), std::vector<MBR>{
+                {105, -55, 115, -45}, {-115, -55, -105, -45},
             });
     }
 
     SECTION("#load uses standard insertion when given a low number of items") {
             auto data = rtest::data;
-            auto tree = NewRTree(8).LoadBoxes(
+            auto tree = new_RTree(8).load_boxes(
                 rtest::data
-            ).LoadBoxes(slice(data,0, 3));
+            ).load_boxes(slice(data,0, 3));
 
-            auto tree2 = NewRTree(8).LoadBoxes(rtest::data).Insert(
+            auto tree2 = new_RTree(8).load_boxes(rtest::data).insert(
                 Object{0, data[0]}
-            ).Insert(Object{1, data[1]}).Insert(Object{2, data[2]});
-            REQUIRE(nodeEquals(*tree.Data, *tree2.Data));
+            ).insert(Object{1, data[1]}).insert(Object{2, data[2]});
+            REQUIRE(nodeEquals(*tree.data, *tree2.data));
     }
     SECTION("#load does nothing if (loading empty data)") {
             auto data = std::vector<Object>{};
-            auto tree = NewRTree(0).Load(data);
-            REQUIRE(tree.IsEmpty());
+            auto tree = new_RTree(0).load(data);
+            REQUIRE(tree.is_empty());
     }
     SECTION("#load properly splits tree root when merging trees of the same height") {
             auto data = rtest::data;
             std::vector<MBR> cloneData(data.begin(), data.end());
             std::vector<MBR> _cloneData(data.begin(), data.end());
             cloneData.insert(cloneData.end(), _cloneData.begin(), _cloneData.end());
-            auto tree = NewRTree(4).LoadBoxes(data).LoadBoxes(data);
-            testResults(tree.All(), std::move(cloneData));
+            auto tree = new_RTree(4).load_boxes(data).load_boxes(data);
+            testResults(tree.all(), std::move(cloneData));
     }
     SECTION("#load properly merges data of smaller or bigger tree heights") {
             auto data = rtest::data;
@@ -157,10 +147,10 @@ TEST_CASE("rtree 1", "[rtree 1]") {
             std::vector<MBR> cloneData(data.begin(), data.end());
             cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
 
-            auto tree1 = NewRTree(4).LoadBoxes(data).LoadBoxes(smaller);
-            auto tree2 = NewRTree(4).LoadBoxes(smaller).LoadBoxes(data);
-            REQUIRE(tree1.Data->height == tree2.Data->height);
-            testResults(tree1.All(), [&]{return cloneData;}());
-            testResults(tree2.All(), [&]{return cloneData;}());
+            auto tree1 = new_RTree(4).load_boxes(data).load_boxes(smaller);
+            auto tree2 = new_RTree(4).load_boxes(smaller).load_boxes(data);
+            REQUIRE(tree1.data->height == tree2.data->height);
+            testResults(tree1.all(), [&]{return cloneData;}());
+            testResults(tree2.all(), [&]{return cloneData;}());
     }
 }

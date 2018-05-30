@@ -9,5 +9,4 @@ add_executable(rtree_cpp
         node.h
         clear.h
         util.h
-        core.h
         )

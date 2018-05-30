@@ -14,85 +14,85 @@ namespace rtree {
     struct RTree {
         size_t maxEntries = 9;
         size_t minEntries = 4;
-        std::shared_ptr<Node> Data = nullptr;
+        std::shared_ptr<Node> data = nullptr;
 
 
-        RTree& Clear() {
+        RTree& clear() {
             std::vector<std::shared_ptr<Node>> ch{};
             auto node = NewNode(Object{}, 1, true, std::move(ch));
-            Data = std::move(node);
+            data = std::move(node);
             return *this;
         }
 
-        //IsEmpty checks for empty tree
-        bool IsEmpty() {
-            return Data.get()->children.empty();
+        //is_empty checks for empty tree
+        bool is_empty() {
+            return data.get()->children.empty();
         }
 
 
-        //Insert item
-        RTree& Insert(Object item) {
-            insert(item, this->Data->height - 1);
+        //insert item
+        RTree& insert(Object item) {
+            insert(item, this->data->height - 1);
             return *this;
         }
 
-        //Load implements bulk loading
-        RTree& Load(std::vector<Object>& objects) {
+        //load implements bulk loading
+        RTree& load(std::vector<Object>& objects) {
             if (objects.empty()) {
                 return *this;
             }
 
             if (objects.size() < minEntries) {
                 for (auto& o : objects) {
-                    Insert(o);
+                    insert(o);
                 }
                 return *this;
             }
 
-            std::vector<Object> data(objects.begin(), objects.end());
+            std::vector<Object> objs(objects.begin(), objects.end());
 
-            // recursively build the tree with the given data from stratch using OMT algorithm
-            auto node = _build(data, 0, data.size() - 1, 0);
+            //recursively build the tree from stratch using OMT algorithm
+            auto node = _build(objs, 0, objs.size() - 1, 0);
 
-            if (Data->children.empty()) {
+            if (data->children.empty()) {
                 // save as is if tree is empty
-                Data = std::move(node);
+                data = std::move(node);
             }
-            else if (Data->height == node->height) {
+            else if (data->height == node->height) {
                 // split root if trees have the same height
-                splitRoot(Data, node);
+                split_root(data, node);
             }
             else {
-                if (Data->height < node->height) {
+                if (data->height < node->height) {
                     // swap trees if inserted one is bigger
-                    std::swap(Data, node);
+                    std::swap(data, node);
                 }
 
                 // insert the small tree into the large tree at appropriate level
-                insert(node, Data->height - node->height - 1);
+                insert(node, data->height - node->height - 1);
             }
 
             return *this;
         }
 
-        //LoadBoxes loads bounding boxes
-        RTree& LoadBoxes(std::vector<MBR>& data) {
+        //load_boxes loads bounding boxes
+        RTree& load_boxes(std::vector<MBR>& boxes) {
             std::vector<Object> items;
-            items.reserve(data.size());
-            for (size_t i = 0; i < data.size(); ++i) {
-                items.emplace_back(Object{i, data[i]});
+            items.reserve(boxes.size());
+            for (size_t i = 0; i < boxes.size(); ++i) {
+                items.emplace_back(Object{i, boxes[i]});
             }
-            return Load(items);
+            return load(items);
         }
 
-        //LoadBoxes loads bounding boxes
-        RTree& LoadBoxes(std::vector<MBR>&& data) {
-            return LoadBoxes(data);
+        //load_boxes loads bounding boxes
+        RTree& load_boxes(std::vector<MBR>&& boxes) {
+            return load_boxes(boxes);
         }
 
-        //Search item
-        std::vector<std::shared_ptr<Node>> Search(const MBR& bbox) {
-            auto node = Data;
+        //search item
+        std::vector<std::shared_ptr<Node>> search(const MBR& bbox) {
+            auto node = data;
             std::vector<std::shared_ptr<Node>> result;
 
             if (!intersects(bbox, node->bbox)) {
@@ -127,16 +127,16 @@ namespace rtree {
             return result;
         }
 
-        //All items from  root node
-        std::vector<std::shared_ptr<Node>> All() {
+        //all items from  root node
+        std::vector<std::shared_ptr<Node>> all() {
             std::vector<std::shared_ptr<Node>> result{};
-            all(Data, result);
+            all(data, result);
             return std::move(result);
         }
 
     private:
         //all - fetch all items from node
-       void all(std::shared_ptr<Node> node, std::vector<std::shared_ptr<Node>>& result) {
+        void all(std::shared_ptr<Node> node, std::vector<std::shared_ptr<Node>>& result) {
             std::vector<std::shared_ptr<Node>> nodesToSearch;
             while (true) {
                 if (node->leaf) {
@@ -158,11 +158,11 @@ namespace rtree {
             std::vector<std::shared_ptr<Node>> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
-            auto node = chooseSubtree(bbox, Data, level, insertPath);
+            auto node = chooseSubtree(bbox, data, level, insertPath);
 
 
             //put the item into the node item_bbox
-            node->addChild(newLeafNode(item));
+            node->add_child(new_leaf_Node(item));
             extend(node->bbox, bbox);
 
             // split on node overflow propagate upwards if necessary
@@ -178,7 +178,7 @@ namespace rtree {
             std::vector<std::shared_ptr<Node>> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
-            auto node = chooseSubtree(bbox, Data, level, insertPath);
+            auto node = chooseSubtree(bbox, data, level, insertPath);
 
             node->children.emplace_back(item);
             extend(node->bbox, bbox);
@@ -207,8 +207,8 @@ namespace rtree {
         // sort an array so that items come in groups of n unsorted items,
         // with groups sorted between each other and
         // combines selection algorithm with binary divide & conquer approach.
-        void multiSelect(std::vector<Object>& arr, size_t left, size_t right, size_t n,
-                         const std::function<double(const MBR&, const MBR&)>& compare) {
+        void multi_select(std::vector<Object>& arr, size_t left, size_t right, size_t n,
+                          const std::function<double(const MBR&, const MBR&)>& compare) {
             size_t mid = 0;
             std::vector<size_t> stack{left, right};
 
@@ -224,15 +224,15 @@ namespace rtree {
                 }
 
                 mid = left + size_t(std::ceil(double(right - left) / double(n) / 2.0)) * n;
-                selectBox(arr, left, right, mid, compare);
+                select_box(arr, left, right, mid, compare);
                 stack.insert(stack.end(), {left, mid, mid, right});
             }
         }
 
 
         // sort array between left and right (inclusive) so that the smallest k elements come first (unordered)
-        void selectBox(std::vector<Object>& arr, size_t left, size_t right, size_t k,
-                       const std::function<double(const MBR&, const MBR&)>& compare) {
+        void select_box(std::vector<Object>& arr, size_t left, size_t right, size_t k,
+                        const std::function<double(const MBR&, const MBR&)>& compare) {
             size_t i = 0, j = 0;
             double fn, fi, fNewLeft, fNewRight, fsn, fz, fs, fsd;
             double fLeft(left), fRight(right), fk(k);
@@ -253,11 +253,11 @@ namespace rtree {
                     fsd = 0.5 * std::sqrt(fz * fs * (fn - fs) / fn) * (fsn);
                     fNewLeft = max(fLeft, std::floor(fk - fi * fs / fn + fsd));
                     fNewRight = min(fRight, std::floor(fk + (fn - fi) * fs / fn + fsd));
-                    selectBox(arr,
-                              static_cast<size_t>(fNewLeft),
-                              static_cast<size_t>(fNewRight),
-                              static_cast<size_t>(fk),
-                              compare
+                    select_box(arr,
+                               static_cast<size_t>(fNewLeft),
+                               static_cast<size_t>(fNewRight),
+                               static_cast<size_t>(fk),
+                               compare
                     );
                 }
 
@@ -265,13 +265,13 @@ namespace rtree {
                 i = left;
                 j = right;
 
-                swapItem(arr, left, k);
+                swap_item(arr, left, k);
                 if (compare(arr[right].bbox, t.bbox) > 0) {
-                    swapItem(arr, left, right);
+                    swap_item(arr, left, right);
                 }
 
                 while (i < j) {
-                    swapItem(arr, i, j);
+                    swap_item(arr, i, j);
                     i++;
                     j--;
                     while (compare(arr[i].bbox, t.bbox) < 0) {
@@ -283,11 +283,11 @@ namespace rtree {
                 }
 
                 if (compare(arr[left].bbox, t.bbox) == 0) {
-                    swapItem(arr, left, j);
+                    swap_item(arr, left, j);
                 }
                 else {
                     j++;
-                    swapItem(arr, j, right);
+                    swap_item(arr, j, right);
                 }
 
                 if (j <= k) {
@@ -301,7 +301,7 @@ namespace rtree {
 
 
         //build
-        std::shared_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, size_t height) {
+        std::shared_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, int height) {
 
             auto N = double(right - left + 1);
             auto M = double(maxEntries);
@@ -309,14 +309,14 @@ namespace rtree {
             if (N <= M) {
                 std::vector<Object> chs(items.begin() + left, items.begin() + right + 1);
                 // reached leaf level return leaf
-                node = NewNode(Object(), 1, true, makeChildren(chs));
-                calcBBox(node);
+                node = NewNode(Object(), 1, true, make_children(chs));
+                calculate_bbox(node);
                 return node;
             }
 
             if (height == 0) {
                 // target height of the bulk-loaded tree
-                height = size_t(std::ceil(std::log(N) / std::log(M)));
+                height = static_cast<int>(std::ceil(std::log(N) / std::log(M)));
 
                 // target number of root entries to maximize storage utilization
                 M = std::ceil(N / std::pow(M, double(height - 1)));
@@ -334,20 +334,20 @@ namespace rtree {
 
             std::function<double(const MBR&, const MBR&)> cmpX = compareMinX;
             std::function<double(const MBR&, const MBR&)> cmpY = compareMinY;
-            multiSelect(items, left, right, N1, cmpX);
+            multi_select(items, left, right, N1, cmpX);
 
             for (i = left; i <= right; i += N1) {
                 right2 = min(i + N1 - 1, right);
-                multiSelect(items, i, right2, N2, cmpY);
+                multi_select(items, i, right2, N2, cmpY);
 
                 for (j = i; j <= right2; j += N2) {
                     right3 = min(j + N2 - 1, right2);
                     // pack each entry recursively
-                    node->addChild(_build(items, j, right3, height - 1));
+                    node->add_child(_build(items, j, right3, height - 1));
                 }
             }
 
-            calcBBox(node);
+            calculate_bbox(node);
             return node;
         }
 
@@ -359,52 +359,52 @@ namespace rtree {
                     Object{},
                     node->height,
                     node->leaf,
-                    emptyChildren(0)
+                    empty_children(0)
             );
 
             auto M = node->children.size();
             size_t m = minEntries;
 
-            chooseSplitAxis(node, m, M);
-            auto at = chooseSplitIndex(node, m, M);
+            choose_split_axis(node, m, M);
+            auto at = choose_split_index(node, m, M);
             //perform split at index
-            newNode->children = splitAtIndex(node->children, at);
+            newNode->children = split_at_index(node->children, at);
 
-            calcBBox(node);
-            calcBBox(newNode);
+            calculate_bbox(node);
+            calculate_bbox(newNode);
 
             if (level > 0) {
-                insertPath[level - 1]->addChild(newNode);
+                insertPath[level - 1]->add_child(newNode);
             }
             else {
-                splitRoot(node, newNode);
+                split_root(node, newNode);
             }
         }
 
         //_splitRoot splits the root of tree.
-        void splitRoot(const std::shared_ptr<Node>& node, std::shared_ptr<Node>& newNode) {
+        void split_root(const std::shared_ptr<Node>& node, std::shared_ptr<Node>& newNode) {
             // split root node
             auto path = std::vector<std::shared_ptr<Node>>{node, newNode};
             auto root = NewNode(Object{}, node->height + 1, false, std::move(path));
-            Data = root;
-            calcBBox(Data);
+            data = root;
+            calculate_bbox(data);
         }
 
         //_chooseSplitAxis selects split axis : sorts node children
         //by the best axis for split.
-        void chooseSplitAxis(std::shared_ptr<Node>& node, size_t m, size_t M) {
-            auto xMargin = allDistMargin(node, m, M, ByX);
-            auto yMargin = allDistMargin(node, m, M, ByY);
+        void choose_split_axis(std::shared_ptr<Node>& node, size_t m, size_t M) {
+            auto xMargin = all_dist_margin(node, m, M, ByX);
+            auto yMargin = all_dist_margin(node, m, M, ByY);
 
             // if total distributions margin value is minimal for x, sort by minX,
             // otherwise it's already sorted by minY
             if (xMargin < yMargin) {
-                std::sort(node->children.begin(), node->children.end(), XNodePath());
+                std::sort(node->children.begin(), node->children.end(), x_node_path());
             }
         }
 
         //_chooseSplitIndex selects split index.
-        std::size_t chooseSplitIndex(std::shared_ptr<Node>& node, std::size_t m, std::size_t M) const {
+        std::size_t choose_split_index(std::shared_ptr<Node>& node, std::size_t m, std::size_t M) const {
             std::size_t i = 0, index = 0;
             double overlap, area, minOverlap, minArea;
 
@@ -412,11 +412,11 @@ namespace rtree {
             minArea = std::numeric_limits<double>::infinity();
 
             for (i = m; i <= M - m; i++) {
-                auto bbox1 = distBBox(node, 0, i);
-                auto bbox2 = distBBox(node, i, M);
+                auto bbox1 = dist_bbox(node, 0, i);
+                auto bbox2 = dist_bbox(node, i, M);
 
-                overlap = intersectionArea(bbox1, bbox2);
-                area = bboxArea(bbox1) + bboxArea(bbox2);
+                overlap = intersection_area(bbox1, bbox2);
+                area = bbox_area(bbox1) + bbox_area(bbox2);
 
                 // choose distribution with minimum overlap
                 if (overlap < minOverlap) {
@@ -441,43 +441,43 @@ namespace rtree {
         }
 
 
-        //allDistMargin computes total margin of all possible split distributions.
+        //all_dist_margin computes total margin of all possible split distributions.
         //Each node is at least m full.
-        double allDistMargin(std::shared_ptr<Node>& node, size_t m, size_t M, SortBy sortBy) const {
+        double all_dist_margin(std::shared_ptr<Node>& node, size_t m, size_t M, SortBy sortBy) const {
             if (sortBy == ByX) {
-                std::sort(node->children.begin(), node->children.end(), XNodePath());
+                std::sort(node->children.begin(), node->children.end(), x_node_path());
                 //bubbleAxis(*node.getChildren(), ByX, ByY)
             }
             else if (sortBy == ByY) {
-                std::sort(node->children.begin(), node->children.end(), YNodePath());
+                std::sort(node->children.begin(), node->children.end(), y_node_path());
                 //bubbleAxis(*node.getChildren(), ByY, ByX)
             }
 
             size_t i = 0;
 
-            auto leftBBox = distBBox(node, 0, m);
-            auto rightBBox = distBBox(node, M - m, M);
-            auto margin = bboxMargin(leftBBox) + bboxMargin(rightBBox);
+            auto leftBBox = dist_bbox(node, 0, m);
+            auto rightBBox = dist_bbox(node, M - m, M);
+            auto margin = bbox_margin(leftBBox) + bbox_margin(rightBBox);
 
             for (i = m; i < M - m; i++) {
                 auto child = node->children[i];
                 extend(leftBBox, child->bbox);
-                margin += bboxMargin(leftBBox);
+                margin += bbox_margin(leftBBox);
             }
 
             for (i = M - m - 1; i >= m; i--) {
                 auto child = node->children[i];
                 extend(rightBBox, child->bbox);
-                margin += bboxMargin(rightBBox);
+                margin += bbox_margin(rightBBox);
             }
             return margin;
         }
 
     };
 
-    RTree NewRTree(size_t cap) {
+    RTree new_RTree(size_t cap) {
         RTree tree;
-        tree.Clear();
+        tree.clear();
 
         if (cap <= 0) {
             cap = 9;
@@ -487,6 +487,5 @@ namespace rtree {
         tree.minEntries = max(size_t(2), size_t(std::ceil(cap * 0.4)));
         return std::move(tree);
     }
-
 
 }

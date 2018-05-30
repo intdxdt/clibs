@@ -5,19 +5,22 @@
 
 #ifndef RTREE_CPP_UTIL_PROTOS
 #define RTREE_CPP_UTIL_PROTOS
+
 //@formatter:off
 MBR emptyMbr();
 struct Object;
-double bboxArea(const MBR&);
+double bbox_area(const MBR&);
 MBR& extend(MBR&, const MBR&);
-double bboxMargin(const MBR&);
-std::array<double, 4> emptyBounds();
+double bbox_margin(const MBR&);
+std::array<double, 4> empty_bounds();
 bool contains(const MBR& , const MBR&) ;
 bool intersects(const MBR&, const MBR&);
-double enlargedArea(const MBR&, const MBR&);
-double intersectionArea(const MBR& , const MBR& );
-int sliceIndex(std::size_t, const std::function<bool(int)>&);
-void swapItem(std::vector<Object>&, std::size_t, std::size_t);
+double enlarged_area(const MBR&, const MBR&);
+double intersection_area(const MBR&, const MBR&);
+int slice_index(std::size_t, const std::function<bool(int)>&);
+void swap_item(std::vector<Object>&, std::size_t, std::size_t);
+template<typename T>
+std::vector<T> split_at_index(std::vector<T>& v, std::size_t index);
 //@formatter:on
 #endif
 
@@ -39,12 +42,12 @@ const SortBy ByX = 0;
 const SortBy ByY = 1;
 
 template<typename T>
-T min(T a, T b) {
+const T& min(const T& a, const T& b) {
     return b < a ? b : a;
 };
 
 template<typename T>
-T max(T a, T b) {
+const T& max(const T& a, const T& b) {
     return b > a ? b : a;
 };
 
@@ -56,7 +59,7 @@ T pop(std::vector<T>& a) {
     }
     auto v = a.back();
     a.resize(a.size() - 1);
-    return v;
+    return std::move(v);
 }
 
 template<typename T>
@@ -65,23 +68,31 @@ std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
     return std::move(s);
 }
 
-void swapItem(std::vector<Object>& arr, std::size_t i, std::size_t j) {
+//split at index
+template<typename T>
+std::vector<T> split_at_index(std::vector<T>& v, std::size_t index) {
+    std::vector<T> part(v.begin() + index, v.end());
+    v.resize(index);
+    return std::move(part);
+}
+
+void swap_item(std::vector<Object>& arr, std::size_t i, std::size_t j) {
     std::swap(arr[i], arr[j]);
 }
 
-std::array<double, 4> emptyBounds() {
+std::array<double, 4> empty_bounds() {
     auto inf = std::numeric_limits<double>::infinity();
     auto neginf = -std::numeric_limits<double>::infinity();
     return {inf, inf, neginf, neginf};
 }
 
 MBR emptyMbr() {
-    return {emptyBounds(), true};
+    return {empty_bounds(), true};
 }
 
 
 //slice index
-int sliceIndex(std::size_t limit, const std::function<bool(int)>& predicate) {
+int slice_index(std::size_t limit, const std::function<bool(int)>& predicate) {
     for (auto i = 0; i < limit; ++i) {
         if (predicate(i)) return i;
     }
@@ -99,18 +110,18 @@ MBR& extend(MBR& a, const MBR& b) {
 }
 
 //computes area of bounding box
-double bboxArea(const MBR& a) {
+double bbox_area(const MBR& a) {
     return (a.maxx - a.minx) * (a.maxy - a.miny);
 }
 
 //computes box margin
-double bboxMargin(const MBR& a) {
+double bbox_margin(const MBR& a) {
     return (a.maxx - a.minx) + (a.maxy - a.miny);
 }
 
 
 //computes enlarged area given two mbrs
-double enlargedArea(const MBR& a, const MBR& b) {
+double enlarged_area(const MBR& a, const MBR& b) {
     return (std::fmax(a.maxx, b.maxx) - std::fmin(a.minx, b.minx)) *
            (std::fmax(a.maxy, b.maxy) - std::fmin(a.miny, b.miny));
 }
@@ -134,7 +145,7 @@ bool intersects(const MBR& a, const MBR& b) {
 
 
 //computes the intersection area of two mbrs
-double intersectionArea(const MBR& a, const MBR& b) {
+double intersection_area(const MBR& a, const MBR& b) {
     auto minx = a.minx;
     auto miny = a.miny;
     auto maxx = a.maxx;
