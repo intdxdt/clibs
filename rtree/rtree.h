@@ -10,7 +10,6 @@
 
 
 namespace rtree {
-
     //RTree type
     struct RTree {
         size_t maxEntries = 9;

@@ -1,9 +1,8 @@
 #define CATCH_CONFIG_MAIN
 
-#include <iostream>
 #include <cmath>
-#include "../catch/catch.h"
 #include <vector>
+#include <iostream>
 #include "rtree.h"
 #include "../catch/catch.h"
 

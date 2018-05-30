@@ -5,9 +5,6 @@
 #include "util.h"
 
 namespace rtree {
-    //universe type with bounds [+inf +inf -inf -inf]
-    struct Universe {
-    };
 
     ///Node type for internal node
     struct Node {
