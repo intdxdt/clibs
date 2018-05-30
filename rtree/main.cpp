@@ -296,7 +296,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         testResults(tree.all(), std::move(cloneData));
     }
 
-    SECTION("#remove removes items correctly") {
+    SECTION("#remove does nothing if (nothing found)") {
         Object item;
         auto data = rtest::data;
         auto tree = new_RTree(0).load_boxes(data);
@@ -315,5 +315,21 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 				tree.remove(result[i]);
 			}
 			REQUIRE(tree.is_empty());
+    }
+
+    SECTION("#clear should clear all the data in the tree"){
+            auto data = rtest::data;
+			auto tree = new_RTree(4).load_boxes(data).clear();
+			REQUIRE(tree.is_empty());
+    }
+
+    SECTION("should have chainable API"){
+            auto data = rtest::data;
+			REQUIRE(new_RTree(4)
+			        .load_boxes(data)
+                    .insert(Object{0, data[0]})
+                    .remove(data[0])
+                    .clear()
+                    .is_empty());
     }
 }

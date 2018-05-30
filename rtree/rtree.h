@@ -20,6 +20,7 @@ namespace rtree {
         RTree& clear() {
             std::vector<std::shared_ptr<Node>> ch{};
             auto node = new_Node(Object{}, 1, true, std::move(ch));
+            //TODO:go down the rtree and remove bottom up , avoid stack destructor recursion of smart_ptr
             data = std::move(node);
             return *this;
         }
