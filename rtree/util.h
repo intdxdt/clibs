@@ -80,7 +80,7 @@ std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
     return std::move(s);
 }
 
-//split at index
+///split at index
 template<typename T>
 std::vector<T> split_at_index(std::vector<T>& v, std::size_t index) {
     std::vector<T> part(v.begin() + index, v.end());
@@ -102,7 +102,7 @@ MBR empty_mbr() {
     return {empty_bounds(), true};
 }
 
-//slice index
+///slice index
 std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
     for (size_t i = 0; i < limit; ++i) {
         if (predicate(i))
@@ -112,7 +112,7 @@ std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)
 }
 
 
-//extend bounding box
+///extend bounding box
 MBR& extend(MBR& a, const MBR& b) {
     a.minx = std::fmin(a.minx, b.minx);
     a.miny = std::fmin(a.miny, b.miny);

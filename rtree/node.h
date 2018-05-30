@@ -14,9 +14,12 @@ namespace rtree {
             MBR bbox = empty_mbr();
             std::vector<std::shared_ptr<Node>> children{};
 
-
             void add_child(std::shared_ptr<Node> child) {
                 children.emplace_back(child);
+            }
+
+            void* get_item() {
+                return item.object;
             }
         };
 

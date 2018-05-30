@@ -15,14 +15,14 @@ namespace rtest {
     size_t N = size_t(1e6);
     size_t maxFill = 64;
     //data from rbush 1.4.2
-//@formatter:off
-    std::vector<MBR> data = {{0, 0, 0, 0}, {10, 10, 10, 10}, {20, 20, 20, 20}, {25, 0, 25, 0}, {35, 10, 35, 10}, {45, 20, 45, 20}, {0, 25, 0, 25}, {10, 35, 10, 35},
-                          {20, 45, 20, 45}, {25, 25, 25, 25}, {35, 35, 35, 35}, {45, 45, 45, 45}, {50, 0, 50, 0}, {60, 10, 60, 10}, {70, 20, 70, 20}, {75, 0, 75, 0},
-                          {85, 10, 85, 10}, {95, 20, 95, 20}, {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45}, {75, 25, 75, 25}, {85, 35, 85, 35}, {95, 45, 95, 45},
-                          {0, 50, 0, 50}, {10, 60, 10, 60}, {20, 70, 20, 70}, {25, 50, 25, 50}, {35, 60, 35, 60}, {45, 70, 45, 70}, {0, 75, 0, 75}, {10, 85, 10, 85},
-                          {20, 95, 20, 95}, {25, 75, 25, 75}, {35, 85, 35, 85}, {45, 95, 45, 95}, {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70}, {75, 50, 75, 50},
-                          {85, 60, 85, 60}, {95, 70, 95, 70}, {50, 75, 50, 75}, {60, 85, 60, 85}, {70, 95, 70, 95}, {75, 75, 75, 75}, {85, 85, 85, 85}, {95, 95, 95, 95}};
-//@formatter:on
+    //@formatter:off
+        std::vector<MBR> data = {{0, 0, 0, 0}, {10, 10, 10, 10}, {20, 20, 20, 20}, {25, 0, 25, 0}, {35, 10, 35, 10}, {45, 20, 45, 20}, {0, 25, 0, 25}, {10, 35, 10, 35},
+                              {20, 45, 20, 45}, {25, 25, 25, 25}, {35, 35, 35, 35}, {45, 45, 45, 45}, {50, 0, 50, 0}, {60, 10, 60, 10}, {70, 20, 70, 20}, {75, 0, 75, 0},
+                              {85, 10, 85, 10}, {95, 20, 95, 20}, {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45}, {75, 25, 75, 25}, {85, 35, 85, 35}, {95, 45, 95, 45},
+                              {0, 50, 0, 50}, {10, 60, 10, 60}, {20, 70, 20, 70}, {25, 50, 25, 50}, {35, 60, 35, 60}, {45, 70, 45, 70}, {0, 75, 0, 75}, {10, 85, 10, 85},
+                              {20, 95, 20, 95}, {25, 75, 25, 75}, {35, 85, 35, 85}, {45, 95, 45, 95}, {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70}, {75, 50, 75, 50},
+                              {85, 60, 85, 60}, {95, 70, 95, 70}, {50, 75, 50, 75}, {60, 85, 60, 85}, {70, 95, 70, 95}, {75, 75, 75, 75}, {85, 85, 85, 85}, {95, 95, 95, 95}};
+    //@formatter:on
     std::vector<MBR> someData(size_t n) {
         std::vector<MBR> data;
         data.reserve(n);
@@ -103,11 +103,23 @@ namespace rtest {
     }
 
 
-//    auto BenchData = GenDataItems(N, 1);
-//    auto bboxes100 = GenDataItems(1000, 100*std::sqrt(0.1));
-//    auto bboxes10 = GenDataItems(1000, 10);
-//    auto bboxes1 = GenDataItems(1000, 1);
-//    auto tree = NewRTree(maxFill).Load(BenchData);
+    struct Pnt {
+        double x;
+        double y;
+
+        MBR bbox() {
+            return MBR{x, y, x + 2, y + 2};
+        }
+        bool operator==(const Pnt& other){
+            return x == other.x && y == other.y;
+        }
+    };
+
+    // auto BenchData = GenDataItems(N, 1);
+    // auto bboxes100 = GenDataItems(1000, 100*std::sqrt(0.1));
+    // auto bboxes10 = GenDataItems(1000, 10);
+    // auto bboxes1 = GenDataItems(1000, 1);
+    // auto tree = NewRTree(maxFill).Load(BenchData);
 }
 
 
@@ -307,29 +319,129 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         REQUIRE(nodeEquals(*tree.data, *tree2.data));
     }
 
-    SECTION("#remove brings the tree to a clear state when removing everything one by one"){
-            auto data = rtest::data;
-			auto tree = new_RTree(4).load_boxes(data);
-			auto result = tree.search(MBR(0, 0, 100, 100));
-			for (size_t i = 0; i < len(result); i++){
-				tree.remove(result[i]);
-			}
-			REQUIRE(tree.is_empty());
+    SECTION("#remove brings the tree to a clear state when removing everything one by one") {
+        auto data = rtest::data;
+        auto tree = new_RTree(4).load_boxes(data);
+        auto result = tree.search(MBR(0, 0, 100, 100));
+        for (size_t i = 0; i < len(result); i++) {
+            tree.remove(result[i]);
+        }
+        REQUIRE(tree.is_empty());
     }
 
-    SECTION("#clear should clear all the data in the tree"){
-            auto data = rtest::data;
-			auto tree = new_RTree(4).load_boxes(data).clear();
-			REQUIRE(tree.is_empty());
+    SECTION("#clear should clear all the data in the tree") {
+        auto data = rtest::data;
+        auto tree = new_RTree(4).load_boxes(data).clear();
+        REQUIRE(tree.is_empty());
     }
 
-    SECTION("should have chainable API"){
-            auto data = rtest::data;
-			REQUIRE(new_RTree(4)
-			        .load_boxes(data)
-                    .insert(Object{0, data[0]})
-                    .remove(data[0])
-                    .clear()
-                    .is_empty());
+    SECTION("should have chainable API") {
+        auto data = rtest::data;
+        REQUIRE(new_RTree(4)
+                        .load_boxes(data)
+                        .insert(Object{0, data[0]})
+                        .remove(data[0])
+                        .clear()
+                        .is_empty());
+    }
+}
+
+TEST_CASE("rtree 2", "[rtree util]") {
+    using namespace rtree;
+    using namespace rtest;
+    SECTION("tests pop nodes") {
+        auto a = new_Node(Object{0, empty_mbr()}, 0, true, std::vector<std::shared_ptr<Node>>{});
+        auto b = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::shared_ptr<Node>>{});
+        auto c = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::shared_ptr<Node>>{});
+        std::vector<std::shared_ptr<Node>> nodes;
+        std::shared_ptr<Node> n;
+
+        n = pop(nodes);
+        REQUIRE(n == nullptr);
+
+        nodes = {a, b, c};
+        REQUIRE(len(nodes));
+
+        n = pop(nodes);
+        REQUIRE(len(nodes) == 2);
+        REQUIRE(n == c);
+
+        n = pop(nodes);
+        REQUIRE(len(nodes) == 1);
+        REQUIRE(n == b);
+
+        n = pop(nodes);
+        REQUIRE(len(nodes) == 0);
+        REQUIRE(n == a);
+
+        n = pop(nodes);
+        REQUIRE(len(nodes) == 0);
+        REQUIRE(n == nullptr);
+    }
+
+    SECTION("tests pop index") {
+        size_t a = 0;
+        size_t b = 1;
+        size_t c = 2;
+        std::vector<size_t> indexes{};
+        size_t n = 0;
+
+        REQUIRE(len(indexes) == 0);
+
+        indexes = {a, b, c};
+        REQUIRE(len(indexes) == 3);
+
+        n = pop_index(indexes);
+        REQUIRE(len(indexes) == 2);
+        REQUIRE(n == c);
+
+        n = pop_index(indexes);
+        REQUIRE(len(indexes) == 1);
+        REQUIRE(n == b);
+
+        n = pop_index(indexes);
+        REQUIRE(len(indexes) == 0);
+        REQUIRE(n == a);
+
+        //REQUIRE(len(indexes) == 0);
+        //REQUIRE_THROWS(pop_index(indexes));
+    }
+
+    SECTION("type node check ") {
+        auto pt = Pnt{0, 0};
+        auto item = Object{0, pt.bbox(), &pt};
+        std::vector<std::shared_ptr<Node>> pth{};
+        auto b = new_Node(item, 0, true, std::vector<std::shared_ptr<Node>>{});
+
+        pth.emplace_back(b);
+        pth.emplace_back(b);
+        pth.emplace_back(b);
+
+        std::vector<std::shared_ptr<Node>> chdren(pth.begin(), pth.end());
+        auto n = new_Node(item, 1, false, std::move(chdren));
+
+        std::vector<Object> items;
+        items.reserve(10);
+
+        std::vector<std::shared_ptr<Node>> nodes{};
+
+        items.emplace_back(item);
+        nodes.emplace_back(b);
+        auto vpt = (Pnt*) (b.get()->get_item());
+
+        REQUIRE(vpt == &pt);
+        REQUIRE(b->leaf);
+        REQUIRE(!n->leaf);
+        REQUIRE(len(n->children) == 3);
+
+        REQUIRE(b->height == 0);
+        REQUIRE(n->height == 1);
+        REQUIRE(len(b->children)==0);
+
+        REQUIRE(b->item.object == item.object);
+        auto mbox = MBR{0, 0, 2, 2};
+
+        REQUIRE(b->bbox == mbox);
+        REQUIRE(n->bbox == mbox);
     }
 }

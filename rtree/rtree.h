@@ -135,87 +135,39 @@ namespace rtree {
             return std::move(result);
         }
 
-        RTree remove(const Object& item) {
-            remove_item(item.bbox , [&](const std::shared_ptr<Node>& node, size_t i) {
-                        return node->children[i]->bbox.equals(item.bbox);
-                    });
-            return *this;
-        }
-
-        RTree remove(const MBR& item) {
-            remove_item(item , [&](const std::shared_ptr<Node>& node, size_t i) {
-                        return node->children[i]->bbox.equals(item);
-                    });
-            return *this;
-        }
-
-        RTree remove(const std::shared_ptr<Node>& item) {
-            remove_item(item->bbox , [&](const std::shared_ptr<Node>& node, size_t i) {
-                        return node->children[i] == item;
-                    });
-            return *this;
-        }
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
-        RTree remove_item(const MBR& bbox,
-                          const std::function<bool(const std::shared_ptr<Node>&, size_t)>& predicate) {
-//            const MBR& bbox = item.bbox;
-            std::shared_ptr<Node> node = data;
-            std::shared_ptr<Node> parent = nullptr;
-            std::vector<std::shared_ptr<Node>> path;
-            std::vector<size_t> indexes;
-            std::optional<size_t> index;
-
-            size_t i = 0;
-            bool goingUp = false;
-
-            //depth-first iterative this traversal
-            while ((node != nullptr) || !path.empty()) {
-                if (node == nullptr) {
-                    //go up
-                    node = pop(path);
-                    parent = node_at_index(path, path.size() - 1);
-                    i = pop_index(indexes);
-                    goingUp = true;
-                }
-
-                if (node->leaf) {
-                    //check current node
-                    //index = node.children.indexOf(item)
-                    index = slice_index(node->children.size(), [&](size_t i) {
-                        return predicate(node, i);
-                        //return node->children[i]->bbox.equals(item.bbox);
-                    });
-
-                    //if found
-                    if (index.has_value()) {
-                        //item found, remove the item and condense this upwards
-                        //node.children.splice(index, 1)
-                        node->children.erase(node->children.begin() + index.value());
-                        path.push_back(node);
-                        condense(path);
-                        return *this;
+        RTree& remove(const Object& item) {
+            remove_item(
+                    item.bbox,
+                    [&](const std::shared_ptr<Node>& node, size_t i) {
+                        return node->children[i]->bbox.equals(item.bbox);
                     }
-                }
+            );
+            return *this;
+        }
 
-                if (!goingUp && !node->leaf && contains(node->bbox, bbox)) {
-                    //go down
-                    path.push_back(node);
-                    indexes.push_back(i);
-                    i = 0;
-                    parent = node;
-                    node = node->children[0];
-                }
-                else if (parent != nullptr) {
-                    //go right
-                    i++;
-                    node = node_at_index(parent->children, i);;
-                    goingUp = false;
-                }
-                else {
-                    node = nullptr;
-                } //nothing found;
-            }
+        //Remove Item from RTree
+        //NOTE:if item is a bbox , then first found bbox is removed
+        RTree& remove(const MBR& item) {
+            remove_item(
+                    item,
+                    [&](const std::shared_ptr<Node>& node, size_t i) {
+                        return node->children[i]->bbox.equals(item);
+                    }
+            );
+            return *this;
+        }
+
+        //Remove Item from RTree
+        //NOTE:if item is a bbox , then first found bbox is removed
+        RTree& remove(const std::shared_ptr<Node>& item) {
+            remove_item(
+                    item->bbox,
+                    [&](const std::shared_ptr<Node>& node, size_t i) {
+                        return node->children[i] == item;
+                    }
+            );
             return *this;
         }
 
@@ -225,7 +177,7 @@ namespace rtree {
                 return false;
             }
 
-            bool bln  = false;
+            bool bln = false;
             std::shared_ptr<Node> child;
             std::vector<std::shared_ptr<Node>> searchList;
 
@@ -234,7 +186,7 @@ namespace rtree {
                 for (; !bln && i < length; ++i) {
                     child = node->children[i];
                     if (intersects(bbox, child->bbox)) {
-                        bln =  node->leaf || contains(bbox, child->bbox);
+                        bln = node->leaf || contains(bbox, child->bbox);
                         searchList.emplace_back(child);
                     }
                 }
@@ -297,6 +249,70 @@ namespace rtree {
 
             //adjust bboxes along the insertion path
             adjust_parent_bboxes(bbox, insertPath, level);
+        }
+
+        //Remove Item from RTree
+        //NOTE:if item is a bbox , then first found bbox is removed
+        RTree& remove_item(const MBR& bbox,
+                           const std::function<bool(const std::shared_ptr<Node>&, size_t)>& predicate) {
+            std::shared_ptr<Node> node = data;
+            std::shared_ptr<Node> parent = nullptr;
+            std::vector<std::shared_ptr<Node>> path;
+            std::vector<size_t> indexes;
+            std::optional<size_t> index;
+
+            size_t i = 0;
+            bool goingUp = false;
+
+            //depth-first iterative this traversal
+            while ((node != nullptr) || !path.empty()) {
+                if (node == nullptr) {
+                    //go up
+                    node = pop(path);
+                    parent = node_at_index(path, path.size() - 1);
+                    i = pop_index(indexes);
+                    goingUp = true;
+                }
+
+                if (node->leaf) {
+                    //check current node
+                    //index = node.children.indexOf(item)
+                    index = slice_index(node->children.size(), [&](size_t i) {
+                        return predicate(node, i);
+                        //return node->children[i]->bbox.equals(item.bbox);
+                    });
+
+                    //if found
+                    if (index.has_value()) {
+                        //item found, remove the item and condense this upwards
+                        //node.children.splice(index, 1)
+                        node->children.erase(node->children.begin() + index.value());
+                        path.push_back(node);
+                        condense(path);
+                        return *this;
+                    }
+                }
+
+                if (!goingUp && !node->leaf && contains(node->bbox, bbox)) {
+                    //go down
+                    path.push_back(node);
+                    indexes.push_back(i);
+                    i = 0;
+                    parent = node;
+                    node = node->children[0];
+                }
+                else if (parent != nullptr) {
+                    //go right
+                    i++;
+                    node = node_at_index(parent->children, i);;
+                    goingUp = false;
+                }
+                else {
+                    node = nullptr;
+                } //nothing found;
+            }
+
+            return *this;
         }
 
         // split on node overflow propagate upwards if necessary
@@ -408,7 +424,6 @@ namespace rtree {
             }
         }
 
-
         //build
         std::shared_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, int height) {
             auto N = double(right - left + 1);
@@ -458,7 +473,6 @@ namespace rtree {
             calculate_bbox(node);
             return node;
         }
-
 
         //_split overflowed node into two
         void split(std::vector<std::shared_ptr<Node>>& insertPath, int level) {
@@ -580,7 +594,6 @@ namespace rtree {
 
             return index;
         }
-
 
         //all_dist_margin computes total margin of all possible split distributions.
         //Each node is at least m full.
