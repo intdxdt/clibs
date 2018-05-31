@@ -5,24 +5,51 @@
 #include "util.h"
 
 namespace rtree {
-    namespace {
-        ///Node type for internal node
-        struct Node {
-            Object item{};
-            int height = 0;
-            bool leaf = false;
-            MBR bbox = empty_mbr();
-            std::vector<std::shared_ptr<Node>> children{};
+    ///Node type for internal node
+    struct Node {
+        Object item;
+        int height;
+        bool leaf;
+        MBR bbox;
+        std::vector<std::unique_ptr<Node>> children;
 
-            void add_child(std::shared_ptr<Node> child) {
-                children.emplace_back(child);
-            }
-
-            void* get_item() {
-                return item.object;
-            }
+        Node() : item(Object{}), height(0), leaf(false), bbox(empty_mbr()) {
+            children = std::vector<std::unique_ptr<Node>>{};
         };
 
+        Node(Object item, int height, bool leaf, MBR bbox) :
+                item(item), height(height), leaf(leaf), bbox(bbox) {
+            children = std::vector<std::unique_ptr<Node>>{};
+        };
+
+        Node(Node&& other) noexcept:
+                item(other.item),
+                leaf(other.leaf),
+                height(other.height),
+                bbox(other.bbox) {
+            children = std::move(other.children);
+        }
+
+        ~Node() = default;
+
+        Node& operator=(Node&& other) noexcept {
+            item = other.item;
+            leaf = other.leaf;
+            height = other.height;
+            bbox = other.bbox;
+            children = std::move(other.children);
+            return *this;
+        }
+
+        void add_child(std::unique_ptr<Node>&& child) {
+            children.emplace_back(std::move(child));
+        }
+
+        void* get_item() {
+            return item.object;
+        }
+    };
+    namespace {
         struct x_boxes {
             inline bool operator()(const MBR& a, const MBR& b) {
                 return a.minx < b.minx;
@@ -46,19 +73,20 @@ namespace rtree {
         };
 
         struct x_node_path {
-            inline bool operator()(const std::shared_ptr<Node>& a, const std::shared_ptr<Node>& b) {
+            inline bool operator()(const std::unique_ptr<Node>& a, const std::unique_ptr<Node>& b) {
                 return a->bbox.minx < b->bbox.minx;
             }
         };
 
         struct y_node_path {
-            inline bool operator()(const std::shared_ptr<Node>& a, const std::shared_ptr<Node>& b) {
+            inline bool operator()(const std::unique_ptr<Node>& a, const std::unique_ptr<Node>& b) {
                 return a->bbox.miny < b->bbox.miny;
             }
         };
 
         struct xy_node_path {
-            inline bool operator()(const std::shared_ptr<Node>& a, const std::shared_ptr<Node>& b) {
+            template<typename T>
+            inline bool operator()(const T& a, const T& b) {
                 auto d = a->bbox.minx - b->bbox.minx;
                 if (feq(d, 0)) {
                     d = a->bbox.miny - b->bbox.miny;
@@ -78,28 +106,32 @@ namespace rtree {
         }
 
 
-        std::shared_ptr<Node> new_Node(Object item, int height, bool leaf,
-                                       std::vector<std::shared_ptr<Node>>&& children) {
+        std::unique_ptr<Node> new_Node(Object item, int height, bool leaf,
+                                       std::vector<std::unique_ptr<Node>>&& children) {
             Node node{};
             node.item = item;
             node.height = height;
             node.leaf = leaf;
             node.bbox = item.bbox;
             node.children = std::move(children);
-            return std::make_shared<Node>(std::move(node));
+            return std::make_unique<Node>(std::move(node));
+        }
+
+        std::unique_ptr<Node> new_Node(Object item, int height, bool leaf) {
+            return std::make_unique<Node>(Node{item, height, leaf, item.bbox});
         }
 
         //new_Node creates a new node
-        std::shared_ptr<Node> new_leaf_Node(Object item) {
+        std::unique_ptr<Node> new_leaf_Node(Object item) {
             return std::move(new_Node(
-                    item, 1, true, std::vector<std::shared_ptr<Node>>{}
+                    item, 1, true, std::vector<std::unique_ptr<Node>>{}
             ));
         }
 
 
         //Constructs children of node
-        std::vector<std::shared_ptr<Node>> make_children(std::vector<Object>& items) {
-            std::vector<std::shared_ptr<Node>> chs;
+        std::vector<std::unique_ptr<Node>> make_children(std::vector<Object>& items) {
+            std::vector<std::unique_ptr<Node>> chs;
             auto n = items.size();
             chs.reserve(n);
             for (auto i = 0; i < n; ++i) {
@@ -108,14 +140,9 @@ namespace rtree {
             return chs;
         }
 
-        std::vector<std::shared_ptr<Node>> empty_children(std::size_t length) {
-            std::vector<std::shared_ptr<Node>> chs;
-            chs.resize(length);
-            return std::move(chs);
-        }
-
         //dist_bbox computes min bounding rectangle of node children from k to p-1.
-        MBR dist_bbox(std::shared_ptr<Node>& node, size_t k, size_t p) {
+        template<typename T>
+        MBR dist_bbox(const T& node, size_t k, size_t p) {
             auto bbox = empty_mbr();
             for (auto i = k; i < p; i++) {
                 extend(bbox, node->children[i]->bbox);
@@ -124,7 +151,14 @@ namespace rtree {
         }
 
 
-        std::shared_ptr<Node> node_at_index(const std::vector<std::shared_ptr<Node>>& a, size_t i) {
+        Node* node_at_index(const std::vector<std::unique_ptr<Node>>& a, size_t i) {
+            if (a.empty() || (i > a.size() - 1)) {
+                return nullptr;
+            }
+            return a[i].get();
+        }
+
+        Node* node_at_index(const std::vector<Node*>& a, size_t i) {
             if (a.empty() || (i > a.size() - 1)) {
                 return nullptr;
             }
@@ -132,25 +166,23 @@ namespace rtree {
         }
 
         //calculate_bbox calculates its bbox from bboxes of its children.
-        void calculate_bbox(std::shared_ptr<Node>& node) {
+        template<typename T>
+        void calculate_bbox(T& node) {
             node->bbox = dist_bbox(node, 0, node->children.size());
         }
 
-
         // adjust bboxes along the given tree path
-        void adjust_parent_bboxes(const MBR& bbox, std::vector<std::shared_ptr<Node>>& path, int level) {
+        void adjust_parent_bboxes(const MBR& bbox, std::vector<Node*>& path, int level) {
             for (int i = level; i >= 0; i--) {
                 extend(path[i]->bbox, bbox);
             }
         }
 
         //_chooseSubtree select child of node and updates path to selected node.
-        std::shared_ptr<Node>
-        choose_subtree(const MBR& bbox, std::shared_ptr<Node> node, int level,
-                       std::vector<std::shared_ptr<Node>>& path) {
+        Node* choose_subtree(const MBR& bbox, Node* node, int level, std::vector<Node*>& path) {
 
-            std::shared_ptr<Node> child;
-            std::shared_ptr<Node> targetNode;
+            Node* child = nullptr;
+            Node* targetNode = nullptr;
             double minArea, minEnlargement, area, enlargement;
 
             while (true) {
@@ -161,8 +193,8 @@ namespace rtree {
                 minEnlargement = std::numeric_limits<double>::infinity();
                 minArea = std::numeric_limits<double>::infinity();
 
-                for (std::size_t i = 0, length = node->children.size(); i < length; i++) {
-                    child = node->children[i];
+                for (auto& o : node->children) {
+                    child = o.get();
                     area = bbox_area(child->bbox);
                     enlargement = enlarged_area(bbox, child->bbox) - area;
 
@@ -186,6 +218,5 @@ namespace rtree {
             }
             return node;
         }
-
     }
 }

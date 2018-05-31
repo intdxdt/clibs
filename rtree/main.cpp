@@ -32,7 +32,7 @@ namespace rtest {
         return std::move(data);
     }
 
-    void testResults(std::vector<std::shared_ptr<rtree::Node>>&& nodes, std::vector<MBR>&& boxes) {
+    void testResults(std::vector<rtree::Node*>&& nodes, std::vector<MBR>&& boxes) {
         std::sort(nodes.begin(), nodes.end(), rtree::xy_node_path());
         std::sort(boxes.begin(), boxes.end(), rtree::xy_boxes());
         REQUIRE(nodes.size() == boxes.size());
@@ -41,43 +41,26 @@ namespace rtest {
         }
     }
 
-    auto getnodes(std::vector<std::shared_ptr<rtree::Node>> nodes) {
-        std::vector<rtree::Node> res0;
-        for (auto& o : nodes) {
-            res0.emplace_back(*o);
-        }
-        return res0;
-    };
 
-
-    bool nodeEquals(rtree::Node a, rtree::Node b) {
-        auto bln = a.bbox == b.bbox;
+    bool nodeEquals(rtree::Node* a, rtree::Node* b) {
+        auto bln = a->bbox == b->bbox;
         bln = bln &&
-              a.item.id == b.item.id &&
-              a.item.bbox == b.item.bbox &&
-              a.item.meta == b.item.meta;
+              a->item.id   == b->item.id &&
+              a->item.bbox == b->item.bbox &&
+              a->item.meta == b->item.meta;
         bln = bln &&
-              a.height == b.height &&
-              a.leaf == b.leaf &&
-              a.bbox == b.bbox &&
-              a.children.size() == b.children.size();
-        if (bln && !a.children.empty()) {
-            for (size_t i = 0; bln && i < a.children.size(); i++) {
-                bln = bln && nodeEquals(*(a.children[i]), *(b.children[i]));
+              a->height == b->height &&
+              a->leaf   == b->leaf &&
+              a->bbox   == b->bbox &&
+              a->children.size() == b->children.size();
+        if (bln && !a->children.empty()) {
+            for (size_t i = 0; bln && i < a->children.size(); i++) {
+                bln = bln && nodeEquals(  a->children[i].get(), b->children[i].get());
             }
         }
         return bln;
     }
 
-    auto testAssertEquals(std::vector<rtree::Node> a, std::vector<rtree::Node> b) {
-        REQUIRE(a.size() == b.size());
-        for (size_t i = 0; i < a.size(); i++) {
-            auto oa = a[i];
-            auto ob = b[i];
-            REQUIRE(oa.bbox.equals(ob.bbox));
-        }
-        return true;
-    };
 
     MBR RandBox(double size, const std::function<double()>& rnd) {
         auto x = rnd() * (100.0 - size);
@@ -110,7 +93,8 @@ namespace rtest {
         MBR bbox() {
             return MBR{x, y, x + 2, y + 2};
         }
-        bool operator==(const Pnt& other){
+
+        bool operator==(const Pnt& other) {
             return x == other.x && y == other.y;
         }
     };
@@ -129,6 +113,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     using namespace rtest;
 
     SECTION("should test load 9 & 10") {
+//        auto tree00 = rtree::new_RTree(0);
         auto tree0 = rtree::new_RTree(0).load_boxes(someData(0));
         REQUIRE(tree0.data->height == 1);
 
@@ -182,7 +167,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         auto tree2 = new_RTree(8).load_boxes(rtest::data).insert(
                 Object{0, data[0]}
         ).insert(Object{1, data[1]}).insert(Object{2, data[2]});
-        REQUIRE(nodeEquals(*tree.data, *tree2.data));
+        REQUIRE(nodeEquals(tree.data.get(), tree2.data.get()));
     }
     SECTION("#load does nothing if (loading empty data)") {
         auto data = std::vector<Object>{};
@@ -267,7 +252,11 @@ TEST_CASE("rtree 1", "[rtree 1]") {
                                  {2, 2, 2, 2},
                                  {3, 3, 3, 3}};
         REQUIRE(tree.data->children.size() == expects.size());
-        testResults([&] { return tree.data->children; }(), [&] { return expects; }());
+        testResults([&] {
+            std::vector<rtree::Node*> nodes;
+            for (const auto& o: tree.data->children) { nodes.emplace_back(o.get()); }
+            return nodes;
+        }(), [&] { return expects; }());
     }
 
     SECTION("#insert forms a valid tree if (items are inserted one by one") {
@@ -314,9 +303,9 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         auto tree = new_RTree(0).load_boxes(data);
         auto tree2 = new_RTree(0).load_boxes(data);
         tree2.remove(MBR(13, 13, 13, 13));
-        REQUIRE(nodeEquals(*tree.data, *tree2.data));
+        REQUIRE(nodeEquals(tree.data.get(), tree2.data.get()));
         tree2.remove(item); //not init
-        REQUIRE(nodeEquals(*tree.data, *tree2.data));
+        REQUIRE(nodeEquals(tree.data.get(), tree2.data.get()));
     }
 
     SECTION("#remove brings the tree to a clear state when removing everything one by one") {
@@ -350,29 +339,32 @@ TEST_CASE("rtree 2", "[rtree util]") {
     using namespace rtree;
     using namespace rtest;
     SECTION("tests pop nodes") {
-        auto a = new_Node(Object{0, empty_mbr()}, 0, true, std::vector<std::shared_ptr<Node>>{});
-        auto b = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::shared_ptr<Node>>{});
-        auto c = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::shared_ptr<Node>>{});
-        std::vector<std::shared_ptr<Node>> nodes;
-        std::shared_ptr<Node> n;
+        auto a = new_Node(Object{0, empty_mbr()}, 0, true, std::vector<std::unique_ptr<Node>>{});
+        auto b = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::unique_ptr<Node>>{});
+        auto c = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::unique_ptr<Node>>{});
+        std::vector<Node*> nodes;
+        Node* n;
 
         n = pop(nodes);
         REQUIRE(n == nullptr);
 
-        nodes = {a, b, c};
+//        nodes = {a, b, c};
+        nodes.emplace_back(a.get());
+        nodes.emplace_back(b.get());
+        nodes.emplace_back(c.get());
         REQUIRE(len(nodes));
 
         n = pop(nodes);
         REQUIRE(len(nodes) == 2);
-        REQUIRE(n == c);
+        REQUIRE(n == c.get());
 
         n = pop(nodes);
         REQUIRE(len(nodes) == 1);
-        REQUIRE(n == b);
+        REQUIRE(n == b.get());
 
         n = pop(nodes);
         REQUIRE(len(nodes) == 0);
-        REQUIRE(n == a);
+        REQUIRE(n == a.get());
 
         n = pop(nodes);
         REQUIRE(len(nodes) == 0);
@@ -402,46 +394,6 @@ TEST_CASE("rtree 2", "[rtree util]") {
         n = pop_index(indexes);
         REQUIRE(len(indexes) == 0);
         REQUIRE(n == a);
-
-        //REQUIRE(len(indexes) == 0);
-        //REQUIRE_THROWS(pop_index(indexes));
     }
 
-    SECTION("type node check ") {
-        auto pt = Pnt{0, 0};
-        auto item = Object{0, pt.bbox(), &pt};
-        std::vector<std::shared_ptr<Node>> pth{};
-        auto b = new_Node(item, 0, true, std::vector<std::shared_ptr<Node>>{});
-
-        pth.emplace_back(b);
-        pth.emplace_back(b);
-        pth.emplace_back(b);
-
-        std::vector<std::shared_ptr<Node>> chdren(pth.begin(), pth.end());
-        auto n = new_Node(item, 1, false, std::move(chdren));
-
-        std::vector<Object> items;
-        items.reserve(10);
-
-        std::vector<std::shared_ptr<Node>> nodes{};
-
-        items.emplace_back(item);
-        nodes.emplace_back(b);
-        auto vpt = (Pnt*) (b.get()->get_item());
-
-        REQUIRE(vpt == &pt);
-        REQUIRE(b->leaf);
-        REQUIRE(!n->leaf);
-        REQUIRE(len(n->children) == 3);
-
-        REQUIRE(b->height == 0);
-        REQUIRE(n->height == 1);
-        REQUIRE(len(b->children)==0);
-
-        REQUIRE(b->item.object == item.object);
-        auto mbox = MBR{0, 0, 2, 2};
-
-        REQUIRE(b->bbox == mbox);
-        REQUIRE(n->bbox == mbox);
-    }
 }

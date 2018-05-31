@@ -8,19 +8,6 @@
 
 //@formatter:off
 MBR empty_mbr();
-struct Object;
-double bbox_area(const MBR&);
-MBR& extend(MBR&, const MBR&);
-double bbox_margin(const MBR&);
-std::array<double, 4> empty_bounds();
-bool contains(const MBR& , const MBR&) ;
-bool intersects(const MBR&, const MBR&);
-double enlarged_area(const MBR&, const MBR&);
-double intersection_area(const MBR&, const MBR&);
-std::optional<size_t> slice_index(size_t, const std::function<bool(size_t)>&);
-void swap_item(std::vector<Object>&, std::size_t, std::size_t);
-template<typename T>
-std::vector<T> split_at_index(std::vector<T>& v, std::size_t index);
 //@formatter:on
 #endif
 
@@ -80,40 +67,32 @@ std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
     return std::move(s);
 }
 
-///split at index
-template<typename T>
-std::vector<T> split_at_index(std::vector<T>& v, std::size_t index) {
-    std::vector<T> part(v.begin() + index, v.end());
-    v.resize(index);
-    return std::move(part);
-}
 
-void swap_item(std::vector<Object>& arr, size_t i, size_t j) {
+inline void swap_item(std::vector<Object>& arr, size_t i, size_t j) {
     std::swap(arr[i], arr[j]);
 }
 
-std::array<double, 4> empty_bounds() {
+inline std::array<double, 4> empty_bounds() {
     auto inf = std::numeric_limits<double>::infinity();
     auto neginf = -std::numeric_limits<double>::infinity();
     return {inf, inf, neginf, neginf};
 }
 
-MBR empty_mbr() {
+inline MBR empty_mbr() {
     return {empty_bounds(), true};
 }
 
 ///slice index
-std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
+inline std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
     for (size_t i = 0; i < limit; ++i) {
-        if (predicate(i))
-            return i;
+        if (predicate(i)) return i;
     }
     return std::nullopt;
 }
 
 
 ///extend bounding box
-MBR& extend(MBR& a, const MBR& b) {
+inline MBR& extend(MBR& a, const MBR& b) {
     a.minx = std::fmin(a.minx, b.minx);
     a.miny = std::fmin(a.miny, b.miny);
     a.maxx = std::fmax(a.maxx, b.maxx);
@@ -122,67 +101,41 @@ MBR& extend(MBR& a, const MBR& b) {
 }
 
 //computes area of bounding box
-double bbox_area(const MBR& a) {
+inline double bbox_area(const MBR& a) {
     return (a.maxx - a.minx) * (a.maxy - a.miny);
 }
 
 //computes box margin
-double bbox_margin(const MBR& a) {
+inline double bbox_margin(const MBR& a) {
     return (a.maxx - a.minx) + (a.maxy - a.miny);
 }
 
 
 //computes enlarged area given two mbrs
-double enlarged_area(const MBR& a, const MBR& b) {
+inline double enlarged_area(const MBR& a, const MBR& b) {
     return (std::fmax(a.maxx, b.maxx) - std::fmin(a.minx, b.minx)) *
            (std::fmax(a.maxy, b.maxy) - std::fmin(a.miny, b.miny));
 }
 
 //contains tests whether a contains b
-bool contains(const MBR& a, const MBR& b) {
-    return b.minx >= a.minx &&
-           b.maxx <= a.maxx &&
-           b.miny >= a.miny &&
-           b.maxy <= a.maxy;
+inline bool contains(const MBR& a, const MBR& b) {
+    return a.contains(b);
 }
 
 //intersects tests a intersect b (mbr)
-bool intersects(const MBR& a, const MBR& b) {
-    return !(
-            b.minx > a.maxx ||
-            b.maxx < a.minx ||
-            b.miny > a.maxy ||
-            b.maxy < a.miny);
+inline bool intersects(const MBR& a, const MBR& b) {
+    return a.intersects(b);
 }
 
-
 //computes the intersection area of two mbrs
-double intersection_area(const MBR& a, const MBR& b) {
-    auto minx = a.minx;
-    auto miny = a.miny;
-    auto maxx = a.maxx;
-    auto maxy = a.maxy;
-
-    if (!intersects(a, b)) {
+inline double intersection_area(const MBR& a, const MBR& b) {
+    if (a.disjoint(b)) {
         return 0.0;
     }
-
-    if (b.minx > minx) {
-        minx = b.minx;
-    }
-
-    if (b.miny > miny) {
-        miny = b.miny;
-    }
-
-    if (b.maxx < maxx) {
-        maxx = b.maxx;
-    }
-
-    if (b.maxy < maxy) {
-        maxy = b.maxy;
-    }
-
+    auto minx = (b.minx > a.minx) ? b.minx : a.minx;
+    auto miny = (b.miny > a.miny) ? b.miny : a.miny;
+    auto maxx = (b.maxx < a.maxx) ? b.maxx : a.maxx;
+    auto maxy = (b.maxy < a.maxy) ? b.maxy : a.maxy;
     return (maxx - minx) * (maxy - miny);
 }
 

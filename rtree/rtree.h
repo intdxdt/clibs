@@ -14,11 +14,34 @@ namespace rtree {
     struct RTree {
         size_t maxEntries = 9;
         size_t minEntries = 4;
-        std::shared_ptr<Node> data = nullptr;
+        std::unique_ptr<Node> data = nullptr;
 
+        RTree() = default;
+
+        RTree(RTree& other) noexcept :
+                maxEntries(other.maxEntries),
+                minEntries(other.minEntries) {
+            data = std::move(other.data);
+        }
+
+        RTree(RTree&& other) noexcept:
+                maxEntries(other.maxEntries),
+                minEntries(other.minEntries) {
+            data = std::move(other.data);
+        }
+
+
+        RTree& operator=(RTree&& other) noexcept {
+            maxEntries = other.maxEntries;
+            minEntries = other.minEntries;
+            data = std::move(other.data);
+            return *this;
+        }
+
+        ~RTree() = default;
 
         RTree& clear() {
-            std::vector<std::shared_ptr<Node>> ch{};
+            std::vector<std::unique_ptr<Node>> ch{};
             auto node = new_Node(Object{}, 1, true, std::move(ch));
             //TODO:go down the rtree and remove bottom up , avoid stack destructor recursion of smart_ptr
             data = std::move(node);
@@ -27,7 +50,7 @@ namespace rtree {
 
         //is_empty checks for empty tree
         bool is_empty() {
-            return data.get()->children.empty();
+            return data->children.empty();
         }
 
 
@@ -61,7 +84,7 @@ namespace rtree {
             }
             else if (data->height == node->height) {
                 // split root if trees have the same height
-                split_root(data, node);
+                split_root(std::move(data), std::move(node));
             }
             else {
                 if (data->height < node->height) {
@@ -69,8 +92,9 @@ namespace rtree {
                     std::swap(data, node);
                 }
 
+                auto nlevel = data->height - node->height - 1;
                 // insert the small tree into the large tree at appropriate level
-                insert(node, data->height - node->height - 1);
+                insert(std::move(node), nlevel);
             }
 
             return *this;
@@ -92,19 +116,19 @@ namespace rtree {
         }
 
         //search item
-        std::vector<std::shared_ptr<Node>> search(const MBR& bbox) {
-            auto node = data;
-            std::vector<std::shared_ptr<Node>> result;
+        std::vector<Node*> search(const MBR& bbox) {
+            Node* node = data.get();
+            std::vector<Node*> result;
 
             if (!intersects(bbox, node->bbox)) {
                 return result;
             }
 
-            std::vector<std::shared_ptr<Node>> nodesToSearch;
+            std::vector<Node*> nodesToSearch;
 
             while (true) {
                 for (size_t i = 0, length = node->children.size(); i < length; i++) {
-                    std::shared_ptr<Node> child = node->children[i];
+                    Node* child = node->children[i].get();
                     const MBR& childBBox = child->bbox;
 
                     if (intersects(bbox, childBBox)) {
@@ -129,18 +153,21 @@ namespace rtree {
         }
 
         //all items from  root node
-        std::vector<std::shared_ptr<Node>> all() {
-            std::vector<std::shared_ptr<Node>> result{};
-            all(data, result);
+        std::vector<Node*> all() {
+            std::vector<Node*> result{};
+            all(data.get(), result);
             return std::move(result);
         }
 
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
         RTree& remove(const Object& item) {
+            if (item.bbox.equals(empty_mbr())) { //uninitialized object
+                return *this;
+            }
             remove_item(
                     item.bbox,
-                    [&](const std::shared_ptr<Node>& node, size_t i) {
+                    [&](const Node* node, size_t i) {
                         return node->children[i]->bbox.equals(item.bbox);
                     }
             );
@@ -152,7 +179,7 @@ namespace rtree {
         RTree& remove(const MBR& item) {
             remove_item(
                     item,
-                    [&](const std::shared_ptr<Node>& node, size_t i) {
+                    [&](const Node* node, size_t i) {
                         return node->children[i]->bbox.equals(item);
                     }
             );
@@ -161,30 +188,30 @@ namespace rtree {
 
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
-        RTree& remove(const std::shared_ptr<Node>& item) {
+        RTree& remove(const Node* item) {
             remove_item(
                     item->bbox,
-                    [&](const std::shared_ptr<Node>& node, size_t i) {
-                        return node->children[i] == item;
+                    [&](const Node* node, size_t i) {
+                        return node->children[i].get() == item;
                     }
             );
             return *this;
         }
 
         bool collides(const MBR& bbox) {
-            auto node = data;
+            Node* node = data.get();
             if (!intersects(bbox, node->bbox)) {
                 return false;
             }
 
             bool bln = false;
-            std::shared_ptr<Node> child;
-            std::vector<std::shared_ptr<Node>> searchList;
+            Node* child;
+            std::vector<Node*> searchList;
 
             while (!bln && node != nullptr) {
                 size_t i = 0, length = node->children.size();
                 for (; !bln && i < length; ++i) {
-                    child = node->children[i];
+                    child = node->children[i].get();
                     if (intersects(bbox, child->bbox)) {
                         bln = node->leaf || contains(bbox, child->bbox);
                         searchList.emplace_back(child);
@@ -197,14 +224,18 @@ namespace rtree {
 
     private:
         //all - fetch all items from node
-        void all(std::shared_ptr<Node> node, std::vector<std::shared_ptr<Node>>& result) {
-            std::vector<std::shared_ptr<Node>> nodesToSearch;
+        void all(Node* node, std::vector<Node*>& result) {
+            std::vector<Node*> nodesToSearch;
             while (true) {
                 if (node->leaf) {
-                    result.insert(result.end(), node->children.begin(), node->children.end());
+                    for (const auto& o : node->children) {
+                        result.emplace_back(o.get());
+                    }
                 }
                 else {
-                    nodesToSearch.insert(nodesToSearch.end(), node->children.begin(), node->children.end());
+                    for (const auto& o : node->children) {
+                        nodesToSearch.emplace_back(o.get());
+                    }
                 }
                 node = pop(nodesToSearch);
                 if (node == nullptr) {
@@ -216,10 +247,10 @@ namespace rtree {
         //insert - private
         void insert(Object item, int level) {
             auto bbox = item.bbox;
-            std::vector<std::shared_ptr<Node>> insertPath{};
+            std::vector<Node*> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
-            auto node = choose_subtree(bbox, data, level, insertPath);
+            auto node = choose_subtree(bbox, data.get(), level, insertPath);
 
 
             //put the item into the node item_bbox
@@ -234,14 +265,14 @@ namespace rtree {
         }
 
         //insert - private
-        void insert(std::shared_ptr<Node> item, int level) {
+        void insert(std::unique_ptr<Node>&& item, int level) {
             auto bbox = item->bbox;
-            std::vector<std::shared_ptr<Node>> insertPath{};
+            std::vector<Node*> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
-            auto node = choose_subtree(bbox, data, level, insertPath);
+            auto node = choose_subtree(bbox, data.get(), level, insertPath);
 
-            node->children.emplace_back(item);
+            node->children.emplace_back(std::move(item));
             extend(node->bbox, bbox);
 
             // split on node overflow propagate upwards if necessary
@@ -254,10 +285,10 @@ namespace rtree {
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
         RTree& remove_item(const MBR& bbox,
-                           const std::function<bool(const std::shared_ptr<Node>&, size_t)>& predicate) {
-            std::shared_ptr<Node> node = data;
-            std::shared_ptr<Node> parent = nullptr;
-            std::vector<std::shared_ptr<Node>> path;
+                           const std::function<bool(const Node*, size_t)>& predicate) {
+            Node* node = data.get();
+            Node* parent = nullptr;
+            std::vector<Node*> path;
             std::vector<size_t> indexes;
             std::optional<size_t> index;
 
@@ -279,7 +310,6 @@ namespace rtree {
                     //index = node.children.indexOf(item)
                     index = slice_index(node->children.size(), [&](size_t i) {
                         return predicate(node, i);
-                        //return node->children[i]->bbox.equals(item.bbox);
                     });
 
                     //if found
@@ -299,7 +329,7 @@ namespace rtree {
                     indexes.push_back(i);
                     i = 0;
                     parent = node;
-                    node = node->children[0];
+                    node = node->children[0].get();
                 }
                 else if (parent != nullptr) {
                     //go right
@@ -316,7 +346,7 @@ namespace rtree {
         }
 
         // split on node overflow propagate upwards if necessary
-        void split_on_overflow(int level, std::vector<std::shared_ptr<Node>>& insertPath) {
+        void split_on_overflow(int level, std::vector<Node*>& insertPath) {
             while (level >= 0) {
                 //fmt.Printf("size of insert path: %v\n", insertPath[level].Size())
                 if (insertPath[level]->children.size() > maxEntries) {
@@ -425,10 +455,10 @@ namespace rtree {
         }
 
         //build
-        std::shared_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, int height) {
+        std::unique_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, int height) {
             auto N = double(right - left + 1);
             auto M = double(maxEntries);
-            std::shared_ptr<Node> node;
+            std::unique_ptr<Node> node;
             if (N <= M) {
                 std::vector<Object> chs(items.begin() + left, items.begin() + right + 1);
                 // reached leaf level return leaf
@@ -447,7 +477,7 @@ namespace rtree {
 
             // TODO eliminate recursion?
 
-            node = new_Node(Object{}, height, false, std::vector<std::shared_ptr<Node>>{});
+            node = new_Node(Object{}, height, false, std::vector<std::unique_ptr<Node>>{});
 
             // split the items into M mostly square tiles
 
@@ -475,46 +505,52 @@ namespace rtree {
         }
 
         //_split overflowed node into two
-        void split(std::vector<std::shared_ptr<Node>>& insertPath, int level) {
-            auto node = insertPath[level];
-            auto newNode = new_Node(
-                    Object{},
-                    node->height,
-                    node->leaf,
-                    empty_children(0)
-            );
+        void split(std::vector<Node*>& insertPath, int level) {
+            Node* node = insertPath[level];
 
-            auto M = node->children.size();
+            const size_t M = node->children.size();
             size_t m = minEntries;
 
             choose_split_axis(node, m, M);
-            auto at = choose_split_index(node, m, M);
-            //perform split at index
-            newNode->children = split_at_index(node->children, at);
+            const size_t at = choose_split_index(node, m, M);
+
+            auto newNode = new_Node(Object{}, node->height, node->leaf);
+            //pre allocate children space = m - index
+            newNode->children.reserve(M-at);
+
+            //move kids from at to the end
+            for (auto i = at; i < M; i++ ){
+                newNode->children.emplace_back(std::move(node->children[i]));
+            }
+            node->children.resize(at);//shrink size
 
             calculate_bbox(node);
             calculate_bbox(newNode);
 
             if (level > 0) {
-                insertPath[level - 1]->add_child(newNode);
+                insertPath[level - 1]->add_child(std::move(newNode));
             }
             else {
-                split_root(node, newNode);
+                auto nn = new_Node(node->item, node->height, node->leaf, std::move(node->children));
+                split_root(std::move(nn), std::move(newNode));
             }
         }
 
         //_splitRoot splits the root of tree.
-        void split_root(const std::shared_ptr<Node>& node, std::shared_ptr<Node>& newNode) {
+        void split_root(std::unique_ptr<Node>&& node, std::unique_ptr<Node>&& newNode) {
             // split root node
-            auto path = std::vector<std::shared_ptr<Node>>{node, newNode};
-            auto root = new_Node(Object{}, node->height + 1, false, std::move(path));
-            data = root;
+            auto root_height = node->height + 1;
+            std::vector<std::unique_ptr<Node>> path;
+            path.emplace_back(std::move(node));
+            path.emplace_back(std::move(newNode));
+            auto root = new_Node(Object{}, root_height, false, std::move(path));
+            data = std::move(root);
             calculate_bbox(data);
         }
 
         //condense node and its path from the root
-        void condense(std::vector<std::shared_ptr<Node>>& path) {
-            std::shared_ptr<Node> parent;
+        void condense(std::vector<Node*>& path) {
+            Node* parent;
             size_t i = !path.empty() ? path.size() - 1 : 0;
             //go through the path, removing empty nodes and updating bboxes
             while (!path.empty()) {
@@ -523,7 +559,7 @@ namespace rtree {
                     if (i > 0) {
                         parent = path[i - 1];
                         auto index = slice_index(parent->children.size(), [&](size_t j) {
-                            return path[i] == parent->children[j];
+                            return path[i] == parent->children[j].get();
                         });
                         if (index.has_value()) {
                             parent->children.erase(parent->children.begin() + index.value());
@@ -547,7 +583,7 @@ namespace rtree {
 
         //_chooseSplitAxis selects split axis : sorts node children
         //by the best axis for split.
-        void choose_split_axis(std::shared_ptr<Node>& node, size_t m, size_t M) {
+        void choose_split_axis(Node* node, size_t m, size_t M) {
             auto xMargin = all_dist_margin(node, m, M, ByX);
             auto yMargin = all_dist_margin(node, m, M, ByY);
 
@@ -559,7 +595,8 @@ namespace rtree {
         }
 
         //_chooseSplitIndex selects split index.
-        std::size_t choose_split_index(std::shared_ptr<Node>& node, std::size_t m, std::size_t M) const {
+        template<typename T>
+        std::size_t choose_split_index(T& node, std::size_t m, std::size_t M) const {
             std::size_t i = 0, index = 0;
             double overlap, area, minOverlap, minArea;
 
@@ -597,7 +634,7 @@ namespace rtree {
 
         //all_dist_margin computes total margin of all possible split distributions.
         //Each node is at least m full.
-        double all_dist_margin(std::shared_ptr<Node>& node, size_t m, size_t M, SortBy sortBy) const {
+        double all_dist_margin(Node* node, size_t m, size_t M, SortBy sortBy) const {
             if (sortBy == ByX) {
                 std::sort(node->children.begin(), node->children.end(), x_node_path());
                 //bubbleAxis(*node.getChildren(), ByX, ByY)
@@ -614,13 +651,13 @@ namespace rtree {
             auto margin = bbox_margin(leftBBox) + bbox_margin(rightBBox);
 
             for (i = m; i < M - m; i++) {
-                auto child = node->children[i];
+                auto child = node->children[i].get();
                 extend(leftBBox, child->bbox);
                 margin += bbox_margin(leftBBox);
             }
 
             for (i = M - m - 1; i >= m; i--) {
-                auto child = node->children[i];
+                auto child = node->children[i].get();
                 extend(rightBBox, child->bbox);
                 margin += bbox_margin(rightBBox);
             }
