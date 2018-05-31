@@ -113,14 +113,14 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     using namespace rtest;
 
     SECTION("should test load 9 & 10") {
-//        auto tree00 = rtree::new_RTree(0);
-        auto tree0 = rtree::new_RTree(0).load_boxes(someData(0));
+//        auto tree00 = rtree::NewRTree(0);
+        auto tree0 = rtree::NewRTree(0).load_boxes(someData(0));
         REQUIRE(tree0.data->height == 1);
 
-        auto tree1 = new_RTree(9).load_boxes(someData(9));
+        auto tree1 = NewRTree(9).load_boxes(someData(9));
         REQUIRE(tree1.data->height == 1);
 
-        auto tree2 = new_RTree(9).load_boxes(someData(10));
+        auto tree2 = NewRTree(9).load_boxes(someData(10));
         REQUIRE(tree2.data->height == 2);
     }
     SECTION("tests search with some other") {
@@ -130,7 +130,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
                 {105,  -55, 115,  -45},
                 {-115, -55, -105, -45},
         };
-        auto tree = new_RTree(4);
+        auto tree = NewRTree(4);
         tree.load_boxes(data);
         testResults(tree.search({-180, -90, 180, 90}), std::vector<MBR>{
                 {-115, 45,  -105, 55},
@@ -160,18 +160,18 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#load uses standard insertion when given a low number of items") {
         auto data = rtest::data;
-        auto tree = new_RTree(8).load_boxes(
+        auto tree = NewRTree(8).load_boxes(
                 rtest::data
         ).load_boxes(slice(data, 0, 3));
 
-        auto tree2 = new_RTree(8).load_boxes(rtest::data).insert(
+        auto tree2 = NewRTree(8).load_boxes(rtest::data).insert(
                 Object{0, data[0]}
         ).insert(Object{1, data[1]}).insert(Object{2, data[2]});
         REQUIRE(nodeEquals(tree.data.get(), tree2.data.get()));
     }
     SECTION("#load does nothing if (loading empty data)") {
         auto data = std::vector<Object>{};
-        auto tree = new_RTree(0).load(data);
+        auto tree = NewRTree(0).load(data);
         REQUIRE(tree.is_empty());
     }
     SECTION("#load properly splits tree root when merging trees of the same height") {
@@ -179,7 +179,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         std::vector<MBR> cloneData(data.begin(), data.end());
         std::vector<MBR> _cloneData(data.begin(), data.end());
         cloneData.insert(cloneData.end(), _cloneData.begin(), _cloneData.end());
-        auto tree = new_RTree(4).load_boxes(data).load_boxes(data);
+        auto tree = NewRTree(4).load_boxes(data).load_boxes(data);
         testResults(tree.all(), std::move(cloneData));
     }
     SECTION("#load properly merges data of smaller or bigger tree heights") {
@@ -189,8 +189,8 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         std::vector<MBR> cloneData(data.begin(), data.end());
         cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
 
-        auto tree1 = new_RTree(4).load_boxes(data).load_boxes(smaller);
-        auto tree2 = new_RTree(4).load_boxes(smaller).load_boxes(data);
+        auto tree1 = NewRTree(4).load_boxes(data).load_boxes(smaller);
+        auto tree2 = NewRTree(4).load_boxes(smaller).load_boxes(data);
         REQUIRE(tree1.data->height == tree2.data->height);
         testResults(tree1.all(), [&] { return cloneData; }());
         testResults(tree2.all(), [&] { return cloneData; }());
@@ -202,15 +202,15 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         std::vector<MBR> cloneData(larger.begin(), larger.end());
         cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
 
-        auto tree1 = new_RTree(64).load_boxes(larger).load_boxes(smaller);
-        auto tree2 = new_RTree(64).load_boxes(smaller).load_boxes(larger);
+        auto tree1 = NewRTree(64).load_boxes(larger).load_boxes(smaller);
+        auto tree2 = NewRTree(64).load_boxes(smaller).load_boxes(larger);
         REQUIRE(tree1.data->height == tree2.data->height);
         testResults(tree1.all(), [&] { return cloneData; }());
         testResults(tree2.all(), [&] { return cloneData; }());
     }
     SECTION("#search finds matching points in the tree given a bbox") {
         auto data = rtest::data;
-        auto tree = new_RTree(4).load_boxes(data);
+        auto tree = NewRTree(4).load_boxes(data);
         //@formatter:off
         testResults(tree.search(MBR(40, 20, 80, 70)), std::vector<MBR>{
                 {70, 20, 70, 20}, {75, 25, 75, 25}, {45, 45, 45, 45}, {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70}, {45, 20, 45, 20}, {45, 70, 45, 70}, {75, 50, 75, 50}, {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45},
@@ -219,21 +219,21 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     }
     SECTION("#collides returns true when search finds matching points") {
         auto data = rtest::data;
-        auto tree = new_RTree(4).load_boxes(data);
+        auto tree = NewRTree(4).load_boxes(data);
         REQUIRE(tree.collides(MBR(40, 20, 80, 70)));
         REQUIRE(!tree.collides(MBR(200, 200, 210, 210)));
     }
 
     SECTION("#search returns an empty array if (nothing found") {
         auto data = rtest::data;
-        auto result = new_RTree(4).load_boxes(data).search(MBR(200, 200, 210, 210));
+        auto result = NewRTree(4).load_boxes(data).search(MBR(200, 200, 210, 210));
         REQUIRE(result.empty());
     }
 
     SECTION("#all <==>.Data returns all points in the tree") {
         auto data = rtest::data;
         std::vector<MBR> cloneData(data.begin(), data.end());
-        auto tree = new_RTree(4).load_boxes(data);
+        auto tree = NewRTree(4).load_boxes(data);
         auto result = tree.search(MBR(0, 0, 100, 100));
         testResults(std::move(result), std::move(cloneData));
     }
@@ -241,7 +241,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         std::vector<MBR> data = {{0, 0, 0, 0},
                                  {2, 2, 2, 2},
                                  {1, 1, 1, 1}};
-        auto tree = new_RTree(4);
+        auto tree = NewRTree(4);
         tree.load_boxes(data);
         tree.insert(Object{3, MBR{3, 3, 3, 3}});
         REQUIRE(tree.data->leaf);
@@ -261,12 +261,12 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#insert forms a valid tree if (items are inserted one by one") {
         auto data = rtest::data;
-        auto tree = new_RTree(4);
+        auto tree = NewRTree(4);
         size_t index = 0;
         for (const auto& o : data) {
             tree.insert(Object{index++, o});
         }
-        auto tree2 = new_RTree(4).load_boxes(data);
+        auto tree2 = NewRTree(4).load_boxes(data);
         REQUIRE(tree.data->height - tree2.data->height <= 1);
         std::vector<MBR> boxes2;
         auto all2 = tree2.all();
@@ -284,7 +284,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         for (size_t i = 0; i < N; ++i) {
             boxes.emplace_back(Object{i, data[i]});
         }
-        auto tree = new_RTree(4).load(boxes);
+        auto tree = NewRTree(4).load(boxes);
         tree.remove(data[0]);
         tree.remove(data[1]);
         tree.remove(data[2]);
@@ -300,8 +300,8 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     SECTION("#remove does nothing if (nothing found)") {
         Object item;
         auto data = rtest::data;
-        auto tree = new_RTree(0).load_boxes(data);
-        auto tree2 = new_RTree(0).load_boxes(data);
+        auto tree = NewRTree(0).load_boxes(data);
+        auto tree2 = NewRTree(0).load_boxes(data);
         tree2.remove(MBR(13, 13, 13, 13));
         REQUIRE(nodeEquals(tree.data.get(), tree2.data.get()));
         tree2.remove(item); //not init
@@ -310,7 +310,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#remove brings the tree to a clear state when removing everything one by one") {
         auto data = rtest::data;
-        auto tree = new_RTree(4).load_boxes(data);
+        auto tree = NewRTree(4).load_boxes(data);
         auto result = tree.search(MBR(0, 0, 100, 100));
         for (size_t i = 0; i < len(result); i++) {
             tree.remove(result[i]);
@@ -320,13 +320,13 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#clear should clear all the data in the tree") {
         auto data = rtest::data;
-        auto tree = new_RTree(4).load_boxes(data).clear();
+        auto tree = NewRTree(4).load_boxes(data).clear();
         REQUIRE(tree.is_empty());
     }
 
     SECTION("should have chainable API") {
         auto data = rtest::data;
-        REQUIRE(new_RTree(4)
+        REQUIRE(NewRTree(4)
                         .load_boxes(data)
                         .insert(Object{0, data[0]})
                         .remove(data[0])
@@ -339,9 +339,9 @@ TEST_CASE("rtree 2", "[rtree util]") {
     using namespace rtree;
     using namespace rtest;
     SECTION("tests pop nodes") {
-        auto a = new_Node(Object{0, empty_mbr()}, 0, true, std::vector<std::unique_ptr<Node>>{});
-        auto b = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::unique_ptr<Node>>{});
-        auto c = new_Node(Object{0, empty_mbr()}, 1, true, std::vector<std::unique_ptr<Node>>{});
+        auto a = NewNode(Object{0, empty_mbr()}, 0, true, std::vector<std::unique_ptr<Node>>{});
+        auto b = NewNode(Object{0, empty_mbr()}, 1, true, std::vector<std::unique_ptr<Node>>{});
+        auto c = NewNode(Object{0, empty_mbr()}, 1, true, std::vector<std::unique_ptr<Node>>{});
         std::vector<Node*> nodes;
         Node* n;
 

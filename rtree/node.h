@@ -48,8 +48,27 @@ namespace rtree {
         void* get_item() {
             return item.object;
         }
+
+
     };
     namespace {
+        void destruct_node(std::unique_ptr<Node>&& a) {
+            if (a == nullptr){
+                return;
+            }
+            std::vector<std::unique_ptr<Node>> stack;
+            stack.reserve(a->children.size());
+            stack.emplace_back(std::move(a));
+            while (!stack.empty()) {
+                auto node = std::move(stack[stack.size() - 1]);
+                stack.pop_back();
+                //adopt children on stack and let node go out of scope
+                for (auto& o : node->children) {
+                    stack.emplace_back(std::move(o));
+                }
+            }
+        }
+
         struct x_boxes {
             inline bool operator()(const MBR& a, const MBR& b) {
                 return a.minx < b.minx;
@@ -106,8 +125,8 @@ namespace rtree {
         }
 
 
-        std::unique_ptr<Node> new_Node(Object item, int height, bool leaf,
-                                       std::vector<std::unique_ptr<Node>>&& children) {
+        std::unique_ptr<Node> NewNode(Object item, int height, bool leaf,
+                                      std::vector<std::unique_ptr<Node>>&& children) {
             Node node{};
             node.item = item;
             node.height = height;
@@ -117,13 +136,13 @@ namespace rtree {
             return std::make_unique<Node>(std::move(node));
         }
 
-        std::unique_ptr<Node> new_Node(Object item, int height, bool leaf) {
+        std::unique_ptr<Node> NewNode(Object item, int height, bool leaf) {
             return std::make_unique<Node>(Node{item, height, leaf, item.bbox});
         }
 
-        //new_Node creates a new node
+        //NewNode creates a new node
         std::unique_ptr<Node> new_leaf_Node(Object item) {
-            return std::move(new_Node(
+            return std::move(NewNode(
                     item, 1, true, std::vector<std::unique_ptr<Node>>{}
             ));
         }

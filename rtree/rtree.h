@@ -41,26 +41,24 @@ namespace rtree {
         ~RTree() = default;
 
         RTree& clear() {
-            std::vector<std::unique_ptr<Node>> ch{};
-            auto node = new_Node(Object{}, 1, true, std::move(ch));
-            //TODO:go down the rtree and remove bottom up , avoid stack destructor recursion of smart_ptr
-            data = std::move(node);
+            destruct_node(std::move(data));
+            data = std::move(NewNode(Object{}, 1, true));
             return *this;
         }
 
-        //is_empty checks for empty tree
-        bool is_empty() {
+        // is_empty checks for empty tree
+        inline bool is_empty() {
             return data->children.empty();
         }
 
 
-        //insert item
+        // insert item
         RTree& insert(Object item) {
             insert(item, this->data->height - 1);
             return *this;
         }
 
-        //load implements bulk loading
+        // load implements bulk loading
         RTree& load(std::vector<Object>& objects) {
             if (objects.empty()) {
                 return *this;
@@ -75,7 +73,7 @@ namespace rtree {
 
             std::vector<Object> objs(objects.begin(), objects.end());
 
-            //recursively build the tree from stratch using OMT algorithm
+            // recursively build the tree from stratch using OMT algorithm
             auto node = _build(objs, 0, objs.size() - 1, 0);
 
             if (data->children.empty()) {
@@ -100,7 +98,7 @@ namespace rtree {
             return *this;
         }
 
-        //load_boxes loads bounding boxes
+        // load_boxes loads bounding boxes
         RTree& load_boxes(std::vector<MBR>& boxes) {
             std::vector<Object> items;
             items.reserve(boxes.size());
@@ -110,12 +108,12 @@ namespace rtree {
             return load(items);
         }
 
-        //load_boxes loads bounding boxes
+        // load_boxes loads bounding boxes
         RTree& load_boxes(std::vector<MBR>&& boxes) {
             return load_boxes(boxes);
         }
 
-        //search item
+        // search item
         std::vector<Node*> search(const MBR& bbox) {
             Node* node = data.get();
             std::vector<Node*> result;
@@ -152,15 +150,15 @@ namespace rtree {
             return result;
         }
 
-        //all items from  root node
+        // all items from  root node
         std::vector<Node*> all() {
             std::vector<Node*> result{};
             all(data.get(), result);
             return std::move(result);
         }
 
-        //Remove Item from RTree
-        //NOTE:if item is a bbox , then first found bbox is removed
+        // Remove Item from RTree
+        // NOTE:if item is a bbox , then first found bbox is removed
         RTree& remove(const Object& item) {
             if (item.bbox.equals(empty_mbr())) { //uninitialized object
                 return *this;
@@ -186,8 +184,8 @@ namespace rtree {
             return *this;
         }
 
-        //Remove Item from RTree
-        //NOTE:if item is a bbox , then first found bbox is removed
+        // Remove Item from RTree
+        // NOTE:if item is a bbox , then first found bbox is removed
         RTree& remove(const Node* item) {
             remove_item(
                     item->bbox,
@@ -223,7 +221,7 @@ namespace rtree {
         }
 
     private:
-        //all - fetch all items from node
+        // all - fetch all items from node
         void all(Node* node, std::vector<Node*>& result) {
             std::vector<Node*> nodesToSearch;
             while (true) {
@@ -244,7 +242,7 @@ namespace rtree {
             }
         }
 
-        //insert - private
+        // insert - private
         void insert(Object item, int level) {
             auto bbox = item.bbox;
             std::vector<Node*> insertPath{};
@@ -253,7 +251,7 @@ namespace rtree {
             auto node = choose_subtree(bbox, data.get(), level, insertPath);
 
 
-            //put the item into the node item_bbox
+            // put the item into the node item_bbox
             node->add_child(new_leaf_Node(item));
             extend(node->bbox, bbox);
 
@@ -264,7 +262,7 @@ namespace rtree {
             adjust_parent_bboxes(bbox, insertPath, level);
         }
 
-        //insert - private
+        // insert - private
         void insert(std::unique_ptr<Node>&& item, int level) {
             auto bbox = item->bbox;
             std::vector<Node*> insertPath{};
@@ -278,12 +276,12 @@ namespace rtree {
             // split on node overflow propagate upwards if necessary
             split_on_overflow(level, insertPath);
 
-            //adjust bboxes along the insertion path
+            // adjust bboxes along the insertion path
             adjust_parent_bboxes(bbox, insertPath, level);
         }
 
-        //Remove Item from RTree
-        //NOTE:if item is a bbox , then first found bbox is removed
+        // Remove Item from RTree
+        // NOTE:if item is a bbox , then first found bbox is removed
         RTree& remove_item(const MBR& bbox,
                            const std::function<bool(const Node*, size_t)>& predicate) {
             Node* node = data.get();
@@ -348,7 +346,6 @@ namespace rtree {
         // split on node overflow propagate upwards if necessary
         void split_on_overflow(int level, std::vector<Node*>& insertPath) {
             while (level >= 0) {
-                //fmt.Printf("size of insert path: %v\n", insertPath[level].Size())
                 if (insertPath[level]->children.size() > maxEntries) {
                     split(insertPath, level);
                     level--;
@@ -394,7 +391,7 @@ namespace rtree {
             Object t;
 
             while (right > left) {
-                //the arbitrary constants 600 and 0.5 are used in the original
+                // the arbitrary constants 600 and 0.5 are used in the original
                 // version to minimize execution time
                 if (right - left > 600) {
                     fn = fRight - fLeft + 1.0;
@@ -454,7 +451,7 @@ namespace rtree {
             }
         }
 
-        //build
+        // build
         std::unique_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, int height) {
             auto N = double(right - left + 1);
             auto M = double(maxEntries);
@@ -462,7 +459,7 @@ namespace rtree {
             if (N <= M) {
                 std::vector<Object> chs(items.begin() + left, items.begin() + right + 1);
                 // reached leaf level return leaf
-                node = new_Node(Object(), 1, true, make_children(chs));
+                node = NewNode(Object(), 1, true, make_children(chs));
                 calculate_bbox(node);
                 return node;
             }
@@ -476,8 +473,7 @@ namespace rtree {
             }
 
             // TODO eliminate recursion?
-
-            node = new_Node(Object{}, height, false, std::vector<std::unique_ptr<Node>>{});
+            node = NewNode(Object{}, height, false, std::vector<std::unique_ptr<Node>>{});
 
             // split the items into M mostly square tiles
 
@@ -514,12 +510,12 @@ namespace rtree {
             choose_split_axis(node, m, M);
             const size_t at = choose_split_index(node, m, M);
 
-            auto newNode = new_Node(Object{}, node->height, node->leaf);
+            auto newNode = NewNode(Object{}, node->height, node->leaf);
             //pre allocate children space = m - index
-            newNode->children.reserve(M-at);
+            newNode->children.reserve(M - at);
 
             //move kids from at to the end
-            for (auto i = at; i < M; i++ ){
+            for (auto i = at; i < M; i++) {
                 newNode->children.emplace_back(std::move(node->children[i]));
             }
             node->children.resize(at);//shrink size
@@ -531,7 +527,7 @@ namespace rtree {
                 insertPath[level - 1]->add_child(std::move(newNode));
             }
             else {
-                auto nn = new_Node(node->item, node->height, node->leaf, std::move(node->children));
+                auto nn = NewNode(node->item, node->height, node->leaf, std::move(node->children));
                 split_root(std::move(nn), std::move(newNode));
             }
         }
@@ -543,7 +539,7 @@ namespace rtree {
             std::vector<std::unique_ptr<Node>> path;
             path.emplace_back(std::move(node));
             path.emplace_back(std::move(newNode));
-            auto root = new_Node(Object{}, root_height, false, std::move(path));
+            auto root = NewNode(Object{}, root_height, false, std::move(path));
             data = std::move(root);
             calculate_bbox(data);
         }
@@ -666,7 +662,7 @@ namespace rtree {
 
     };
 
-    RTree new_RTree(size_t cap) {
+    RTree NewRTree(size_t cap) {
         RTree tree;
         tree.clear();
 
