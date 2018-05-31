@@ -7,6 +7,5 @@ add_executable(rtree_cpp
         main.cpp
         rtree.h
         node.h
-        clear.h
         util.h
         )
