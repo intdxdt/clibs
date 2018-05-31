@@ -243,7 +243,7 @@ namespace rtree {
         }
 
         // insert - private
-        void insert(Object item, int level) {
+        void insert(Object item, size_t level) {
             auto bbox = item.bbox;
             std::vector<Node*> insertPath{};
 
@@ -263,7 +263,7 @@ namespace rtree {
         }
 
         // insert - private
-        void insert(std::unique_ptr<Node>&& item, int level) {
+        void insert(std::unique_ptr<Node>&& item, size_t level) {
             auto bbox = item->bbox;
             std::vector<Node*> insertPath{};
 
@@ -344,15 +344,11 @@ namespace rtree {
         }
 
         // split on node overflow propagate upwards if necessary
-        void split_on_overflow(int level, std::vector<Node*>& insertPath) {
-            while (level >= 0) {
-                if (insertPath[level]->children.size() > maxEntries) {
+        void split_on_overflow(size_t level, std::vector<Node*>& insertPath) {
+            auto n = static_cast<size_t>(-1);
+            while ((level != n) && (insertPath[level]->children.size() > maxEntries)) {
                     split(insertPath, level);
                     level--;
-                }
-                else {
-                    break;
-                }
             }
         }
 
@@ -452,7 +448,7 @@ namespace rtree {
         }
 
         // build
-        std::unique_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, int height) {
+        std::unique_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, size_t height) {
             auto N = double(right - left + 1);
             auto M = double(maxEntries);
             std::unique_ptr<Node> node;
@@ -466,7 +462,7 @@ namespace rtree {
 
             if (height == 0) {
                 // target height of the bulk-loaded tree
-                height = static_cast<int>(std::ceil(std::log(N) / std::log(M)));
+                height = static_cast<size_t>(std::ceil(std::log(N) / std::log(M)));
 
                 // target number of root entries to maximize storage utilization
                 M = std::ceil(N / std::pow(M, double(height - 1)));
@@ -501,7 +497,7 @@ namespace rtree {
         }
 
         //_split overflowed node into two
-        void split(std::vector<Node*>& insertPath, int level) {
+        void split(std::vector<Node*>& insertPath, size_t level) {
             Node* node = insertPath[level];
 
             const size_t M = node->children.size();
@@ -546,10 +542,11 @@ namespace rtree {
 
         //condense node and its path from the root
         void condense(std::vector<Node*>& path) {
-            Node* parent;
-            size_t i = !path.empty() ? path.size() - 1 : 0;
+            Node* parent {nullptr};
+            auto sentinel {static_cast<size_t>(-1)};
+            auto i {path.size() - 1};
             //go through the path, removing empty nodes and updating bboxes
-            while (!path.empty()) {
+            while (i != sentinel) {
                 if (path[i]->children.empty()) {
                     //go through the path, removing empty nodes and updating bboxes
                     if (i > 0) {
@@ -568,10 +565,6 @@ namespace rtree {
                 }
                 else {
                     calculate_bbox(path[i]);
-                }
-
-                if (i == 0) {
-                    break;
                 }
                 i--;
             }

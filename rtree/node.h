@@ -8,7 +8,7 @@ namespace rtree {
     ///Node type for internal node
     struct Node {
         Object item;
-        int height;
+        size_t height;
         bool leaf;
         MBR bbox;
         std::vector<std::unique_ptr<Node>> children;
@@ -17,7 +17,7 @@ namespace rtree {
             children = std::vector<std::unique_ptr<Node>>{};
         };
 
-        Node(Object item, int height, bool leaf, MBR bbox) :
+        Node(Object item, size_t height, bool leaf, MBR bbox) :
                 item(item), height(height), leaf(leaf), bbox(bbox) {
             children = std::vector<std::unique_ptr<Node>>{};
         };
@@ -53,7 +53,7 @@ namespace rtree {
     };
     namespace {
         void destruct_node(std::unique_ptr<Node>&& a) {
-            if (a == nullptr){
+            if (a == nullptr) {
                 return;
             }
             std::vector<std::unique_ptr<Node>> stack;
@@ -125,7 +125,7 @@ namespace rtree {
         }
 
 
-        std::unique_ptr<Node> NewNode(Object item, int height, bool leaf,
+        std::unique_ptr<Node> NewNode(Object item, size_t height, bool leaf,
                                       std::vector<std::unique_ptr<Node>>&& children) {
             Node node{};
             node.item = item;
@@ -136,7 +136,7 @@ namespace rtree {
             return std::make_unique<Node>(std::move(node));
         }
 
-        std::unique_ptr<Node> NewNode(Object item, int height, bool leaf) {
+        std::unique_ptr<Node> NewNode(Object item, size_t height, bool leaf) {
             return std::make_unique<Node>(Node{item, height, leaf, item.bbox});
         }
 
@@ -191,22 +191,23 @@ namespace rtree {
         }
 
         // adjust bboxes along the given tree path
-        void adjust_parent_bboxes(const MBR& bbox, std::vector<Node*>& path, int level) {
-            for (int i = level; i >= 0; i--) {
+        void adjust_parent_bboxes(const MBR& bbox, std::vector<Node*>& path, size_t level) {
+            auto n = static_cast<size_t>(-1);
+            for (auto i = level; i != n; i--) {
                 extend(path[i]->bbox, bbox);
             }
         }
 
         //_chooseSubtree select child of node and updates path to selected node.
-        Node* choose_subtree(const MBR& bbox, Node* node, int level, std::vector<Node*>& path) {
+        Node* choose_subtree(const MBR& bbox, Node* node, size_t level, std::vector<Node*>& path) {
 
-            Node* child = nullptr;
-            Node* targetNode = nullptr;
+            Node* child {nullptr};
+            Node* targetNode{nullptr};
             double minArea, minEnlargement, area, enlargement;
 
             while (true) {
                 path.emplace_back(node);
-                if (node->leaf || path.size() - 1 == level) {
+                if (node->leaf || (path.size() - 1 == level)) {
                     break;
                 }
                 minEnlargement = std::numeric_limits<double>::infinity();
