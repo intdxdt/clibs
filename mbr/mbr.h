@@ -229,7 +229,7 @@ struct MBR {
 
 
     ///computes dx and dy for computing hypot
-    Pt2D distance_dxdy(const MBR& other) {
+    Pt2D distance_dxdy(const MBR& other) const{
         double dx = 0.0;
         double dy = 0.0;
 
@@ -254,7 +254,7 @@ struct MBR {
 
 
     ///Distance computes the distance between two mbrs
-    double distance(const MBR& other) {
+    double distance(const MBR& other) const {
         if (intersects(other)) {
             return 0.0;
         }

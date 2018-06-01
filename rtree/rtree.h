@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <memory>
+#include <tuple>
 #include "node.h"
 
 namespace rtree {
@@ -220,6 +221,86 @@ namespace rtree {
             return bln;
         }
 
+        std::vector<Object> KNN(
+                const MBR& query,
+                size_t limit,
+                const std::function<double(const MBR&, KObj)>& score) {
+            return KNN(query, limit, score, [](KObj o) { return std::tuple<bool, bool>(true, false); });
+        }
+
+        std::vector<Object> KNN(
+                const MBR query,
+                size_t limit,
+                const std::function<double(const MBR&, KObj)>& score,
+                const std::function<std::tuple<bool, bool>(KObj)>& predicate) {
+
+            auto node = data.get();
+            std::vector<Object> result{};
+
+            Node* child{nullptr};
+            std::vector<KObj> queue{};
+            bool stop{false}, pred{false};
+            double dist{0};
+            auto cmp = kobj_cmp();
+
+            while (!stop && (node != nullptr)) {
+                for (auto& o : node->children) {
+                    child = o.get();
+
+                    if (child->children.empty()) {
+                        dist = score(query, KObj{child, child->bbox, true, -1});
+                    }
+                    else {
+                        dist = score(query, KObj{nullptr, child->bbox, false, -1});
+                    }
+
+                    queue.push_back(KObj{
+                            child, child->bbox, child->children.empty(), dist
+                    });
+                }
+
+                //make heap
+                std::make_heap(queue.begin(), queue.end(), cmp);
+                std::pop_heap(queue.begin(), queue.end(), cmp); //pop heap
+
+                while (!queue.empty() && queue.back().is_item) {
+
+                    auto candidate = queue.back(); //back
+                    queue.pop_back(); //pop
+
+                    auto pred_stop = predicate(candidate);
+                    pred = std::get<0>(pred_stop);
+                    stop = std::get<1>(pred_stop);
+
+                    if (pred) {
+                        result.emplace_back(candidate.node->item);
+                    }
+
+                    if (stop) {
+                        break;
+                    }
+
+                    if ((limit != 0) && (result.size() == limit)) {
+                        return result;
+                    }
+
+                    std::pop_heap(queue.begin(), queue.end(), cmp); //pop heap
+                }
+
+                if (!stop) {
+                    if (queue.empty()) {
+                        node = nullptr;
+                    }
+                    else {
+                        auto q = queue.back(); //back
+                        queue.pop_back();      //pop
+                        node = q.node;
+                    }
+                }
+            }
+            return result;
+        }
+
     private:
         // all - fetch all items from node
         void all(Node* node, std::vector<Node*>& result) {
@@ -347,8 +428,8 @@ namespace rtree {
         void split_on_overflow(size_t level, std::vector<Node*>& insertPath) {
             auto n = static_cast<size_t>(-1);
             while ((level != n) && (insertPath[level]->children.size() > maxEntries)) {
-                    split(insertPath, level);
-                    level--;
+                split(insertPath, level);
+                level--;
             }
         }
 
@@ -542,9 +623,9 @@ namespace rtree {
 
         //condense node and its path from the root
         void condense(std::vector<Node*>& path) {
-            Node* parent {nullptr};
-            auto sentinel {static_cast<size_t>(-1)};
-            auto i {path.size() - 1};
+            Node* parent{nullptr};
+            auto sentinel{static_cast<size_t>(-1)};
+            auto i{path.size() - 1};
             //go through the path, removing empty nodes and updating bboxes
             while (i != sentinel) {
                 if (path[i]->children.empty()) {

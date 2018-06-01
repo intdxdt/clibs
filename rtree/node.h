@@ -1,4 +1,5 @@
 #include <memory>
+#include <sstream>
 #include <utility>
 #include "../mutil/mutil.h"
 #include "../mbr/mbr.h"
@@ -45,12 +46,40 @@ namespace rtree {
             children.emplace_back(std::move(child));
         }
 
-        void* get_item() {
-            return item.object;
+        Object get_item() {
+            return item;
+        }
+    };
+
+
+    ///KObj instance struct
+    struct KObj {
+        Node* node;
+        MBR bbox;
+        bool is_item;
+        double dist;
+
+        double score(){
+            return this->dist;
         }
 
+        Object get_item(){
+            return this->node->get_item();
+        }
 
+        std::string string(){
+            std::ostringstream ss;
+            ss << this->node->bbox.wkt() << " -> "  << this->dist;
+           return ss.str();
+        }
     };
+
+    struct kobj_cmp {
+        inline bool operator()(const KObj& a, const KObj& b) const {
+            return a.dist > b.dist;
+        }
+    };
+
     namespace {
         void destruct_node(std::unique_ptr<Node>&& a) {
             if (a == nullptr) {
@@ -201,7 +230,7 @@ namespace rtree {
         //_chooseSubtree select child of node and updates path to selected node.
         Node* choose_subtree(const MBR& bbox, Node* node, size_t level, std::vector<Node*>& path) {
 
-            Node* child {nullptr};
+            Node* child{nullptr};
             Node* targetNode{nullptr};
             double minArea, minEnlargement, area, enlargement;
 
