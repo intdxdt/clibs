@@ -521,5 +521,23 @@ TEST_CASE("rtree knn", "[rtree knn]") {
             });
         }
         auto rt = NewRTree(9).load(objects);
+        auto scoreFn = [](MBR query, KObj boxer ) {
+				return query.distance(boxer.bbox);
+			};
+
+	    auto predicate = [](KObj v) {
+	            auto o = (RichData*)v.get_item().object;
+				return std::tuple<bool,bool>(o->version < 5, false);
+			};
+		auto	result = rt.KNN(MBR(2, 4, 2, 4), 1, scoreFn, predicate);
+
+			REQUIRE(len(result)== 1);
+
+			auto v = (RichData*) result[0].object;
+			auto expects_mbr = MBR{3, 3, 3, 3};
+			auto expects_version = 2;
+
+			REQUIRE(v->bbox == expects_mbr);
+			REQUIRE(v->version == expects_version);
     }
 }
