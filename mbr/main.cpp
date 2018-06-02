@@ -174,12 +174,25 @@ TEST_CASE("mbr 2", "[mbr 2]") {
 
         MBR a{
                 -7.703505430214746, 3.0022503796012305,
-                -5.369812194018422, 5.231449888803689};
+                -5.369812194018422, 5.231449888803689
+        };
         REQUIRE(m1.distance(a) == std::hypot(-5.369812194018422, 3.0022503796012305 - 2));
 
-        MBR b{-4.742849832055231, -4.1033230559816065,
-              -1.9563504455521576, -2.292098454754609};
+        MBR b{
+                -4.742849832055231, -4.1033230559816065,
+                -1.9563504455521576, -2.292098454754609
+        };
         REQUIRE(m1.distance(b) == std::hypot(-1.9563504455521576, -2.292098454754609));
+
+        MBR aa{
+                56.375782597898, 56.375782597898,
+                123.375782597898, 823.375782597898
+        };
+        std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+        std::cout << aa.wkt() << std::endl;
+        std::cout << b.wkt() << std::endl;
+        std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+
     }
 
     SECTION("contains, disjoint , contains completely") {
@@ -229,11 +242,7 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         md.expand_to_include(mb);
 
         std::array<double, 4> arr{0, 0, 5, 9};
-        std::vector<std::vector<double>> polyarr{{0, 0},
-                                                 {0, 9},
-                                                 {5, 9},
-                                                 {5, 0},
-                                                 {0, 0}};
+        std::vector<std::vector<double>> polyarr{{0, 0}, {0, 9}, {5, 9}, {5, 0}, {0, 0}};
         REQUIRE(ma.as_array() == arr);  //ma modified by expand
         REQUIRE(ma.as_poly_array() == polyarr); //ma modified by expand
         arr = {1.7, 1.5, 5, 9};
@@ -262,6 +271,6 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     }
 
     SECTION("wkt string") {
-        REQUIRE(m1.wkt() == "POLYGON ((0 0,0 2,2 2,2 0,0 0))");
+        REQUIRE(m1.wkt() == "POLYGON ((0 0, 0 2, 2 2, 2 0, 0 0))");
     }
 }

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <functional>
 #include <optional>
+#include <iomanip>
 #include "../pt/pt.h"
 #include "../mutil/mutil.h"
 
@@ -229,7 +230,7 @@ struct MBR {
 
 
     ///computes dx and dy for computing hypot
-    Pt2D distance_dxdy(const MBR& other) const{
+    Pt2D distance_dxdy(const MBR& other) const {
         double dx = 0.0;
         double dy = 0.0;
 
@@ -276,11 +277,11 @@ struct MBR {
     std::string wkt() const {
         std::ostringstream ss;
         ss << "POLYGON (("
-           << minx << " " << miny << ","
-           << minx << " " << maxy << ","
-           << maxx << " " << maxy << ","
-           << maxx << " " << miny << ","
-           << minx << " " << miny
+           << f2str(minx) << " " << f2str(miny) << ", "
+           << f2str(minx) << " " << f2str(maxy) << ", "
+           << f2str(maxx) << " " << f2str(maxy) << ", "
+           << f2str(maxx) << " " << f2str(miny) << ", "
+           << f2str(minx) << " " << f2str(miny)
            << "))";
         return ss.str();
     }
@@ -314,6 +315,17 @@ struct MBR {
     ///Operator : not equal
     bool operator!=(const MBR& other) {
         return !(*this == other);
+    }
+
+private:
+    std::string f2str(double f, int precision = 12) const {
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(precision) << f;
+        auto s = ss.str();
+        s.erase(s.find_last_not_of('0') + 1, std::string::npos);
+        if (s.back() == '.')
+            s.pop_back();
+        return s;
     }
 
 };

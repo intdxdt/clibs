@@ -577,7 +577,7 @@ namespace rtree {
             return node;
         }
 
-        //_split overflowed node into two
+        //split overflowed node into two
         void split(std::vector<Node*>& insertPath, size_t level) {
             Node* node = insertPath[level];
 
@@ -604,7 +604,13 @@ namespace rtree {
                 insertPath[level - 1]->add_child(std::move(newNode));
             }
             else {
-                auto nn = NewNode(node->item, node->height, node->leaf, std::move(node->children));
+                auto nn = std::make_unique<Node>(Node{
+                        node->item,
+                        node->height,
+                        node->leaf,
+                        node->bbox
+                });
+                nn->children = std::move(node->children);
                 split_root(std::move(nn), std::move(newNode));
             }
         }
