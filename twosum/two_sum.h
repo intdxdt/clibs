@@ -3,7 +3,7 @@
 #ifndef TWOSUM_TWOSUM_H
 #define TWOSUM_TWOSUM_H
 ///fast two sum
-inline Pt2D TwoSum(double a, double b )  {
+inline Pt2D two_sum(double a, double b )  {
 	auto x  = a + b;
 	auto bv = x - a;
 	auto av = x - bv;
