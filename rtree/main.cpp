@@ -583,8 +583,6 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
     using namespace rtree;
     using namespace rtest;
 
-
-
     SECTION("same root bounds for : bulkload & single insert ") {
         //@formatter:off
         std::vector<MBR> data = {
@@ -605,14 +603,12 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
         //one by one
         std::vector<MBR> data_oneByone(data.begin(), data.end());
         for (size_t i = 0; i < data_oneByone.size(); i++) {
-            //std::cout << i << " -> " << oneT.data->children.size() << std::endl;
-//            std::cout << data_oneByone[i].wkt() << std::endl;
-            oneT.insert(Object{i, data_oneByone[i].bbox(), &data_oneByone[i]});
+            oneT.insert(Object{i, data_oneByone[i], &data_oneByone[i]});
         }
 
         //fill zero size
         for (size_t i = 0; i < data_oneByone.size(); i++) {
-            one_defT.insert(Object{i, data_oneByone[i].bbox(), &data_oneByone[i]});
+            one_defT.insert(Object{i, data_oneByone[i], &data_oneByone[i]});
         }
 
         auto one_mbr = oneT.data->bbox;
@@ -630,16 +626,14 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
         REQUIRE(one_mbr.equals(one_def_mbr));
         REQUIRE(one_mbr.equals(buk_mbr));
         REQUIRE(std::abs(int(bulkT.data->height - oneT.data->height)) <= 1);
-//        REQUIRE(len(bulkT.data->children) == len(oneT.data->children));
-//        tree.data->height - tree2.data->height <= 1
+        REQUIRE(len(bulkT.data->children) == len(oneT.data->children));
 
-        auto tokens = print_RTree(oneT.data);
-        for (auto& tok : tokens) {
-            std::cout << tok.wkt << std::endl;
-            for (auto& ch: tok.children) {
-                std::cout << "    " << ch << std::endl;
-            }
-        }
-
+//        auto tokens = print_RTree(oneT.data);
+//        for (auto& tok : tokens) {
+//            std::cout << tok.wkt << std::endl;
+//            for (auto& ch: tok.children) {
+//                std::cout << "    " << ch << std::endl;
+//            }
+//        }
     }
 }

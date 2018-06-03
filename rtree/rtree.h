@@ -4,14 +4,412 @@
  https://github.com/mourner/rbush;
  @after  (c) 2015, Vladimir Agafonkin;
 */
-
-#include <cmath>
+#include <limits>
 #include <memory>
+#include <utility>
 #include <tuple>
-#include "node.h"
+#include <sstream>
+#include <cmath>
+#include <algorithm>
+#include "../mbr/mbr.h"
+#include "../mutil/mutil.h"
 
+#ifndef RTREE_CPP_H
+#define RTREE_CPP_H
+//Util
 namespace rtree {
-    //RTree type
+    using SortBy = std::size_t;
+    const SortBy ByX = 0;
+    const SortBy ByY = 1;
+
+    //@formatter:off
+    MBR empty_mbr();
+    //@formatter:on
+
+    struct Object {
+        size_t id = 0;
+        MBR bbox = empty_mbr();
+        void* object = nullptr;
+        size_t meta = 0;
+    };
+
+    template<typename T>
+    inline size_t len(const std::vector<T>& v) {
+        return v.size();
+    };
+
+    template<typename T>
+    inline const T& min(const T& a, const T& b) {
+        return b < a ? b : a;
+    };
+
+    template<typename T>
+    inline const T& max(const T& a, const T& b) {
+        return b > a ? b : a;
+    };
+
+    template<typename T>
+    T pop(std::vector<T>& a) {
+        if (a.empty()) {
+            return nullptr;
+        }
+        auto v = a.back();
+        a.resize(a.size() - 1);
+        return std::move(v);
+    }
+
+    ///std::optional<size_t>
+    size_t pop_index(std::vector<size_t>& indexes) {
+        assert(!indexes.empty());
+        size_t v = indexes.back();
+        indexes.resize(indexes.size() - 1);
+        return v;
+    }
+
+    template<typename T>
+    std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
+        std::vector<T> s(v.begin() + i, v.begin() + j);
+        return std::move(s);
+    }
+
+    inline void swap_item(std::vector<Object>& arr, size_t i, size_t j) {
+        std::swap(arr[i], arr[j]);
+    }
+
+    inline std::array<double, 4> empty_bounds() {
+        auto inf = std::numeric_limits<double>::infinity();
+        auto neginf = -std::numeric_limits<double>::infinity();
+        return {inf, inf, neginf, neginf};
+    }
+
+    inline MBR empty_mbr() {
+        return {empty_bounds(), true};
+    }
+
+    ///slice index
+    inline std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
+        for (size_t i = 0; i < limit; ++i) {
+            if (predicate(i)) return i;
+        }
+        return std::nullopt;
+    }
+
+
+    ///extend bounding box
+    inline MBR& extend(MBR& a, const MBR& b) {
+        a.minx = std::fmin(a.minx, b.minx);
+        a.miny = std::fmin(a.miny, b.miny);
+        a.maxx = std::fmax(a.maxx, b.maxx);
+        a.maxy = std::fmax(a.maxy, b.maxy);
+        return a;
+    }
+
+    ///computes area of bounding box
+    inline double bbox_area(const MBR& a) {
+        return (a.maxx - a.minx) * (a.maxy - a.miny);
+    }
+
+    ///computes box margin
+    inline double bbox_margin(const MBR& a) {
+        return (a.maxx - a.minx) + (a.maxy - a.miny);
+    }
+
+    ///computes enlarged area given two mbrs
+    inline double enlarged_area(const MBR& a, const MBR& b) {
+        return (std::fmax(a.maxx, b.maxx) - std::fmin(a.minx, b.minx)) *
+               (std::fmax(a.maxy, b.maxy) - std::fmin(a.miny, b.miny));
+    }
+
+    ///contains tests whether a contains b
+    inline bool contains(const MBR& a, const MBR& b) {
+        return a.contains(b);
+    }
+
+    ///intersects tests a intersect b (mbr)
+    inline bool intersects(const MBR& a, const MBR& b) {
+        return a.intersects(b);
+    }
+
+    ///computes the intersection area of two mbrs
+    inline double intersection_area(const MBR& a, const MBR& b) {
+        if (a.disjoint(b)) {
+            return 0.0;
+        }
+        auto minx = (b.minx > a.minx) ? b.minx : a.minx;
+        auto miny = (b.miny > a.miny) ? b.miny : a.miny;
+        auto maxx = (b.maxx < a.maxx) ? b.maxx : a.maxx;
+        auto maxy = (b.maxy < a.maxy) ? b.maxy : a.maxy;
+        return (maxx - minx) * (maxy - miny);
+    }
+}
+
+//Node
+namespace rtree {
+    ///Node type for internal node
+    struct Node {
+        Object item;
+        size_t height;
+        bool leaf;
+        MBR bbox;
+        std::vector<std::unique_ptr<Node>> children;
+
+        Node() : item(Object{}), height(0), leaf(false), bbox(empty_mbr()) {
+            children = std::vector<std::unique_ptr<Node>>{};
+        };
+
+        Node(Object item, size_t height, bool leaf, MBR bbox) :
+                item(item), height(height), leaf(leaf), bbox(bbox) {
+            children = std::vector<std::unique_ptr<Node>>{};
+        };
+
+        Node(Node&& other) noexcept:
+                item(other.item),
+                leaf(other.leaf),
+                height(other.height),
+                bbox(other.bbox) {
+            children = std::move(other.children);
+        }
+
+        ~Node() = default;
+
+        Node& operator=(Node&& other) noexcept {
+            item = other.item;
+            leaf = other.leaf;
+            height = other.height;
+            bbox = other.bbox;
+            children = std::move(other.children);
+            return *this;
+        }
+
+        void add_child(std::unique_ptr<Node>&& child) {
+            children.emplace_back(std::move(child));
+        }
+
+        Object get_item() {
+            return item;
+        }
+    };
+
+    ///KObj instance struct
+    struct KObj {
+        Node* node;
+        MBR bbox;
+        bool is_item;
+        double dist;
+
+        double score() {
+            return this->dist;
+        }
+
+        Object get_item() {
+            return this->node->get_item();
+        }
+
+        std::string string() {
+            std::ostringstream ss;
+            ss << this->node->bbox.wkt() << " -> " << this->dist;
+            return ss.str();
+        }
+    };
+
+    struct kobj_cmp {
+        inline bool operator()(const KObj& a, const KObj& b) const {
+            return a.dist > b.dist;
+        }
+    };
+
+    namespace {
+        void destruct_node(std::unique_ptr<Node>&& a) {
+            if (a == nullptr) {
+                return;
+            }
+            std::vector<std::unique_ptr<Node>> stack;
+            stack.reserve(a->children.size());
+            stack.emplace_back(std::move(a));
+            while (!stack.empty()) {
+                auto node = std::move(stack[stack.size() - 1]);
+                stack.pop_back();
+                //adopt children on stack and let node go out of scope
+                for (auto& o : node->children) {
+                    stack.emplace_back(std::move(o));
+                }
+            }
+        }
+
+        struct x_boxes {
+            inline bool operator()(const MBR& a, const MBR& b) {
+                return a.minx < b.minx;
+            }
+        };
+
+        struct y_boxes {
+            inline bool operator()(const MBR& a, const MBR& b) {
+                return a.miny < b.miny;
+            }
+        };
+
+        struct xy_boxes {
+            inline bool operator()(const MBR& a, const MBR& b) {
+                auto d = a.minx - b.minx;
+                if (feq(d, 0)) {
+                    d = a.miny - b.miny;
+                }
+                return d < 0;
+            }
+        };
+
+        struct x_node_path {
+            inline bool operator()(const std::unique_ptr<Node>& a, const std::unique_ptr<Node>& b) {
+                return a->bbox.minx < b->bbox.minx;
+            }
+        };
+
+        struct y_node_path {
+            inline bool operator()(const std::unique_ptr<Node>& a, const std::unique_ptr<Node>& b) {
+                return a->bbox.miny < b->bbox.miny;
+            }
+        };
+
+        struct xy_node_path {
+            template<typename T>
+            inline bool operator()(const T& a, const T& b) {
+                auto d = a->bbox.minx - b->bbox.minx;
+                if (feq(d, 0)) {
+                    d = a->bbox.miny - b->bbox.miny;
+                }
+                return d < 0;
+            }
+        };
+
+        //compareNodeMinX computes change in minimum x
+        inline double compare_minx(const MBR& a, const MBR& b) {
+            return a.minx - b.minx;
+        }
+
+        //compareNodeMinY computes change in minimum y
+        inline double compare_miny(const MBR& a, const MBR& b) {
+            return a.miny - b.miny;
+        }
+
+
+        std::unique_ptr<Node> NewNode(Object item, size_t height, bool leaf,
+                                      std::vector<std::unique_ptr<Node>>&& children) {
+            Node node{};
+            node.item = item;
+            node.height = height;
+            node.leaf = leaf;
+            node.bbox = item.bbox;
+            node.children = std::move(children);
+            return std::make_unique<Node>(std::move(node));
+        }
+
+        std::unique_ptr<Node> NewNode(Object item, size_t height, bool leaf) {
+            return std::make_unique<Node>(Node{item, height, leaf, item.bbox});
+        }
+
+        //NewNode creates a new node
+        std::unique_ptr<Node> new_leaf_Node(Object item) {
+            return std::move(NewNode(
+                    item, 1, true, std::vector<std::unique_ptr<Node>>{}
+            ));
+        }
+
+
+        //Constructs children of node
+        std::vector<std::unique_ptr<Node>> make_children(std::vector<Object>& items) {
+            std::vector<std::unique_ptr<Node>> chs;
+            auto n = items.size();
+            chs.reserve(n);
+            for (auto i = 0; i < n; ++i) {
+                chs.emplace_back(new_leaf_Node(items[i]));
+            }
+            return chs;
+        }
+
+        //dist_bbox computes min bounding rectangle of node children from k to p-1.
+        template<typename T>
+        MBR dist_bbox(const T& node, size_t k, size_t p) {
+            auto bbox = empty_mbr();
+            for (auto i = k; i < p; i++) {
+                extend(bbox, node->children[i]->bbox);
+            }
+            return bbox;
+        }
+
+
+        Node* node_at_index(const std::vector<std::unique_ptr<Node>>& a, size_t i) {
+            if (a.empty() || (i > a.size() - 1)) {
+                return nullptr;
+            }
+            return a[i].get();
+        }
+
+        Node* node_at_index(const std::vector<Node*>& a, size_t i) {
+            if (a.empty() || (i > a.size() - 1)) {
+                return nullptr;
+            }
+            return a[i];
+        }
+
+        //calculate_bbox calculates its bbox from bboxes of its children.
+        template<typename T>
+        void calculate_bbox(T& node) {
+            node->bbox = dist_bbox(node, 0, node->children.size());
+        }
+
+        // adjust bboxes along the given tree path
+        void adjust_parent_bboxes(const MBR& bbox, std::vector<Node*>& path, size_t& level) {
+            auto n = static_cast<size_t>(-1);
+            for (auto i = level; i != n; i--) {
+                extend(path[i]->bbox, bbox);
+            }
+        }
+
+        //_chooseSubtree select child of node and updates path to selected node.
+        Node* choose_subtree(const MBR& bbox, Node* node, size_t& level, std::vector<Node*>& path) {
+            Node* child{nullptr};
+            Node* targetNode{nullptr};
+            double minArea, minEnlargement, area, enlargement;
+
+            while (true) {
+                path.emplace_back(node);
+                if (node->leaf || (path.size() - 1 == level)) {
+                    break;
+                }
+                minEnlargement = std::numeric_limits<double>::infinity();
+                minArea = std::numeric_limits<double>::infinity();
+
+                for (auto& o : node->children) {
+                    child = o.get();
+                    area = bbox_area(child->bbox);
+                    enlargement = enlarged_area(bbox, child->bbox) - area;
+
+                    // choose entry with the least area enlargement
+                    if (enlargement < minEnlargement) {
+                        minEnlargement = enlargement;
+                        if (area < minArea) {
+                            minArea = area;
+                        }
+                        targetNode = child;
+                    }
+                    else if (feq(enlargement, minEnlargement)) {
+                        // otherwise choose one with the smallest area
+                        if (area < minArea) {
+                            minArea = area;
+                            targetNode = child;
+                        }
+                    }
+                }
+                node = targetNode;
+            }
+            return node;
+        }
+    }
+}
+
+
+//RTree
+namespace rtree {
     struct RTree {
         size_t maxEntries = 9;
         size_t minEntries = 4;
@@ -75,7 +473,7 @@ namespace rtree {
             std::vector<Object> objs(objects.begin(), objects.end());
 
             // recursively build the tree from stratch using OMT algorithm
-            auto node = _build(objs, 0, objs.size() - 1, 0);
+            auto node = bulk_build(objs, 0, objs.size() - 1, 0);
 
             if (data->children.empty()) {
                 // save as is if tree is empty
@@ -306,20 +704,17 @@ namespace rtree {
         void all(Node* node, std::vector<Node*>& result) {
             std::vector<Node*> nodesToSearch;
             while (true) {
-                if (node->leaf) {
-                    for (const auto& o : node->children) {
+                if (node->leaf)
+                    for (const auto& o : node->children)
                         result.emplace_back(o.get());
-                    }
-                }
-                else {
-                    for (const auto& o : node->children) {
+                else
+                    for (const auto& o : node->children)
                         nodesToSearch.emplace_back(o.get());
-                    }
-                }
+
                 node = pop(nodesToSearch);
-                if (node == nullptr) {
+                if (node == nullptr)
                     break;
-                }
+
             }
         }
 
@@ -425,7 +820,7 @@ namespace rtree {
         }
 
         // split on node overflow propagate upwards if necessary
-        void split_on_overflow(size_t level, std::vector<Node*>& insertPath) {
+        void split_on_overflow(size_t& level, std::vector<Node*>& insertPath) {
             auto n = static_cast<size_t>(-1);
             while ((level != n) && (insertPath[level]->children.size() > maxEntries)) {
                 split(insertPath, level);
@@ -529,7 +924,7 @@ namespace rtree {
         }
 
         // build
-        std::unique_ptr<Node> _build(std::vector<Object>& items, size_t left, size_t right, size_t height) {
+        std::unique_ptr<Node> bulk_build(std::vector<Object>& items, size_t left, size_t right, size_t height) {
             auto N = double(right - left + 1);
             auto M = double(maxEntries);
             std::unique_ptr<Node> node;
@@ -569,7 +964,7 @@ namespace rtree {
                 for (j = i; j <= right2; j += N2) {
                     right3 = min(j + N2 - 1, right2);
                     // pack each entry recursively
-                    node->add_child(_build(items, j, right3, height - 1));
+                    node->add_child(bulk_build(items, j, right3, height - 1));
                 }
             }
 
@@ -578,7 +973,7 @@ namespace rtree {
         }
 
         //split overflowed node into two
-        void split(std::vector<Node*>& insertPath, size_t level) {
+        void split(std::vector<Node*>& insertPath, size_t& level) {
             Node* node = insertPath[level];
 
             const size_t M = node->children.size();
@@ -622,8 +1017,8 @@ namespace rtree {
             std::vector<std::unique_ptr<Node>> path;
             path.emplace_back(std::move(node));
             path.emplace_back(std::move(newNode));
-            auto root = NewNode(Object{}, root_height, false, std::move(path));
-            data = std::move(root);
+
+            data = NewNode(Object{}, root_height, false, std::move(path));
             calculate_bbox(data);
         }
 
@@ -754,5 +1149,6 @@ namespace rtree {
         tree.minEntries = max(2ul, static_cast<size_t>(std::ceil(cap * 0.4)));
         return std::move(tree);
     }
-
 }
+
+#endif //RTREE_CPP_H

@@ -6,6 +6,4 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(rtree_cpp
         main.cpp
         rtree.h
-        node.h
-        util.h
         )
