@@ -3,4 +3,4 @@ project(twoproduct)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(twoproduct main.cpp twoproduct.h)
+add_executable(twoproduct main.cpp two_product.h)
