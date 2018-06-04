@@ -5,7 +5,6 @@
 #include "../catch/catch.h"
 #include "dbits.h"
 
-
 TEST_CASE("db bits", "[dbits]") {
     SECTION("construction") {
         REQUIRE(low(1.0) == 0);
