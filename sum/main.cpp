@@ -44,14 +44,14 @@ TEST_CASE("two sum", "[two_sum]") {
         }
         auto x = Sum(nois, nois);
         REQUIRE(x == expect);
-//            REQUIRE(validate_seq.ValidateSequence(x));
+        //REQUIRE(validate_seq.ValidateSequence(x));
         expects = af{1, 1e64};
         REQUIRE(Sum(af{0}, af{1, 1e64}) == expects);
 
         auto s = af{0};
         for (auto i = 0; i < 1000; i++) {
             s = Sum(s, af{r.random() * std::pow(2, r.random() * 1800 - 900)});
-//                REQUIRE(validate_seq.ValidateSequence(s));
+        //REQUIRE(validate_seq.ValidateSequence(s));
         }
 
     }
