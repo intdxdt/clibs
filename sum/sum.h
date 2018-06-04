@@ -29,6 +29,7 @@ std::vector<double> linearExpansionSum(const std::vector<double>& e,const std::v
 	auto fi = f[fptr];
 	auto fa = std::abs(fi);
 	double  a, b ;
+
 	if (ea < fa ){
 		b = ei;
 		eptr += 1;
@@ -154,7 +155,7 @@ std::vector<double> linearExpansionSum(const std::vector<double>& e,const std::v
 		count += 1;
 	}
 
-	return g(g.begin(),g.begin()+count);
+	return std::vector<double> (g.begin(),g.begin()+count);
 }
 
 //scalar sum{ easy case{ add two scalars

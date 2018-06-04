@@ -6,7 +6,7 @@
 #include <ctime>
 #include <functional>
 #include <iostream>
-#include <random>
+#include "../random/rand.h"
 #include "../catch/catch.h"
 #include "two_product.h"
 
@@ -16,10 +16,8 @@ namespace rtest {
 
     std::vector<double>  init() {
         std::vector<double> testValues;
-        auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-        std::default_random_engine generator(seed);
-        std::uniform_real_distribution<double> distribution(0.0, 1.0);
-        auto rnd = [&]() { return distribution(generator); };
+        auto r = URandom();
+        auto rnd = [&]() { return r.random(); };
         testValues = {
                 0, 1,
                 std::pow(2, -52),

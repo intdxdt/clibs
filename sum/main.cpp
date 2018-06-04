@@ -3,52 +3,56 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include "../random/rand.h"
 #include "../catch/catch.h"
 #include "sum.h"
 
+using af = std::vector<double>;
+
 TEST_CASE("two sum", "[two_sum]") {
-    SECTION("methods") {
-            auto seed = rand.NewSource(time.Now().UnixNano());
-            auto random = rand.New(seed);
-            REQUIRE(Sum(
-                af(1, 64), af(-1e-64, 1e64),
-            )).Eql(af(-1e-64, 65, 1e64), );
+    SECTION("sum") {
+        auto r = URandom();
+        auto expects = af{-1e-64, 65.0, 1e64};
+        REQUIRE(Sum(af{1, 64}, af{-1e-64, 1e64}) == expects);
 
-            REQUIRE(Sum(af(0), af(0))).Eql(af(0));
-            REQUIRE(Sum(af(0), af(1))).Eql(af(1));
+        REQUIRE(Sum(af{0}, af{0}) == af{0});
+        REQUIRE(Sum(af{0}, af{1}) == af{1});
+        expects = af{1e-64, 3., 1e64};
+        REQUIRE(Sum(af{1., 1e64}, af{1e-64, 2.}) == expects);
+        expects = af{1e-64, 1e-16, 1.};
+        REQUIRE(Sum(af{1.}, af{1e-64, 1e-16}) == expects);
 
-            REQUIRE(Sum(af(1, 1e64), af(1e-64, 2), )).Eql(af(1e-64, 3, 1e64));
-
-            REQUIRE(Sum(af(1), af(1e-64, 1e-16), )).Eql(af(1e-64, 1e-16, 1));
-
-            auto for (i = -10; i <= 10; i++ ) {
-                auto for (j = -10; j <= 10; j++ ) {
-                    REQUIRE(Sum(af(double(i)), af(double(j)))).Eql(af(double(i + j)));
-                }
+        for (auto i = -10; i <= 10; i++) {
+            for (auto j = -10; j <= 10; j++) {
+                REQUIRE(Sum(af{double(i)}, af{double(j)}) == af{double(i + j)});
             }
+        }
 
-            REQUIRE(validate_seq.ValidateSequence(Sum(
-                []double{5.711861227349496e-133, 1e-116},
-                []double{5.711861227349496e-133, 1e-116},
-            )));
+//            REQUIRE(validate_seq.ValidateSequence(Sum(
+//                af{5.711861227349496e-133, 1e-116},
+//                af{5.711861227349496e-133, 1e-116},
+//            )));
 
-            auto nois = make([]double, 10);
-            auto expect = make([]double, 10);
-            auto for (i = 0; i < 10; i++ ) {
-                nois[i] = std::pow(2, double(-1000+53*i));
-                expect[i] = std::pow(2, double(-999+53*i));
-            }
-            auto x = Sum(nois, nois);
-            REQUIRE(x).Eql(expect);
-            REQUIRE(validate_seq.ValidateSequence(x));
+        std::vector<double> nois;
+        nois.resize(10);
+        std::vector<double> expect;
+        expect.resize(10);
 
-            REQUIRE(Sum(af(0), af(1, 1e64))).Eql(af(1, 1e64));
+        for (auto i = 0; i < 10; i++) {
+            nois[i] = std::pow(2, double(-1000 + 53 * i));
+            expect[i] = std::pow(2, double(-999 + 53 * i));
+        }
+        auto x = Sum(nois, nois);
+        REQUIRE(x == expect);
+//            REQUIRE(validate_seq.ValidateSequence(x));
+        expects = af{1, 1e64};
+        REQUIRE(Sum(af{0}, af{1, 1e64}) == expects);
 
-            auto s = []double{0}
-            auto for (i = 0; i < 1000; i++ ) {
-                s = Sum(s, []double{random.Float64() * std::pow(2, random.Float64()*1800-900)});
-                REQUIRE(validate_seq.ValidateSequence(s));
-            }
+        auto s = af{0};
+        for (auto i = 0; i < 1000; i++) {
+            s = Sum(s, af{r.random() * std::pow(2, r.random() * 1800 - 900)});
+//                REQUIRE(validate_seq.ValidateSequence(s));
+        }
 
     }
 }
