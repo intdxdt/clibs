@@ -4,20 +4,14 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-#include "../random/rand.h"
 #include "../catch/catch.h"
-#include "sum.h"
-std:vector<double> af(v ...float64) []float64 {
-	return v
-}
-TEST_CASE("two sum", "[two_sum]") {
-    SECTION("sum") {
-        auto random = URandom();
-        REQUIRE(Sum(
-                af(1, 64), af(-1e-64, 1e64),
-        ) == af(-1e-64, 65, 1e64),);
+#include "validate_seq.h"
+
+TEST_CASE("Validate Non-Overlaping Seq", "[validate]") {
+    SECTION("test validate seq") {
+			REQUIRE(validate_sequence(std::vector<double>{1e-16, 1.}));
+			REQUIRE_FALSE(validate_sequence(std::vector<double>{0.5, 1.5}));
+			REQUIRE(validate_sequence(std::vector<double>{0.}));
+			REQUIRE_FALSE(validate_sequence(std::vector<double>{}));
     }
-int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
 }

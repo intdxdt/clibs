@@ -7,8 +7,9 @@
 
 #include <cmath>
 #include <vector>
+#include "../test_overlap/test_overlap.h"
 
-bool ValidateSequence(std::vector<double> x) {
+bool validate_sequence(std::vector<double> x) {
     auto n = x.size();
     if (n < 1) {
         return false;

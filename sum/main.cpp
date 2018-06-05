@@ -24,7 +24,7 @@ TEST_CASE("two sum", "[two_sum]") {
 
         for (auto i = -10; i <= 10; i++) {
             for (auto j = -10; j <= 10; j++) {
-                REQUIRE(Sum(af{double(i)}, af{double(j)}) == af{double(i + j)});
+                REQUIRE(Sum(af{i*1.}, af{j*1.}) == af{(i + j)*1.});
             }
         }
 
