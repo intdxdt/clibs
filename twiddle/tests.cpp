@@ -18,4 +18,15 @@ TEST_CASE("twiddle", "[twiddle]") {
         }
         REQUIRE(count_trailing_zeros(0xf81700) == 8);
     }
+
+    SECTION("log2") {
+			for (uint32 i = 0; i < 31; i++) {
+				if (i > 0) {
+					REQUIRE(log2((1u<<i)-1) == (i-1));
+					REQUIRE(log2((1u<<i)+1) == i);
+				}
+				REQUIRE(log2(1u<<i) == i);
+			}
+
+		}
 }

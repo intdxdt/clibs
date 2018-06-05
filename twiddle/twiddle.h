@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cmath>
 
 #ifndef TWIDDLE_CPP_H
 #define TWIDDLE_CPP_H
@@ -41,19 +42,19 @@ bool inline is_pow2(int32 v) {
     return (v != 0) && ((v & (v - 1)) == 0);
 }
 
-//Computes log base 2 of v
+////Computes log base 2 of v
 inline uint32 log2(uint32 v) {
     uint32 r{0}, shift{0};
     //@formatter:off
-    r = static_cast<uint32>((v > 0xFFFF) << 4u);
+    r = uint32(v > 0xFFFF) << 4u;
     v >>= r;
-    shift = static_cast<uint32>((v > 0xFF) << 3u);
+    shift = uint32(v > 0xFF) << 3u;
     v >>= shift;
     r |= shift;
-    shift = static_cast<uint32>((v > 0xF) << 2u);
+    shift = uint32(v > 0xF) << 2u;
     v >>= shift;
     r |= shift;
-    shift = static_cast<uint32>((v > 0x3) << 1u);
+    shift = uint32(v > 0x3) << 1u;
     v >>= shift;
     r |= shift;
     return r | (v >> 1u);

@@ -1,6 +1,7 @@
 #include <cmath>
 #include <vector>
 #include <cstdint>
+#include "../twiddle/twiddle.h"
 #include "../dbits/dbits.h"
 
 #ifndef TEST_OVERLAP_TEST_OVERLAP_H
@@ -11,20 +12,20 @@ using uint32 = uint32_t;
 
 //use bits{count_trailing_zeros, log2};
 //use db{fraction, denormalized, exponent};
-int32 tz(std::vector<uint32> f) {
+int32 tz(const std::vector<uint32>& f) {
     if (f[0] != 0) {
-        return int32(twiddle.CountTrailingZeros(f[0]));
+        return count_trailing_zeros(f[0]);
     } else if (f[1] != 0) {
-        return 32 + int32(twiddle.CountTrailingZeros(f[1]));
+        return 32 + count_trailing_zeros(f[1]);
     }
     return 0;
 }
 
 int32 lz(std::vector<uint32> f) {
     if (f[1] != 0) {
-        return 20 - int32(twiddle.Log2(f[1]));
+        return 20 - log2(f[1]);
     } else if (f[0] != 0) {
-        return 52 - int32(twiddle.Log2(f[0]));
+        return 52 - log2(f[0]);
     }
     return 52;
 
@@ -38,17 +39,16 @@ int32 lo(double n) {
     return e - (52 - z);
 }
 
-int32 hi(double n) const {
+int32 hi(double n)  {
     if (denormalized(n)) {
         auto v = fraction(n);
         std::vector<uint32> vv(v.begin(), v.end());
         return -(1023 + lz(vv));
     }
     return exponent(n);
-
 }
 
-bool TestOverlap(double a, double b) {
+bool test_overlap(double a, double b) {
     if (std::abs(b) > std::abs(a)) {
         std::swap(a, b);
     }
