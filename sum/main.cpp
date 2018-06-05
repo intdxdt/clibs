@@ -3,8 +3,9 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-#include "../random/rand.h"
 #include "../catch/catch.h"
+#include "../random/rand.h"
+#include "../validate_seq/validate_seq.h"
 #include "sum.h"
 
 using af = std::vector<double>;
@@ -24,14 +25,14 @@ TEST_CASE("two sum", "[two_sum]") {
 
         for (auto i = -10; i <= 10; i++) {
             for (auto j = -10; j <= 10; j++) {
-                REQUIRE(Sum(af{i*1.}, af{j*1.}) == af{(i + j)*1.});
+                REQUIRE(Sum(af{i * 1.}, af{j * 1.}) == af{(i + j) * 1.});
             }
         }
 
-//            REQUIRE(validate_seq.ValidateSequence(Sum(
-//                af{5.711861227349496e-133, 1e-116},
-//                af{5.711861227349496e-133, 1e-116},
-//            )));
+        REQUIRE(validate_sequence(Sum(
+                af{5.711861227349496e-133, 1e-116},
+                af{5.711861227349496e-133, 1e-116}
+        )));
 
         std::vector<double> nois;
         nois.resize(10);
@@ -44,14 +45,14 @@ TEST_CASE("two sum", "[two_sum]") {
         }
         auto x = Sum(nois, nois);
         REQUIRE(x == expect);
-        //REQUIRE(validate_seq.ValidateSequence(x));
+        REQUIRE(validate_sequence(x));
         expects = af{1, 1e64};
         REQUIRE(Sum(af{0}, af{1, 1e64}) == expects);
 
         auto s = af{0};
         for (auto i = 0; i < 1000; i++) {
             s = Sum(s, af{r.random() * std::pow(2, r.random() * 1800 - 900)});
-        //REQUIRE(validate_seq.ValidateSequence(s));
+            REQUIRE(validate_sequence(s));
         }
 
     }
