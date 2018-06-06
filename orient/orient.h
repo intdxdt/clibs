@@ -67,12 +67,13 @@ namespace robust {
 
     }
 
+
 //orientation in 2d space
 // < 0 if ccw - c is on left of segment(a, b)
 // > 0 if cw - c is on right of segment(a, b)
 // = 0 if a, b, and c are coplanar
     double
-    orientation(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c)  {
+    orientation(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c) {
         auto l = (a[1] - c[1]) * (b[0] - c[0]);
         auto r = (a[0] - c[0]) * (b[1] - c[1]);
         auto det = l - r;
@@ -104,7 +105,7 @@ namespace robust {
     }
 
     double orientation(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c,
-                       const std::vector<double>& d)  {
+                       const std::vector<double>& d) {
         auto adx = a[0] - d[0];
         auto bdx = b[0] - d[0];
         auto cdx = c[0] - d[0];
@@ -133,6 +134,17 @@ namespace robust {
             return det;
         }
         return orientation4_exact(a, b, c, d);
+    }
+
+    double
+    orientation_2d(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c) {
+        return orientation(a, b, c);
+    }
+
+    double
+    orientation_3d(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c,
+                   const std::vector<double>& d) {
+        return orientation(a, b, c, d);
     }
 
 }

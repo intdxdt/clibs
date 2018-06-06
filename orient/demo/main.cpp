@@ -24,14 +24,14 @@ std::string f2str(double f, int precision = 16)  {
     return s;
 }
 
-std::string as_json_array(std::vector<double> data) {
+std::string as_js_module_array(std::vector<double> data) {
     std::ostringstream ss;
     auto n = data.size() - 1;
-    ss << "[";
+    ss << "module.exports=[";
     for (auto i = 0; i <= n; i++) {
         ss << f2str(data[i]) << (i < n ? "," : "");
     }
-    ss << "]";
+    ss << "];\n";
     return ss.str();
 }
 
@@ -59,16 +59,15 @@ void plotPredicate(const std::function<double(pt, pt, pt)>& pred, std::string ou
         }
     }
     std::cout << "len or arr = " << res.size() << std::endl;
-    std::fstream fid;
-    fid.open(out, std::fstream::in | std::fstream::out | std::fstream::app);
-    auto vals = as_json_array(res);
-    fid << "module.exports=" + vals + "\n";
+    std::ofstream fid;
+    fid.open(out);
+    fid << as_js_module_array(res);
     fid.close();
 }
 
 
 int main() {
-    plotPredicate(naiveLeftRight, "cpp-naive.js");
-    plotPredicate(robust::Orientation2D, "cpp-robust.js");
+    plotPredicate(naiveLeftRight, "../cpp-naive.js");
+    plotPredicate(robust::orientation_2d, "../cpp-robust.js");
     return 0;
 }

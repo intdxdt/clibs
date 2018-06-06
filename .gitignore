@@ -1,4 +1,6 @@
-sandbox
+sandbox/
+node_modules
+
 # Prerequisites
 *.d
 *.profraw
