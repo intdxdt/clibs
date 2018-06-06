@@ -6,65 +6,65 @@
 
 #ifndef TEST_OVERLAP_TEST_OVERLAP_H
 #define TEST_OVERLAP_TEST_OVERLAP_H
-
-using int32 = int32_t;
-using uint32 = uint32_t;
+namespace robust {
+    using int32 = int32_t;
+    using uint32 = uint32_t;
 
 //use bits{count_trailing_zeros, log2};
 //use db{fraction, denormalized, exponent};
-int32 tz(const std::vector<uint32>& f) {
-    if (f[0] != 0) {
-        return count_trailing_zeros(f[0]);
-    } else if (f[1] != 0) {
-        return 32 + count_trailing_zeros(f[1]);
+    int32 tz(const std::vector<uint32> &f) {
+        if (f[0] != 0) {
+            return count_trailing_zeros(f[0]);
+        } else if (f[1] != 0) {
+            return 32 + count_trailing_zeros(f[1]);
+        }
+        return 0;
     }
-    return 0;
-}
 
-int32 lz(std::vector<uint32> f) {
-    if (f[1] != 0) {
-        return 20 - log2(f[1]);
-    } else if (f[0] != 0) {
-        return 52 - log2(f[0]);
+    int32 lz(std::vector<uint32> f) {
+        if (f[1] != 0) {
+            return 20 - log2(f[1]);
+        } else if (f[0] != 0) {
+            return 52 - log2(f[0]);
+        }
+        return 52;
+
     }
-    return 52;
 
-}
-
-int32 lo(double n) {
-    auto e = exponent(n);
-    auto f = fraction(n);
-    std::vector<uint32> fv(f.begin(), f.end());
-    auto z = tz(fv);
-    return e - (52 - z);
-}
-
-int32 hi(double n)  {
-    if (denormalized(n)) {
-        auto v = fraction(n);
-        std::vector<uint32> vv(v.begin(), v.end());
-        return -(1023 + lz(vv));
+    int32 lo(double n) {
+        auto e = exponent(n);
+        auto f = fraction(n);
+        std::vector<uint32> fv(f.begin(), f.end());
+        auto z = tz(fv);
+        return e - (52 - z);
     }
-    return exponent(n);
-}
 
-bool test_overlap(double a, double b) {
-    if (std::abs(b) > std::abs(a)) {
-        std::swap(a, b);
+    int32 hi(double n) {
+        if (denormalized(n)) {
+            auto v = fraction(n);
+            std::vector<uint32> vv(v.begin(), v.end());
+            return -(1023 + lz(vv));
+        }
+        return exponent(n);
     }
-    if (a == 0.0 || b == 0.0) {
-        return false;
-    }
-    auto a0 = hi(a);
-    auto a1 = lo(a);
-    auto b0 = hi(b);
-    auto b1 = lo(b);
-    //[a1------a0]
-    //     [b1-----b0]
-    //---------or----------
-    //    [a1-------a0]
-    //[b1-------b0]
-    return (b1 <= a0) && (a1 <= b0);
-}
 
+    bool test_overlap(double a, double b) {
+        if (std::abs(b) > std::abs(a)) {
+            std::swap(a, b);
+        }
+        if (a == 0.0 || b == 0.0) {
+            return false;
+        }
+        auto a0 = hi(a);
+        auto a1 = lo(a);
+        auto b0 = hi(b);
+        auto b1 = lo(b);
+        //[a1------a0]
+        //     [b1-----b0]
+        //---------or----------
+        //    [a1-------a0]
+        //[b1-------b0]
+        return (b1 <= a0) && (a1 <= b0);
+    }
+}
 #endif //TEST_OVERLAP_TEST_OVERLAP_H

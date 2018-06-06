@@ -1,11 +1,14 @@
+//
+//05/06/18.
+//
 #include <cmath>
 #include <vector>
 
-#ifndef SUM_SUM_H
-#define SUM_SUM_H
+#ifndef SUBTRACT_SUBTRACT_H
+#define SUBTRACT_SUBTRACT_H
 namespace robust {
-//scalar add two scalars
-    std::vector<double> scalar_scalar_sum(double a, double b) {
+    //scalar sum: easy case: add two scalars
+    std::vector<double> scalar_scalar_subtract(double a, double b) {
         auto x = a + b;
         auto bv = x - a;
         auto av = x - bv;
@@ -18,27 +21,27 @@ namespace robust {
         return {x};
     }
 
-//linear expansion sum
-    std::vector<double> linear_expansion_sum(const std::vector<double> &e, const std::vector<double> &f) {
+
+//linear expansion
+    std::vector<double> linearExpansionSub(const std::vector<double> &e, const std::vector<double> &f) {
         auto ne = e.size();
         auto nf = f.size();
         if (ne == 1 && nf == 1) {
-            return scalar_scalar_sum(e[0], f[0]);
+            return scalar_scalar_subtract(e[0], -f[0]);
         }
         auto n = ne + nf;
         std::vector<double> g;
         g.resize(n, 0);
 
-        size_t count = 0;
+        auto count = 0;
         auto eptr = 0;
         auto fptr = 0;
 
         auto ei = e[eptr];
         auto ea = std::abs(ei);
-        auto fi = f[fptr];
+        auto fi = -f[fptr];
         auto fa = std::abs(fi);
         double a{0}, b{0};
-
         if (ea < fa) {
             b = ei;
             eptr += 1;
@@ -50,7 +53,7 @@ namespace robust {
             b = fi;
             fptr += 1;
             if (fptr < nf) {
-                fi = f[fptr];
+                fi = -f[fptr];
                 fa = std::abs(fi);
             }
         }
@@ -65,7 +68,7 @@ namespace robust {
             a = fi;
             fptr += 1;
             if (fptr < nf) {
-                fi = f[fptr];
+                fi = -f[fptr];
                 fa = std::abs(fi);
             }
         }
@@ -74,7 +77,7 @@ namespace robust {
         auto y = b - bv;
         auto q0 = y;
         auto q1 = x;
-        double _x, _bv, _av, _br, _ar;
+        double _x{0}, _bv{0}, _av{0}, _br{0}, _ar{0};
         while (eptr < ne && fptr < nf) {
             if (ea < fa) {
                 a = ei;
@@ -87,7 +90,7 @@ namespace robust {
                 a = fi;
                 fptr += 1;
                 if (fptr < nf) {
-                    fi = f[fptr];
+                    fi = -f[fptr];
                     fa = std::abs(fi);
                 }
             }
@@ -148,7 +151,7 @@ namespace robust {
             q1 = _x;
             fptr += 1;
             if (fptr < nf) {
-                fi = f[fptr];
+                fi = -f[fptr];
             }
         }
         if (q0 != 0) {
@@ -167,9 +170,10 @@ namespace robust {
         return std::vector<double>(g.begin(), g.begin() + count);
     }
 
-//robust sum
-    std::vector<double> sum(const std::vector<double> &e, const std::vector<double> &f) {
-        return linear_expansion_sum(e, f);
+//Robust subtraction of two floats
+    std::vector<double> Subtract(const std::vector<double> &e, const std::vector<double> &f) {
+        return linearExpansionSub(e, f);
     }
+
 }
-#endif //SUM_SUM_H
+#endif //SUBTRACT_SUBTRACT_H

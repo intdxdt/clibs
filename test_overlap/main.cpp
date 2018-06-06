@@ -3,6 +3,7 @@
 #include <iostream>
 #include "../catch/catch.h"
 #include "test_overlap.h"
+using namespace robust;
 
 TEST_CASE("Test Float Overlap", "[twiddle]") {
     SECTION("test double bits") {
