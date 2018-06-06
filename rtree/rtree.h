@@ -11,6 +11,7 @@
 #include <sstream>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include "../mbr/mbr.h"
 #include "../mutil/mutil.h"
 

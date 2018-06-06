@@ -16,7 +16,7 @@ namespace robust {
 
 //orientation 2d exact
     double
-    orientation3Exact(const std::vector<double>& m0, const std::vector<double>& m1, const std::vector<double>& m2) {
+    orientation3_exact(const std::vector<double>& m0, const std::vector<double>& m1, const std::vector<double>& m2) {
         auto p = sum(
                 sum(two_product(m1[1], m2[0]), two_product(-m2[1], m1[0])),
                 sum(two_product(m0[1], m1[0]), two_product(-m1[1], m0[0]))
@@ -27,8 +27,8 @@ namespace robust {
     }
 
     double
-    orientation4Exact(const std::vector<double>& m0, const std::vector<double>& m1, const std::vector<double>& m2,
-                      const std::vector<double>& m3) {
+    orientation4_exact(const std::vector<double>& m0, const std::vector<double>& m1, const std::vector<double>& m2,
+                       const std::vector<double>& m3) {
         auto p = sum(
                 sum(
                         scale(sum(two_product(m2[1], m3[0]), two_product(-m3[1], m2[0])), m1[2]),
@@ -72,7 +72,7 @@ namespace robust {
 // > 0 if cw - c is on right of segment(a, b)
 // = 0 if a, b, and c are coplanar
     double
-    Orientation2D(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c)  {
+    orientation(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c)  {
         auto l = (a[1] - c[1]) * (b[0] - c[0]);
         auto r = (a[0] - c[0]) * (b[1] - c[1]);
         auto det = l - r;
@@ -100,11 +100,11 @@ namespace robust {
         if (det >= tol || det <= -tol) {
             return det;
         }
-        return orientation3Exact(a, b, c);
+        return orientation3_exact(a, b, c);
     }
 
-    double Orientation3D(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c,
-                         const std::vector<double>& d)  {
+    double orientation(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c,
+                       const std::vector<double>& d)  {
         auto adx = a[0] - d[0];
         auto bdx = b[0] - d[0];
         auto cdx = c[0] - d[0];
@@ -132,7 +132,7 @@ namespace robust {
         if ((det > tol) || (-det > tol)) {
             return det;
         }
-        return orientation4Exact(a, b, c, d);
+        return orientation4_exact(a, b, c, d);
     }
 
 }
