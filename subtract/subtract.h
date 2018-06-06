@@ -8,7 +8,7 @@
 #define SUBTRACT_SUBTRACT_H
 namespace robust {
     //scalar sum: easy case: add two scalars
-    std::vector<double> scalar_scalar_subtract(double a, double b) {
+    std::vector<double> scalar_scalar_sub(double a, double b) {
         auto x = a + b;
         auto bv = x - a;
         auto av = x - bv;
@@ -23,11 +23,11 @@ namespace robust {
 
 
 //linear expansion
-    std::vector<double> linearExpansionSub(const std::vector<double> &e, const std::vector<double> &f) {
+    std::vector<double> linear_expansion_sub(const std::vector<double> &e, const std::vector<double> &f) {
         auto ne = e.size();
         auto nf = f.size();
         if (ne == 1 && nf == 1) {
-            return scalar_scalar_subtract(e[0], -f[0]);
+            return scalar_scalar_sub(e[0], -f[0]);
         }
         auto n = ne + nf;
         std::vector<double> g;
@@ -171,8 +171,8 @@ namespace robust {
     }
 
 //Robust subtraction of two floats
-    std::vector<double> Subtract(const std::vector<double> &e, const std::vector<double> &f) {
-        return linearExpansionSub(e, f);
+    std::vector<double> subtract(const std::vector<double> &e, const std::vector<double> &f) {
+        return linear_expansion_sub(e, f);
     }
 
 }
