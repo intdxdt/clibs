@@ -15,22 +15,23 @@ using af = std::vector<double>;
 TEST_CASE("robust compress", "[compress]") {
     SECTION("test robust compress") {
         auto r = URandom();
-        REQUIRE(Compress(af{0}) == af{0});
-        REQUIRE(Compress(af{1}) == af{1});
+
+        REQUIRE(compress(af{0}) == af{0});
+        REQUIRE(compress(af{1}) == af{1});
 
         for (auto i = 0; i < 10; i++) {
             auto h = r.random();
-            REQUIRE(Compress(af{h}) == af{h});
+            REQUIRE(compress(af{h}) == af{h});
             h = -h;
-            REQUIRE(Compress(af{h}) == af{h});
+            REQUIRE(compress(af{h}) == af{h});
         }
 
-        REQUIRE(Compress(af{1, 2}) == af{3});
-        REQUIRE(Compress(af{std::pow(2, -52), 1}) == af{1 + std::pow(2, -52)});
+        REQUIRE(compress(af{1, 2}) == af{3});
+        REQUIRE(compress(af{std::pow(2, -52), 1}) == af{1 + std::pow(2, -52)});
 
         auto verify = [](std::vector<double> seq) {
-            auto rseq = Compress(seq);
-            //must Compress:  + rseq.length +  <=  + seq.length
+            auto rseq = compress(seq);
+            //must compress:  + rseq.length +  <=  + seq.length
             REQUIRE(rseq.size() <= seq.size());
             //t.same(toFixed(rseq).toString(16), toFixed(seq).toString(16), "verifying sequence")
         };

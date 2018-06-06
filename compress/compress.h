@@ -39,7 +39,7 @@ namespace robust {
         return std::vector<double>(e.begin(), e.begin() + top);
     }
 
-    std::vector<double> Compress(const std::vector<double>& e) {
+    std::vector<double> compress(const std::vector<double>& e) {
         return compress_expansion(e);
     }
 }
