@@ -42,20 +42,21 @@ namespace rtest {
 TEST_CASE("two product", "[two_product]") {
     using namespace std;
     using namespace rtest;
+    using namespace robust;
 
     SECTION("test fast two product") {
         auto testValues = init();
-        Pt2D expects{std::pow(2, -104), 1.0 + std::pow(2, -51)};
+        std::vector<double> expects{std::pow(2, -104), 1.0 + std::pow(2, -51)};
         auto val = two_product(1.0 + std::pow(2, -52), 1.0 + std::pow(2, -52));
         REQUIRE(val == expects);
 
         for (double a : testValues) {
             REQUIRE(a * a < inf);
-            expects = Pt2D{0, 0};
+            expects = std::vector<double>{0, 0};
             REQUIRE(two_product(0, a) == expects);
-            expects = Pt2D{0, a};
+            expects = std::vector<double>{0, a};
             REQUIRE(two_product(1, a) == expects);
-            expects = Pt2D{0, -a};
+            expects = std::vector<double>{0, -a};
             REQUIRE(two_product(-1, a) == expects);
         }
     }
