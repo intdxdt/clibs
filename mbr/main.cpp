@@ -71,9 +71,16 @@ TEST_CASE("mbr 1", "[mbr 1]") {
         REQUIRE(b[0] == b[4]);
 
         auto m1 = m;
+        auto m2 = m.clone();
         REQUIRE(m1.area() == m.area());
         REQUIRE(m1.equals(m));
         REQUIRE(m1 == m);
+
+        REQUIRE(m2.area() == m.area());
+        REQUIRE(m2.equals(m));
+        REQUIRE(m2 == m);
+        m1.minx = -1;
+        REQUIRE_FALSE(m2 == m1);
     }
 }
 

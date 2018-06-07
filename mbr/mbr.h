@@ -22,19 +22,22 @@ struct MBR {
             minx(fmin(minx, maxx)), miny(fmin(miny, maxy)),
             maxx(fmax(minx, maxx)), maxy(fmax(miny, maxy)) {}
 
-    MBR(double minx_, double miny_, double maxx_, double maxy_, bool raw) {
-        minx = raw ? minx_ : fmin(minx_, maxx_);
-        maxx = raw ? maxx_ : fmax(minx_, maxx_);
-        miny = raw ? miny_ : fmin(miny_, maxy_);
-        maxy = raw ? maxy_ : fmax(miny_, maxy_);
+    MBR(double minx_, double miny_, double maxx_, double maxy_, bool raw) :
+            minx(raw ? minx_ : fmin(minx_, maxx_)),
+            miny(raw ? miny_ : fmin(miny_, maxy_)),
+            maxx(raw ? maxx_ : fmax(minx_, maxx_)),
+            maxy(raw ? maxy_ : fmax(miny_, maxy_)) {
     }
 
-    explicit MBR(const std::array<double, 4>& bounds) {
-        *this = MBR{bounds[0], bounds[1], bounds[2], bounds[3]};
+    explicit MBR(const std::array<double, 4>& bounds) :
+            minx(fmin(bounds[0], bounds[2])),
+            miny(fmin(bounds[1], bounds[3])),
+            maxx(fmax(bounds[0], bounds[2])),
+            maxy(fmax(bounds[1], bounds[3])) {
     }
 
     MBR(const std::array<double, 4>& bounds, bool raw) {
-        *this = MBR{bounds[0], bounds[1], bounds[2], bounds[3], raw};
+        *this = MBR(bounds[0], bounds[1], bounds[2], bounds[3], raw);
     }
 
     double operator[](std::size_t index) const {
@@ -47,6 +50,8 @@ struct MBR {
 
 
     MBR& bbox() { return *this; }
+
+    MBR clone() { return *this; }
 
     double width() const { return maxx - minx; }
 
@@ -323,8 +328,9 @@ private:
         ss << std::fixed << std::setprecision(precision) << f;
         auto s = ss.str();
         s.erase(s.find_last_not_of('0') + 1, std::string::npos);
-        if (s.back() == '.')
+        if (s.back() == '.') {
             s.pop_back();
+        }
         return s;
     }
 
