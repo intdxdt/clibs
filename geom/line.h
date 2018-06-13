@@ -2,9 +2,9 @@
 //06/06/18.
 //
 #include "line_mono.h"
-#include "../rtree/rtree.h"
 #include "point.h"
 #include "util.h"
+#include "../rtree/rtree.h"
 
 #ifndef GEOM_LINE_H
 #define GEOM_LINE_H

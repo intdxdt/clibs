@@ -14,7 +14,10 @@ namespace geom {
         int j{null};
 
         ///mono mbr
-        MonoMBR(MBR box) : mbr(box), i(null), j(null) {};
+        MonoMBR() = default;
+
+        ///mono mbr
+        explicit MonoMBR(MBR box) : mbr(box){};
 
         ///mono mbr
         MonoMBR(MBR box, int i, int j) : mbr(box), i(i), j(j) {};

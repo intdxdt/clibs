@@ -15,7 +15,6 @@ using namespace std;
 namespace rtest {
     size_t N = size_t(1e6);
     size_t maxFill = 64;
-    //data from rbush 1.4.2
     //@formatter:off
         std::vector<MBR> data = {{0, 0, 0, 0}, {10, 10, 10, 10}, {20, 20, 20, 20}, {25, 0, 25, 0}, {35, 10, 35, 10}, {45, 20, 45, 20}, {0, 25, 0, 25}, {10, 35, 10, 35},
                               {20, 45, 20, 45}, {25, 25, 25, 25}, {35, 35, 35, 35}, {45, 45, 45, 45}, {50, 0, 50, 0}, {60, 10, 60, 10}, {70, 20, 70, 20}, {75, 0, 75, 0},
@@ -650,11 +649,13 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
             };
             //@formatter:on
         MBR query = {0., 0., 100, 100};
+
         auto tree = NewRTree(0);
         std::vector<MBR> data_oneByone(data.begin(), data.end());
         for (size_t i = 0; i < data_oneByone.size(); i++) {
             tree.insert(Object{i, data_oneByone[i], &data_oneByone[i]});
         }
+
         auto res = tree.search(query);
         for (auto& o: res) {
             tree.remove(o);

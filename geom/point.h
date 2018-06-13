@@ -15,7 +15,6 @@
 #ifndef GEOM_POINT_H
 #define GEOM_POINT_H
 namespace geom {
-
     struct Point {
         double x;
         double y;
