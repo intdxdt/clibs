@@ -1,24 +1,25 @@
 //
 //06/06/18.
 //
-#include "line_mono.h"
+
+#include "mono.h"
 #include "point.h"
-#include "util.h"
-#include "../rtree/rtree.h"
+
 
 #ifndef GEOM_LINE_H
 #define GEOM_LINE_H
+
 namespace geom {
     const size_t bucketSize = 8;
 
     struct LineString {
         //@formatter:off
+        int                  monosize{0};
+        double               length{0};
         std::vector<MonoMBR> chains{};
         std::vector<Point>   coordinates{};
-        int                  monosize{0};
         rtree::RTree         index;
         MonoMBR              bbox;
-        double               length{0};
         //@formatter:on
 
         explicit LineString(std::vector<Point> coordinates) :
@@ -124,12 +125,14 @@ namespace geom {
                     mono.j = i;
                 }
                 else {
-                    mono.i, mono.j = i, j;
+                    mono.i = i;
+                    mono.j = j;
                 }
 
                 bbox.mbr.expand_to_include(mono.mbr);
                 if (bbox.i == null) {
-                    bbox.i, bbox.j = mono.i, mono.j;
+                    bbox.i = mono.i;
+                    bbox.j = mono.j;
                 }
                 else {
                     if (mono.j > bbox.j) {

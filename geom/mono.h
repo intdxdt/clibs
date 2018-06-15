@@ -2,7 +2,6 @@
 //06/06/18.
 //
 #include "../mbr/mbr.h"
-#include "geom.h"
 #include "util.h"
 
 #ifndef GEOM_LINE_MONO_H

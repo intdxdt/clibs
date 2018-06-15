@@ -1,19 +1,11 @@
 //
 //06/06/18.
 //
-#include <cmath>
-#include <vector>
-#include <cassert>
-#include <array>
-#include <vector>
-#include <sstream>
-#include <functional>
-#include <optional>
-#include <iomanip>
-#include "../mutil/mutil.h"
+#include "util.h"
 
 #ifndef GEOM_POINT_H
 #define GEOM_POINT_H
+
 namespace geom {
     struct Point {
         double x;
@@ -46,4 +38,5 @@ namespace geom {
         }
     };
 }
+
 #endif //GEOM_POINT_H

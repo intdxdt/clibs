@@ -1,26 +1,12 @@
 //
 //06/06/18.
 //
-#include "../pt/pt.h"
-#include "../mbr/mbr.h"
+#include "util.h"
 
 #ifndef GEOM_GEOMETRY_H
 #define GEOM_GEOMETRY_H
 
 namespace geom {
-    const int x = 0;
-    const int y = 1;
-    const int z = 2;
-    const int null = -9;
-
-    enum GeoType {
-        Unkown      = -1,
-        Point       = 0,
-        Segment     = 1,
-        LineString  = 2,
-        Polygon     = 3,
-    };
-
     struct Geometry {
         virtual MBR BBox() {
             return MBR{std::nan("0"), std::nan("0"), std::nan("0"), std::nan("0"), true};
@@ -43,7 +29,7 @@ namespace geom {
         }
 
         virtual GeoType Type() {
-            return GeoType::Unkown;
+            return GeoType::UnkownType;
         }
 
         virtual std::string WKT() {
