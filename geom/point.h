@@ -40,6 +40,12 @@ namespace geom {
             return 0.0;
         }
 
+        ///checks if a point is a ring , by def every point is a ring
+        /// which concides on itself
+        bool is_ring() {
+            return true;
+        }
+
         ///indexing
         double operator[](std::size_t index) const {
             assert(index >= 0 && index < 2);

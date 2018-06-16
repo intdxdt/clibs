@@ -9,7 +9,6 @@
 namespace geom {
     struct LinearRing {
         std::shared_ptr<LineString> linestr{nullptr};
-
         explicit LinearRing(std::vector<Point> coordinates) {
             auto n = coordinates.size();
             if (n > 1) {

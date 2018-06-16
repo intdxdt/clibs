@@ -1,7 +1,8 @@
 //06/06/18.
 #include "geometry.h"
+#include "coords.h" //includes point
 #include "line.h"
-#include "point.h"
+#include "wkt.h"
 
 #ifndef GEOM_GEOM_H
 #define GEOM_GEOM_H
