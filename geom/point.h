@@ -2,6 +2,7 @@
 //06/06/18.
 //
 #include "util.h"
+#include "../mutil/mutil.h"
 
 #ifndef GEOM_POINT_H
 #define GEOM_POINT_H
@@ -22,6 +23,11 @@ namespace geom {
         ///is null
         bool is_null() {
             return std::isnan(x) || std::isnan(y);
+        }
+
+        ///Is point zero in 2d - origin
+        bool is_zero()  {
+            return feq(x, 0.0) && feq(y, 0.0);
         }
 
         ///indexing
