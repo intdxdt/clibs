@@ -20,6 +20,11 @@ namespace geom {
         explicit Point(const std::vector<double>& v) :
                 x(v[0]), y(v[1]), z(v.size() > 2 ? v[2] : std::nan("0")) {}
 
+        ///clone
+        Point clone() {
+            return {x, y, z};
+        }
+
         ///is null
         bool is_null() {
             return std::isnan(x) || std::isnan(y);
