@@ -26,8 +26,13 @@ namespace geom {
         }
 
         ///Is point zero in 2d - origin
-        bool is_zero()  {
+        bool is_zero() {
             return feq(x, 0.0) && feq(y, 0.0);
+        }
+
+        ///Area of point
+        double area() {
+            return 0.0;
         }
 
         ///indexing

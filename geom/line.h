@@ -113,7 +113,7 @@ namespace geom {
             for (size_t i = 0; i < chains.size(); i++) {
                 data.emplace_back() = rtree::Object{i, chains[i].mbr, &chains[i]};
             }
-            index.load(data); //bulkload;
+            index.load(data); //bulk load;
             return *this;
         }
 
