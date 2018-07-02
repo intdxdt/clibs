@@ -48,12 +48,24 @@ namespace geom {
         return i;
     }
 
-std::string str_tolower(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return std::tolower(c); }
-                  );
-    return s;
-}
+    std::string lower_str(std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(),
+                       [](unsigned char c) { return std::tolower(c); }
+        );
+        return s;
+    }
+
+    std::vector<std::string> split_str(const std::string& str, const std::string& delimiter) {
+        std::vector<std::string> strings;
+        std::string::size_type pos = 0;
+        std::string::size_type prev = 0;
+        while ((pos = str.find(delimiter, prev)) != std::string::npos) {
+            strings.emplace_back(str.substr(prev, pos - prev));
+            prev = pos + 1;
+        }
+        strings.emplace_back(str.substr(prev));
+        return strings;
+    }
 
     /// trim from start (in place)
     static inline void ltrim(std::string& s) {

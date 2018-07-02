@@ -1,6 +1,3 @@
-//
-//16/06/18.
-//
 
 #include <regex>
 #include <unordered_map>
@@ -9,6 +6,14 @@
 #ifndef GEOM_WKT_H
 #define GEOM_WKT_H
 namespace geom {
+
+    using Shell = std::vector<std::vector<float>>;
+    using Holes = std::vector<std::shared_ptr<Shell>>;
+    struct WKTParserObj {
+        std::shared_ptr<Shell> shell;
+        std::shared_ptr<Holes> holes;
+        GeoType gtype;
+    };
 
     std::regex re_typeStr(R"(\s*(\w+)\s*\(\s*(.*)\s*\)\s*)",
                           std::regex_constants::ECMAScript | std::regex_constants::icase);
@@ -28,20 +33,58 @@ namespace geom {
     std::regex re_trimParens(R"(\s*\(?(.*?)\)?\s*)",
                              std::regex_constants::ECMAScript | std::regex_constants::icase);
 
+
+
     std::vector<std::string> FindStringSubmatch(const std::regex&, const std::string&);
 
     bool is_empty_wkt(const std::string&);
+std::unordered_map<std::string, std::string> wkt_type_coords(const std::regex& wktreg,  const std::string& input_wkt) ;
+    //wkt string
+    std::string wkt_string(std::string& wkt ) {
+        std::ostringstream  buffer;
+        auto tokens = split_str(wkt, "\n");
+        for (const auto& token : tokens) {
+            buffer << trim_copy(token).c_str();
+        }
+        return buffer.str();
+    }
+//Read wkt string
+    const WKTParserObj& ReadWKT(std::string wkt) const {
+        wkt = wkt_string(wkt);
+        std::function<double(const std::string&, const WKTParserObj&)>  parser;
+        auto matches = wkt_type_coords(re_typeStr, wkt);
+        auto obj = WKTParserObj{nullptr, nullptr, GeoType::UnkownType};
 
+        auto mtype = matches["type"] ;
+        auto coords = matches["coords"];
 
-//wkt type and coordiantes
-    std::unordered_map<std::string, std::string> wkt_type_const(const std::string& input_wkt) {
-        std::regex wktreg;
+        if (mtype == "polygon") {
+            obj.gtype= GeoType::PolygonType;
+            parser = wkt_polygon_parser;
+        }
+        else if (mtype == "linestring") {
+            obj.gtype =  GeoType::LineStringType;
+            parser = wkt_linestring_parser;
+        }
+        else if (mtype == "point") {
+            obj.gtype =  GeoType::PointType;
+            parser = wkt_point_parser;
+        }
+
+        if (coords != nullptr && obj.gtype != GeoType_Unkown) {
+            parser(coords, obj);
+        }
+        return obj;
+    }
+
+    //wkt type and coordiantes
+    std::unordered_map<std::string, std::string> wkt_type_coords(const std::regex& wktreg,  const std::string& input_wkt) {
         auto wkt = trim_copy(input_wkt);
-        std::unordered_map<std::string, std::string> captures{};
-        captures["wkt"] = "";
-        captures["type"] = "";
-        captures["coords"] = "";
-
+        std::unordered_map<std::string, std::string> captures{
+                {"wkt",    ""},
+                {"type",   ""},
+                {"coords", ""},
+        };
 
         if (is_empty_wkt(wkt)) {
             wktreg = re_emptyTypeStr;
@@ -58,7 +101,7 @@ namespace geom {
                 }
                 auto val = match[i];
                 if (name == "type") {
-                    val = str_tolower(val);
+                    val = lower_str(val);
                 }
                 captures[name] = val;
             }
