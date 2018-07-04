@@ -88,11 +88,18 @@ namespace rtree {
 
 
     ///slice index
-    inline std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
-        for (size_t i = 0; i < limit; ++i) {
-            if (predicate(i)) { return i; }
+    inline std::optional<size_t> slice_index(
+            size_t limit, const std::function<bool(size_t)>& predicate) {
+        bool bln{false};
+        size_t index{0};
+
+        for (size_t i = 0; !bln && i < limit; ++i) {
+            index = i;
+            bln = predicate(i);
+            //remove branching in loop
+            //if (predicate(i)) { return i; }
         }
-        return std::nullopt;
+        return bln ? std::optional<size_t>{index} : std::nullopt;
     }
 
 
@@ -412,8 +419,8 @@ namespace rtree {
 //RTree
 namespace rtree {
     struct RTree {
-        size_t maxEntries = 9;
-        size_t minEntries = 4;
+        size_t maxEntries{9};
+        size_t minEntries{4};
         std::unique_ptr<Node> data = nullptr;
 
         RTree() = default;
@@ -473,7 +480,7 @@ namespace rtree {
 
             std::vector<Object> objs(objects.begin(), objects.end());
 
-            // recursively build the tree from stratch using OMT algorithm
+            // recursively build the tree from scratch using OMT algorithm
             auto node = bulk_build(objs, 0, objs.size() - 1, 0);
 
             if (data->children.empty()) {
