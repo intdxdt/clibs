@@ -35,10 +35,17 @@ namespace geom {
 
 
 
-    std::vector<std::string> FindStringSubmatch(const std::regex&, const std::string&);
+    std::vector<std::string> FindStringSubmatch(
+            const std::regex&,
+            const std::string&
+    );
 
     bool is_empty_wkt(const std::string&);
-std::unordered_map<std::string, std::string> wkt_type_coords(const std::regex& wktreg,  const std::string& input_wkt) ;
+    std::unordered_map<std::string, std::string> wkt_type_coords(
+            const std::regex& ,
+            const std::string&
+    ) ;
+
     //wkt string
     std::string wkt_string(std::string& wkt ) {
         std::ostringstream  buffer;

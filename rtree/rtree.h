@@ -20,11 +20,20 @@
 //Util
 namespace rtree {
     using SortBy = std::size_t;
-    const SortBy ByX = 0;
-    const SortBy ByY = 1;
+    constexpr SortBy ByX = 0;
+    constexpr SortBy ByY = 1;
+    constexpr double Inf = std::numeric_limits<double>::infinity();
+    constexpr double NegInf = -std::numeric_limits<double>::infinity();
+
+    inline std::array<double, 4> empty_bounds() {
+        return {Inf, Inf, NegInf, NegInf};
+    }
 
     //@formatter:off
-    MBR empty_mbr();
+    inline MBR empty_mbr() {
+        return {empty_bounds(), true};
+    }
+
     //@formatter:on
 
     struct Object {
@@ -77,20 +86,11 @@ namespace rtree {
         std::swap(arr[i], arr[j]);
     }
 
-    inline std::array<double, 4> empty_bounds() {
-        auto inf = std::numeric_limits<double>::infinity();
-        auto neginf = -std::numeric_limits<double>::infinity();
-        return {inf, inf, neginf, neginf};
-    }
-
-    inline MBR empty_mbr() {
-        return {empty_bounds(), true};
-    }
 
     ///slice index
     inline std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
         for (size_t i = 0; i < limit; ++i) {
-            if (predicate(i)) return i;
+            if (predicate(i)) { return i; }
         }
         return std::nullopt;
     }
@@ -705,16 +705,21 @@ namespace rtree {
         void all(Node* node, std::vector<Node*>& result) {
             std::vector<Node*> nodesToSearch;
             while (true) {
-                if (node->leaf)
-                    for (const auto& o : node->children)
+                if (node->leaf) {
+                    for (const auto& o : node->children) {
                         result.emplace_back(o.get());
-                else
-                    for (const auto& o : node->children)
+                    }
+                }
+                else {
+                    for (const auto& o : node->children) {
                         nodesToSearch.emplace_back(o.get());
+                    }
+                }
 
                 node = pop(nodesToSearch);
-                if (node == nullptr)
+                if (node == nullptr) {
                     break;
+                }
 
             }
         }
@@ -792,7 +797,7 @@ namespace rtree {
                         //item found, remove the item and condense this upwards
                         //node.children.splice(index, 1)
                         node->children.erase(node->children.begin() + index.value());
-                        path.push_back(node);
+                        path.emplace_back(node);
                         condense(path);
                         return *this;
                     }
@@ -800,8 +805,8 @@ namespace rtree {
 
                 if (!goingUp && !node->leaf && contains(node->bbox, bbox)) {
                     //go down
-                    path.push_back(node);
-                    indexes.push_back(i);
+                    path.emplace_back(node);
+                    indexes.emplace_back(i);
                     i = 0;
                     parent = node;
                     node = node->children[0].get();
@@ -858,7 +863,7 @@ namespace rtree {
         // sort array between left and right (inclusive) so that the smallest k elements come first (unordered)
         void select_box(std::vector<Object>& arr, size_t left, size_t right, size_t k,
                         const std::function<double(const MBR&, const MBR&)>& compare) {
-            size_t i = 0, j = 0;
+            size_t i{0}, j{0};
             double fn, fi, fNewLeft, fNewRight, fsn, fz, fs, fsd;
             double fLeft(left), fRight(right), fk(k);
             Object t;
