@@ -3,4 +3,4 @@ project(rbsegs)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(rbsegs main.cpp util.h event.h)
+add_executable(rbsegs main.cpp util.h event.h prep.h)

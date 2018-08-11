@@ -1,6 +1,5 @@
 
 #include "../mutil/mutil.h"
-
 #ifndef RBSEGS_EVENT_H
 #define RBSEGS_EVENT_H
 
@@ -10,11 +9,11 @@ enum Ev {
 
 struct event {
     double val;
-    int ev;
+    Ev ev;
     int idx;
 };
 
-struct events {
+struct lex_events {
     template<typename T>
     inline bool operator()(const T& a, const T& b) {
         auto d = a.val - b.val;
@@ -27,7 +26,6 @@ struct events {
             return d < 0
         }
 
-        //y's are close enough to each other
         if (id == 0) {
             id = a.idx - b.idx
         }
