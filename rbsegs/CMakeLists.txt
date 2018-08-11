@@ -3,4 +3,4 @@ project(rbsegs)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(rbsegs main.cpp util.h event.h prep.h brute.h seg.h intersects.h rbinter.h)
+add_executable(rbsegs main.cpp util.h event.h prep.h brute.h seg.h intersects.h rbinter.h brute_force.h)
