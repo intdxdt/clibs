@@ -8,17 +8,13 @@
 #ifndef RBSEGS_BRUTE_FORCE_H
 #define RBSEGS_BRUTE_FORCE_H
 
-std::vector<std::vector<int>> BruteForce(Segs red, Segs blue) {
+std::vector<std::vector<int>> BruteForce(const Segs& red, const Segs& blue) {
     auto nr = red.size();
     auto nb = blue.size();
     std::vector<std::vector<int>> crossings;
-    Seg* rseg, * bseg;
-
     for (auto i = 0; i < nr; i++) {
-        rseg = &red[i];
         for (auto j = 0; j < nb; j++) {
-            bseg = &blue[j];
-            if (intersects(&rseg[0], &rseg[1], &bseg[0], &bseg[1])) {
+            if (intersects(red[i][0], red[i][1], blue[j][0], blue[j][1])) {
                 crossings.emplace_back(std::vector<int>{i, j});
             }
         }

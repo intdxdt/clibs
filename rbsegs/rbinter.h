@@ -12,7 +12,7 @@
 
 bool RedBlueLineSegmentIntersection(
         const Segs& red, const Segs& blue,
-        std::function<bool(int, int)>& visit) {
+        const std::function<bool(int, int)>& visit) {
     auto nr = red.size();
     auto nb = blue.size();
     auto n = nr + nb;
@@ -32,9 +32,13 @@ bool RedBlueLineSegmentIntersection(
         auto ev = events[i].ev;
         auto index = events[i].idx;
         if (ev == Ev::CreateRED) {
-            ret = addSegment(index, red, &redList, blue, &blueList, visit, false);
+            ret = addSegment(index,
+                    red,  redList,
+                    blue, blueList, visit, false);
         } else if (ev == Ev::CreateBLUE) {
-            ret = addSegment(index, blue, &blueList, red, &redList, visit, true);
+            ret = addSegment(index,
+                    blue, blueList,
+                    red,  redList, visit, true);
         } else if (ev == Ev::RemoveRED) {
             redList.remove(index);
         } else if (ev == Ev::RemoveBLUE) {
@@ -47,12 +51,10 @@ bool RedBlueLineSegmentIntersection(
 
 std::vector<std::vector<int>> RBIntersection(const Segs& red, const Segs& blue) {
     std::vector<std::vector<int>> crossings;
-    std::function<bool(int, int)> visit = [&](int i, int j) {
+    RedBlueLineSegmentIntersection(red, blue, [&](int i, int j) {
         crossings.emplace_back(std::vector<int>{i, j});
         return false;
-    };
-
-    RedBlueLineSegmentIntersection(red, blue, &visit);
+    });
     return crossings;
 }
 

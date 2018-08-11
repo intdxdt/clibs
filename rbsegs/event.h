@@ -1,5 +1,6 @@
 
 #include "../mutil/mutil.h"
+
 #ifndef RBSEGS_EVENT_H
 #define RBSEGS_EVENT_H
 
@@ -17,19 +18,18 @@ struct lex_events {
     template<typename T>
     inline bool operator()(const T& a, const T& b) {
         auto d = a.val - b.val;
-        int
-        id
+        int id;
         //x's are close enough to each other
         if (feq(d, 0)) {
-            id = a.ev - b.ev
+            id = a.ev - b.ev;
         } else {
-            return d < 0
+            return d < 0;
         }
 
         if (id == 0) {
-            id = a.idx - b.idx
+            id = a.idx - b.idx;
         }
-        return id < 0
+        return id < 0;
     }
 };
 

@@ -5,7 +5,8 @@
 const size_t x = 0;
 const size_t y = 1;
 
-using Seg = std::vector<std::vector<double>>;
+using Pt = std::vector<double>;
+using Seg = std::vector<Pt>;
 using Segs = std::vector<Seg>;
 
 template<typename T>
