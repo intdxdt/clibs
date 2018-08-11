@@ -1,6 +1,3 @@
-//
-// Created by resson on 10/08/18.
-//
 
 #ifndef RBSEGS_UTIL_H
 #define RBSEGS_UTIL_H
