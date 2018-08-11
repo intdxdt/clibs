@@ -3,7 +3,8 @@
 using namespace std;
 
 int main() {
-    std::vector<int> list(10);
-    cout << list.size() << '\n';
+    std::vector<std::vector<int>> crossings;
+    crossings.emplace_back(std::vector<int>{2,3});
+    cout << crossings.size() << '\n';
     return 0;
 }
