@@ -9,8 +9,8 @@
 #include <random>
 #include "rbinter.h"
 #include "../catch/catch.h"
-#include "test_cases.h"
 #include "brute_force.h"
+#include "test_cases.h"
 
 using namespace std;
 
@@ -25,9 +25,19 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
     auto random = [&]() {
         return distribution(generator);
     };
+    SECTION("should test edge case") {
+        auto red = Segs{{{224, 328}, {224, 331}}};
+        auto blue = Segs{{{224, 146}, {224, 330}}};
+        auto bln = false;
+        auto visit = [&](int r, int b) {
+            bln = true;
+            return false;
+        };
+        RedBlueLineSegmentIntersection(red, blue, visit);
+        REQUIRE(bln);
+    }
 
     SECTION("should test fuzzy") {
-
         for (auto j = 0; j < 10; j++) {
             Segs red;
             for (auto i = 0; i < 10 * (j + 1); i++) {
@@ -52,6 +62,19 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
             std::sort(actual.begin(), actual.end(), lex_crossings());
             REQUIRE(actual == expected);
         };
+    }
+
+    SECTION ("should test cases") {
+        init_cases();
+        for (auto&& testCase : Cases) {
+            cout << testCase.Name << '\n';
+            auto expected = brutal(testCase.Red, testCase.Blue);
+            std::sort(expected.begin(), expected.end(), lex_crossings());
+
+            auto actual = rblsi(testCase.Red, testCase.Blue);
+            std::sort(actual.begin(), actual.end(), lex_crossings());
+            REQUIRE(actual == expected);
+        }
     }
 
 }

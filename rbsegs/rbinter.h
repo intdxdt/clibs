@@ -17,28 +17,20 @@ bool RedBlueLineSegmentIntersection(
     auto nb = blue.size();
     auto n = nr + nb;
     auto ne = 2 * n;
-    bool ret = false;
+    auto ret = false;
 
     auto events = prepareEvents(red, blue);
 
     auto redList = BruteForceList(nr);
     auto blueList = BruteForceList(nb);
 
-    /*
-     int, const Segs&, BruteForceList&, const Segs&, BruteForceList&,
-        const std::function<bool(int, int)>& visit, bool flip)
-     */
     for (auto i = 0; !ret && i < ne; i++) {
         auto ev = events[i].ev;
         auto index = events[i].idx;
         if (ev == Ev::CreateRED) {
-            ret = addSegment(index,
-                    red,  redList,
-                    blue, blueList, visit, false);
+            ret = addSegment(index, red,  redList, blue, blueList, visit, false);
         } else if (ev == Ev::CreateBLUE) {
-            ret = addSegment(index,
-                    blue, blueList,
-                    red,  redList, visit, true);
+            ret = addSegment(index, blue, blueList, red,  redList, visit, true);
         } else if (ev == Ev::RemoveRED) {
             redList.remove(index);
         } else if (ev == Ev::RemoveBLUE) {
