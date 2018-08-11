@@ -29,7 +29,7 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
         auto red = Segs{{{224, 328}, {224, 331}}};
         auto blue = Segs{{{224, 146}, {224, 330}}};
         auto bln = false;
-        auto visit = [&](int r, int b) {
+        auto visit = [&](int , int) {
             bln = true;
             return false;
         };

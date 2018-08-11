@@ -20,22 +20,23 @@ std::vector<event> prepareEvents(const Segs& red, const Segs& blue) {
     std::vector<event> data;
     data.reserve(2 * n);
 
-    for (auto i = 0; i < nr; i++) {
+    for (size_t i = 0; i < nr; i++) {
         seg = red[i];
         x = seg[0][0];
         y = seg[1][0];
-        data.emplace_back(event{min(x, y), Ev::CreateRED, i});
-        data.emplace_back(event{max(x, y), Ev::RemoveRED, i});
+        data.emplace_back(event{min(x, y), Ev::CreateRED, int(i)});
+        data.emplace_back(event{max(x, y), Ev::RemoveRED, int(i)});
     }
 
-    for (auto i = 0; i < nb; i++) {
+    for (size_t i = 0; i < nb; i++) {
         seg = blue[i];
         x = seg[0][0];
         y = seg[1][0];
-        data.emplace_back(event{min(x, y), Ev::CreateBLUE, i});
-        data.emplace_back(event{max(x, y), Ev::RemoveBLUE, i});
+        data.emplace_back(event{min(x, y), Ev::CreateBLUE, int(i)});
+        data.emplace_back(event{max(x, y), Ev::RemoveBLUE, int(i)});
     }
     std::sort(data.begin(), data.end(), lex_events());
+
     return data;
 }
 

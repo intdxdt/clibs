@@ -172,8 +172,8 @@ namespace rtree {
 
         Node(Node&& other) noexcept:
                 item(other.item),
-                leaf(other.leaf),
                 height(other.height),
+                leaf(other.leaf),
                 bbox(other.bbox) {
             children = std::move(other.children);
         }
@@ -317,9 +317,7 @@ namespace rtree {
 
         //NewNode creates a new node
         std::unique_ptr<Node> new_leaf_Node(Object item) {
-            return std::move(NewNode(
-                    item, 1, true, std::vector<std::unique_ptr<Node>>{}
-            ));
+            return NewNode(item, 1, true, std::vector<std::unique_ptr<Node>>{});
         }
 
 
@@ -328,7 +326,7 @@ namespace rtree {
             std::vector<std::unique_ptr<Node>> chs;
             auto n = items.size();
             chs.reserve(n);
-            for (auto i = 0; i < n; ++i) {
+            for (size_t i = 0; i < n; ++i) {
                 chs.emplace_back(new_leaf_Node(items[i]));
             }
             return chs;
@@ -449,7 +447,7 @@ namespace rtree {
 
         RTree& clear() {
             destruct_node(std::move(data));
-            data = std::move(NewNode(Object{}, 1, true));
+            data = NewNode(Object{}, 1, true);
             return *this;
         }
 
@@ -561,7 +559,7 @@ namespace rtree {
         std::vector<Node*> all() {
             std::vector<Node*> result{};
             all(data.get(), result);
-            return std::move(result);
+            return result;
         }
 
         // Remove Item from RTree
@@ -631,7 +629,7 @@ namespace rtree {
                 const MBR& query,
                 size_t limit,
                 const std::function<double(const MBR&, KObj)>& score) {
-            return KNN(query, limit, score, [](KObj o) { return std::tuple<bool, bool>(true, false); });
+            return KNN(query, limit, score, [](KObj) { return std::tuple<bool, bool>(true, false); });
         }
 
         std::vector<Object> KNN(
@@ -1160,7 +1158,7 @@ namespace rtree {
         // max entries in a node is 9 by default min node fill is 40% for best performance
         tree.maxEntries = max(4ul, cap);
         tree.minEntries = max(2ul, static_cast<size_t>(std::ceil(cap * 0.4)));
-        return std::move(tree);
+        return tree;
     }
 }
 

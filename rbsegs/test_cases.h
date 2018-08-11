@@ -37,9 +37,9 @@ struct lex_crossings {
 
 Segs clipperToGraph(Segs loops) {
     Segs edges;
-    for (auto i = 0; i < loops.size(); i++) {
+    for (size_t i = 0; i < loops.size(); i++) {
         auto loop = loops[i];
-        for (auto j = 0; j < loop.size(); j++) {
+        for (size_t j = 0; j < loop.size(); j++) {
             auto a = loop[j];
             auto b = loop[(j + 1) % loop.size()];
             if (a[0] == b[0] && a[1] == b[1]) {

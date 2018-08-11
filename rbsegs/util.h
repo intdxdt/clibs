@@ -1,5 +1,6 @@
 #include <vector>
 
+
 #ifndef RBSEGS_UTIL_H
 #define RBSEGS_UTIL_H
 const size_t x = 0;

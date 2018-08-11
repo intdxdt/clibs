@@ -29,8 +29,6 @@ bool addSegment(
     double h0 = max(a0, a1);
 
     //Scan over blue intervals for point
-    auto intervals = blueList.intervals;
-    auto blueIndex = blueList.index;
     auto count = blueList.count;
     auto ptr = 2 * count;
     double h1, l1;
@@ -40,16 +38,15 @@ bool addSegment(
 
     for (auto i = count - 1; !ret &&  i >= 0; i--) {
         ptr += -1;
-        h1 = intervals[ptr];
+        h1 = blueList.intervals[ptr];
         ptr += -1;
-        l1 = intervals[ptr];
+        l1 = blueList.intervals[ptr];
 
         //Test if intervals overlap
         if (l0 <= h1 && l1 <= h0) {
-            bindex = blueIndex[i];
-            auto bseg  = blue[bindex];
+            bindex = blueList.index[i];
             //Test if segments intersect
-            if (intersects(seg_a, seg_b, bseg[0], bseg[1])) {
+            if (intersects(seg_a, seg_b, blue[bindex][0], blue[bindex][1])) {
                 if (flip) {
                     ret = visit(bindex, index);
                 } else {

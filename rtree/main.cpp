@@ -29,14 +29,14 @@ namespace rtest {
         for (size_t i = 0; i < n; i++) {
             data.emplace_back(MBR{double(i), double(i), double(i), double(i)});
         }
-        return std::move(data);
+        return data;
     }
 
     void testResults(std::vector<rtree::Node*>&& nodes, std::vector<MBR>&& boxes) {
         std::sort(nodes.begin(), nodes.end(), rtree::xy_node_path());
         std::sort(boxes.begin(), boxes.end(), rtree::xy_boxes());
         REQUIRE(nodes.size() == boxes.size());
-        for (int i = 0; i < nodes.size(); i++) {
+        for (size_t i = 0; i < nodes.size(); i++) {
             REQUIRE(nodes[i]->bbox.equals(boxes[i]));
         }
     }
@@ -82,7 +82,7 @@ namespace rtest {
         for (size_t i = 0; i < N; ++i) {
             data.emplace_back(RandBox(size, rnd));
         }
-        return std::move(data);
+        return data;
     }
 
 
@@ -154,9 +154,9 @@ namespace rtest {
                 {3,   4, 3,   4},
                 {2.5, 4, 2.5, 4},
         };
-        for (auto i = 0; i < data.size(); i++) {
+        for (size_t i = 0; i < data.size(); i++) {
             auto d = data[i];
-            richData.emplace_back(RichData{d, i + 1});
+            richData.emplace_back(RichData{d, int(i) + 1});
         }
         return richData;
     }
@@ -189,7 +189,7 @@ namespace rtest {
             if (!parent.children.empty())
                 tokens.emplace_back(parent);
         }
-        return std::move(tokens);
+        return tokens;
     }
 }
 
@@ -539,7 +539,7 @@ TEST_CASE("rtree knn", "[rtree knn]") {
         auto res = rt.KNN(query, 10, scoreFunc, prefFn);
 
         REQUIRE(len(res) == 2);
-        for (auto i = 0; i < res.size(); i++) {
+        for (size_t i = 0; i < res.size(); i++) {
             REQUIRE(res[i].bbox == predicate_mbr[i]);
         }
     }

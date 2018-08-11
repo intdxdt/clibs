@@ -12,10 +12,10 @@ std::vector<std::vector<int>> BruteForce(const Segs& red, const Segs& blue) {
     auto nr = red.size();
     auto nb = blue.size();
     std::vector<std::vector<int>> crossings;
-    for (auto i = 0; i < nr; i++) {
-        for (auto j = 0; j < nb; j++) {
+    for (size_t i = 0; i < nr; i++) {
+        for (size_t j = 0; j < nb; j++) {
             if (intersects(red[i][0], red[i][1], blue[j][0], blue[j][1])) {
-                crossings.emplace_back(std::vector<int>{i, j});
+                crossings.emplace_back(std::vector<int>{int(i), int(j)});
             }
         }
     }

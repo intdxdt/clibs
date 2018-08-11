@@ -20,11 +20,10 @@ bool RedBlueLineSegmentIntersection(
     auto ret = false;
 
     auto events = prepareEvents(red, blue);
-
     auto redList = BruteForceList(nr);
     auto blueList = BruteForceList(nb);
 
-    for (auto i = 0; !ret && i < ne; i++) {
+    for (size_t i = 0; !ret && i < ne; i++) {
         auto ev = events[i].ev;
         auto index = events[i].idx;
         if (ev == Ev::CreateRED) {
@@ -43,10 +42,11 @@ bool RedBlueLineSegmentIntersection(
 
 std::vector<std::vector<int>> RBIntersection(const Segs& red, const Segs& blue) {
     std::vector<std::vector<int>> crossings;
-    RedBlueLineSegmentIntersection(red, blue, [&](int i, int j) {
+    auto visit = [&](int i, int j) {
         crossings.emplace_back(std::vector<int>{i, j});
         return false;
-    });
+    };
+    RedBlueLineSegmentIntersection(red, blue, visit);
     return crossings;
 }
 
