@@ -37,7 +37,7 @@ int main() {
     auto IntersectBruteForce = BruteForce;
     auto implementations = std::vector<Task>{
             {"Brute-force", IntersectBruteForce},
-            {"RBLSI",       RBIntersection},
+            {"RB Intersection",       RBIntersection},
     };
 
     init_cases();
