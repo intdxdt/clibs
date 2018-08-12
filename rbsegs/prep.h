@@ -17,23 +17,38 @@ std::vector<event> prepareEvents(const Segs& red, const Segs& blue) {
     auto n = nr + nb;
     double x, y;
     Seg seg;
-    std::vector<event> data;
-    data.reserve(2 * n);
+    std::vector<event> data(2 * n);
+    size_t ptr = 0;
 
     for (size_t i = 0; i < nr; i++) {
         seg = red[i];
         x = seg[0][0];
         y = seg[1][0];
-        data.emplace_back(event{min(x, y), Ev::CreateRED, int(i)});
-        data.emplace_back(event{max(x, y), Ev::RemoveRED, int(i)});
+        data[ptr].val = min(x, y);
+        data[ptr].ev = Ev::CreateRED;
+        data[ptr].idx = static_cast<int>(i);
+        ptr++;
+
+        data[ptr].val = max(x, y);
+        data[ptr].ev = Ev::RemoveRED;
+        data[ptr].idx = static_cast<int>(i);
+        ptr++;
     }
 
     for (size_t i = 0; i < nb; i++) {
         seg = blue[i];
         x = seg[0][0];
         y = seg[1][0];
-        data.emplace_back(event{min(x, y), Ev::CreateBLUE, int(i)});
-        data.emplace_back(event{max(x, y), Ev::RemoveBLUE, int(i)});
+
+        data[ptr].val = min(x, y);
+        data[ptr].ev = Ev::CreateBLUE;
+        data[ptr].idx = static_cast<int>(i);
+        ptr++;
+
+        data[ptr].val = max(x, y);
+        data[ptr].ev = Ev::RemoveBLUE;
+        data[ptr].idx = static_cast<int>(i);
+        ptr++;
     }
     std::sort(data.begin(), data.end(), lex_events());
 

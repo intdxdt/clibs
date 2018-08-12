@@ -16,10 +16,9 @@ struct event {
 
 struct lex_events {
     template<typename T>
-    inline bool operator()(const T& a, const T& b) {
+    bool operator()(const T& a, const T& b) {
         auto d = a.val - b.val;
         int id;
-        //x's are close enough to each other
         if (feq(d, 0)) {
             id = a.ev - b.ev;
         } else {
