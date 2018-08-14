@@ -10,12 +10,6 @@ struct Pt2D {
     double x;
     double y;
 
-    double operator[](const size_t index) {
-        assert(index >= 0 && index < 2);
-        return index == 0 ? x :
-               index == 1 ? y : std::nan("-9");
-    }
-
     ///Operator : equals
     inline bool equals(const Pt2D& other) {
         return feq(x, other.x) && feq(y, other.y);
@@ -41,13 +35,6 @@ struct Pt3D {
     double x;
     double y;
     double z;
-
-    inline double operator[](const size_t index) {
-        assert(index >= 0 && index < 3);
-        return index == 0 ? x :
-               index == 1 ? y :
-               index == 2 ? z : std::nan("-9");
-    }
 
     ///Operator : equals
     inline bool equals(const Pt3D& other) {
