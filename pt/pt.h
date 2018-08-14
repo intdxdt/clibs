@@ -6,22 +6,22 @@
 #ifndef PT_PT_H
 #define PT_PT_H
 
-struct Pt2D {
+struct Pt {
     double x;
     double y;
 
     ///Operator : equals
-    inline bool equals(const Pt2D& other) {
+    inline bool equals(const Pt& other) {
         return feq(x, other.x) && feq(y, other.y);
     }
 
     ///Operator : equals
-    inline bool operator==(const Pt2D& other) {
+    inline bool operator==(const Pt& other) {
         return equals(other);
     }
 
     ///Operator : not equal
-    inline bool operator!=(const Pt2D& other) {
+    inline bool operator!=(const Pt& other) {
         return !equals(other);
     }
 
@@ -31,23 +31,23 @@ struct Pt2D {
     }
 };
 
-struct Pt3D {
+struct Pt3d {
     double x;
     double y;
     double z;
 
     ///Operator : equals
-    inline bool equals(const Pt3D& other) {
+    inline bool equals(const Pt3d& other) {
         return feq(x, other.x) && feq(y, other.y) && feq(z, other.z);
     }
 
     ///Operator : equals
-    inline bool operator==(const Pt3D& other) {
+    inline bool operator==(const Pt3d& other) {
         return equals(other);
     }
 
     ///Operator : not equal
-    inline bool operator!=(const Pt3D& other) {
+    inline bool operator!=(const Pt3d& other) {
         return !equals(other);
     }
 
