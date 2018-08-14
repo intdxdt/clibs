@@ -203,18 +203,18 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     }
 
     SECTION("contains, disjoint , contains completely") {
-        Pt2D p1{-5.95, 9.28};
-        Pt2D p2{-0.11, 12.56};
-        Pt2D p3{3.58, 11.79};
-        Pt2D p4{-1.16, 14.71};
+        Pt p1{-5.95, 9.28};
+        Pt p2{-0.11, 12.56};
+        Pt p3{3.58, 11.79};
+        Pt p4{-1.16, 14.71};
 
-        MBR mp12 = {p1[x1], p1[y1], p2[x1], p2[y1]};
-        MBR mp34 = {p3[x1], p3[y1], p4[x1], p4[y1]};
+        MBR mp12 = {p1.x, p1.y, p2.x, p2.y};
+        MBR mp34 = {p3.x, p3.y, p4.x, p4.y};
 
         // intersects but segment are disjoint
         REQUIRE(mp12.intersects(mp34));
         REQUIRE(mp12.intersects(p3, p4));
-        REQUIRE(!mp12.intersects(Pt2D{m1.minx, m1.miny}, Pt2D{m1.maxx, m1.maxy}));
+        REQUIRE(!mp12.intersects(Pt{m1.minx, m1.miny}, Pt{m1.maxx, m1.maxy}));
         REQUIRE(!mp12.intersects(p3.x, p3.y));
         REQUIRE(m1.contains(1, 1));
 
@@ -267,9 +267,9 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         auto m1c = m1.center();
         auto mtc = mt.center();
 
-        auto pt = Pt2D{1, 1};
+        auto pt = Pt{1, 1};
         REQUIRE(m1c == pt);
-        pt = Pt2D{2, 2};
+        pt = Pt{2, 2};
         REQUIRE(mtc == pt);
         arr = {{1, 1, 3, 3}};
         REQUIRE(mt.as_array() == arr);

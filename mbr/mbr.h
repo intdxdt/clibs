@@ -40,7 +40,7 @@ struct MBR {
         *this = MBR(bounds[0], bounds[1], bounds[2], bounds[3], raw);
     }
 
-    double operator[](std::size_t index) const {
+    double operator[](int index) const {
         assert(index >= 0 && index < 4);
         return index == 0 ? minx :
                index == 1 ? miny :
@@ -77,9 +77,9 @@ struct MBR {
         };
     }
 
-    std::tuple<Pt2D, Pt2D> llur() {
-        return std::tuple<Pt2D, Pt2D>{
-                Pt2D{minx, miny}, Pt2D{maxx, maxy}
+    std::tuple<Pt, Pt> llur() {
+        return std::tuple<Pt, Pt>{
+                Pt{minx, miny}, Pt{maxx, maxy}
         };
     }
 
@@ -139,7 +139,7 @@ struct MBR {
     }
 
     ///Computes the center of minimum bounding box - (x, y)
-    Pt2D center() const {
+    Pt center() const {
         return {(minx + maxx) / 2.0, (miny + maxy) / 2.0};
     }
 
@@ -158,7 +158,7 @@ struct MBR {
     }
 
     ///intersects point
-    bool intersects(const Pt2D& pt1, const Pt2D& pt2) const {
+    bool intersects(const Pt& pt1, const Pt& pt2) const {
         auto minq = fmin(pt1.x, pt2.x);
         auto maxq = fmax(pt1.x, pt2.x);
 
@@ -235,7 +235,7 @@ struct MBR {
 
 
     ///computes dx and dy for computing hypot
-    Pt2D distance_dxdy(const MBR& other) const {
+    Pt distance_dxdy(const MBR& other) const {
         double dx = 0.0;
         double dy = 0.0;
 
@@ -255,7 +255,7 @@ struct MBR {
             dy = miny - other.maxy;
         }
 
-        return Pt2D{dx, dy};
+        return Pt{dx, dy};
     }
 
 
