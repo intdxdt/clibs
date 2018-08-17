@@ -5,6 +5,8 @@
 #include "../catch/catch.h"
 #include "mbr.h"
 
+using namespace mbr;
+
 
 TEST_CASE("mbr 1", "[mbr 1]") {
     SECTION("construction") {
@@ -47,7 +49,7 @@ TEST_CASE("mbr 1", "[mbr 1]") {
     }
 
     SECTION("methods") {
-        MBR m = {2, 2, 0.5, 0.2};
+        auto m = MBR{2, 2, 0.5, 0.2};
         REQUIRE(m.height() == 1.8);
         REQUIRE(m.width() == 1.5);
         REQUIRE(m.area() == 1.5 * 1.8);
@@ -249,7 +251,11 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         md.expand_to_include(mb);
 
         std::array<double, 4> arr{0, 0, 5, 9};
-        std::vector<std::vector<double>> polyarr{{0, 0}, {0, 9}, {5, 9}, {5, 0}, {0, 0}};
+        std::vector<std::vector<double>> polyarr{{0, 0},
+                                                 {0, 9},
+                                                 {5, 9},
+                                                 {5, 0},
+                                                 {0, 0}};
         REQUIRE(ma.as_array() == arr);  //ma modified by expand
         REQUIRE(ma.as_poly_array() == polyarr); //ma modified by expand
         arr = {1.7, 1.5, 5, 9};
