@@ -7,4 +7,5 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -Wextra -Wpedantic -Wno-missing-b
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fprofile-arcs -ftest-coverage")
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 
+add_library(libmbr  mbr.h)
 add_executable(mbr main.cpp mbr.h )
