@@ -1,6 +1,3 @@
-//
-// Created on 16/08/18.
-//
 #include <limits>
 #include <memory>
 #include <utility>
