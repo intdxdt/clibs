@@ -12,6 +12,8 @@
 #include <cmath>
 #include <algorithm>
 #include <functional>
+
+#include "../ref/ref.h"
 #include "../mbr/mbr.h"
 #include "../mutil/mutil.h"
 
@@ -22,6 +24,7 @@
 #define RTREE_CPP_RTREE_H
 //RTree
 namespace rtree {
+
     template<typename T>
     struct RTree {
         size_t maxEntries{9};
@@ -58,11 +61,11 @@ namespace rtree {
 
         RTree& clear() {
             destruct_node(std::move(data));
-            data = NewNode(T{}, 1, true);
+            data = NewNode<T>(nullptr, 1, true);
             return *this;
         }
 
-        RTree insert(T item) {
+        RTree& insert(T* item) {
             insert(item, this->data->height - 1);
             return *this;
         }
@@ -70,16 +73,13 @@ namespace rtree {
 
     private:
 
-
-
         // insert - private
-        void insert(T item, size_t level) {
-            auto bbox = deref(item).bbox();
+        void insert(T* item, size_t level) {
+            auto bbox = item->bbox();
             std::vector<Node<T>*> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
             auto node = choose_subtree(bbox, data.get(), level, insertPath);
-
 
             // put the item into the node item_bbox
             node->add_child(new_leaf_Node(item));
@@ -114,11 +114,12 @@ namespace rtree {
         void split_root(std::unique_ptr<Node<T>>&& node, std::unique_ptr<Node<T>>&& newNode) {
             // split root node
             auto root_height = node->height + 1;
+
             std::vector<std::unique_ptr<Node<T>>> path;
             path.emplace_back(std::move(node));
             path.emplace_back(std::move(newNode));
 
-            data = NewNode(universe{}, root_height, false, std::move(path));
+            data = NewNode<T>(nullptr, root_height, false, std::move(path));
             calculate_bbox(data);
         }
 
@@ -141,7 +142,7 @@ namespace rtree {
             choose_split_axis(node, m, M);
             const size_t at = choose_split_index(node, m, M);
 
-            auto newNode = NewNode(nullptr, node->height, node->leaf);
+            auto newNode = NewNode<T>(nullptr, node->height, node->leaf);
             //pre allocate children space = m - index
             newNode->children.reserve(M - at);
 
@@ -157,7 +158,7 @@ namespace rtree {
             if (level > 0) {
                 insertPath[level - 1]->add_child(std::move(newNode));
             } else {
-                auto nn = std::make_unique<Node>(Node{
+                auto nn = std::make_unique<Node<T>>(Node<T>{
                         node->item,
                         node->height,
                         node->leaf,
@@ -216,14 +217,13 @@ namespace rtree {
             return index;
         }
 
-                //all_dist_margin computes total margin of all possible split distributions.
+        //all_dist_margin computes total margin of all possible split distributions.
         //Each node is at least m full.
         double all_dist_margin(Node<T>* node, size_t m, size_t M, SortBy sortBy) const {
             if (sortBy == ByX) {
                 std::sort(node->children.begin(), node->children.end(), x_node_path<T>());
                 //bubbleAxis(*node.getChildren(), ByX, ByY)
-            }
-            else if (sortBy == ByY) {
+            } else if (sortBy == ByY) {
                 std::sort(node->children.begin(), node->children.end(), y_node_path<T>());
                 //bubbleAxis(*node.getChildren(), ByY, ByX)
             }

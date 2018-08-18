@@ -9,7 +9,7 @@
 #include <random>
 #include "../catch/catch.h"
 #include "../mbr/mbr.h"
-#include "node.h"
+#include "rtree.h"
 
 using namespace std;
 
@@ -35,7 +35,7 @@ namespace rtest {
 
     template<typename T>
     void testResults(std::vector<rtree::Node<T>*>&& nodes, std::vector<mbr::MBR>&& boxes) {
-        std::sort(nodes.begin(), nodes.end(), rtree::xy_node_path());
+        std::sort(nodes.begin(), nodes.end(), rtree::xy_node_path<T>());
         std::sort(boxes.begin(), boxes.end(), rtree::xy_boxes());
         REQUIRE(nodes.size() == boxes.size());
         for (size_t i = 0; i < nodes.size(); i++) {
@@ -200,12 +200,12 @@ namespace rtest {
         return tokens;
     }
 }
-//
-//TEST_CASE("rtree 1", "[rtree 1]") {
-//
-//    using namespace rtree;
-//    using namespace rtest;
-//
+
+TEST_CASE("rtree 1", "[rtree 1]") {
+
+    using namespace rtree;
+    using namespace rtest;
+
 //    SECTION("should test load 9 & 10") {
 ////        auto tree00 = rtree::NewRTree(0);
 //        auto tree0 = rtree::NewRTree(0).load_boxes(someData(0));
@@ -355,13 +355,14 @@ namespace rtest {
 //            return nodes;
 //        }(), [&] { return expects; }());
 //    }
-//
+
 //    SECTION("#insert forms a valid tree if (items are inserted one by one") {
 //        auto data = rtest::data;
-//        auto tree = NewRTree(4);
+//        auto tree = NewRTree<mbr::MBR>(4);
 //        size_t index = 0;
-//        for (const auto& o : data) {
-//            tree.insert(Object{index++, o});
+//        for (size_t i =0 ; i < data.size(); i++) {
+//            tree.insert(&data[i]);
+//            cout << tree.data.get()->children.size()<< '\n';
 //        }
 //        auto tree2 = NewRTree(4).load_boxes(data);
 //        REQUIRE(tree.data->height - tree2.data->height <= 1);
@@ -430,16 +431,19 @@ namespace rtest {
 //                        .clear()
 //                        .is_empty());
 //    }
-//}
+}
 
 TEST_CASE("rtree 2", "[rtree util]") {
     using namespace rtree;
     using namespace rtest;
 
     SECTION("tests pop nodes") {
-        auto a = NewNode<mbr::MBR>( empty_mbr(), 0, true, std::vector<std::unique_ptr<Node<mbr::MBR>>>{});
-        auto b = NewNode<mbr::MBR>( empty_mbr(), 1, true, std::vector<std::unique_ptr<Node<mbr::MBR>>>{});
-        auto c = NewNode<mbr::MBR>( empty_mbr(), 1, true, std::vector<std::unique_ptr<Node<mbr::MBR>>>{});
+        auto abox = empty_mbr();
+        auto bbox = empty_mbr();
+        auto cbox = empty_mbr();
+        auto a = NewNode<mbr::MBR>(&abox, 0, true, std::vector<std::unique_ptr<Node<mbr::MBR>>>{});
+        auto b = NewNode<mbr::MBR>(&bbox, 1, true, std::vector<std::unique_ptr<Node<mbr::MBR>>>{});
+        auto c = NewNode<mbr::MBR>(&cbox, 1, true, std::vector<std::unique_ptr<Node<mbr::MBR>>>{});
         std::vector<Node<mbr::MBR>*> nodes;
         Node<mbr::MBR>* n;
 
