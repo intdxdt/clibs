@@ -225,15 +225,13 @@ namespace rtree {
         }
 
         std::vector<T*> KNN(
-                const mbr::MBR& query,
-                size_t limit,
+                const mbr::MBR& query, size_t limit,
                 const std::function<double(const mbr::MBR&, KObj<T>)>& score) {
             return KNN(query, limit, score, [](KObj<T>) { return std::tuple<bool, bool>(true, false); });
         }
 
         std::vector<T*> KNN(
-                const mbr::MBR query,
-                size_t limit,
+                const mbr::MBR query, size_t limit,
                 const std::function<double(const mbr::MBR&, KObj<T>)>& score,
                 const std::function<std::tuple<bool, bool>(KObj<T>)>& predicate) {
 
@@ -251,13 +249,11 @@ namespace rtree {
                     child = o.get();
 
                     if (child->children.empty()) {
-                        dist = score(query, KObj{child, child->bbox, true, -1});
+                        dist = score(query, KObj<T>{child, child->bbox, true, -1});
                     } else {
-                        dist = score(query, KObj{nullptr, child->bbox, false, -1});
+                        dist = score(query, KObj<T>{nullptr, child->bbox, false, -1});
                     }
-
-                    queue.push_back(KObj{
-                            child, child->bbox, child->children.empty(), dist});
+                    queue.push_back(KObj<T>{child, child->bbox, child->children.empty(), dist});
                 }
 
                 //make heap

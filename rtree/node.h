@@ -51,7 +51,7 @@ namespace rtree {
             children.emplace_back(std::move(child));
         }
 
-        T get_item() {
+        T* get_item() {
             return item;
         }
     };
@@ -68,7 +68,7 @@ namespace rtree {
             return this->dist;
         }
 
-        T get_item() {
+        T* get_item() {
             return this->node->get_item();
         }
 
