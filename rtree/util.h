@@ -29,14 +29,6 @@ namespace rtree {
         return {empty_bounds(), true};
     }
 
-    //@formatter:on
-    struct Object {
-        size_t id = 0;
-        mbr::MBR bbox = empty_mbr();
-        void* object = nullptr;
-        size_t meta = 0;
-    };
-
     template<typename T>
     inline size_t len(const std::vector<T>& v) {
         return v.size();
@@ -76,7 +68,8 @@ namespace rtree {
         return std::move(s);
     }
 
-    inline void swap_item(std::vector<Object>& arr, size_t i, size_t j) {
+    template <typename T>
+    inline void swap_item(std::vector<T*>& arr, size_t i, size_t j) {
         std::swap(arr[i], arr[j]);
     }
 

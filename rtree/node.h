@@ -144,7 +144,7 @@ namespace rtree {
 
     template<typename T>
     struct xy_node_path {
-        inline bool operator()(const T& a, const T& b) {
+        inline bool operator()(T* a, T* b) {
             auto d = a->bbox.minx - b->bbox.minx;
             if (feq(d, 0)) {
                 d = a->bbox.miny - b->bbox.miny;
@@ -167,7 +167,11 @@ namespace rtree {
     template<typename T>
     std::unique_ptr<Node<T>> NewNode(T* item, size_t height, bool leaf,
                                      std::vector<std::unique_ptr<Node<T>>>&& children) {
-        auto node = Node<T>(item, height, leaf, item->bbox());
+        mbr::MBR box = empty_mbr();
+        if (item != nullptr) {
+            box = item->bbox();
+        }
+        auto node = Node<T>(item, height, leaf, box);
         node.children = std::move(children);
         return std::make_unique<Node<T>>(std::move(node));
     }
@@ -190,7 +194,7 @@ namespace rtree {
 
     //Constructs children of node
     template<typename T>
-    std::vector<std::unique_ptr<Node<T>>> make_children(std::vector<T>& items) {
+    std::vector<std::unique_ptr<Node<T>>> make_children(std::vector<T*>& items) {
         std::vector<std::unique_ptr<Node<T>>> chs;
         auto n = items.size();
         chs.reserve(n);
