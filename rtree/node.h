@@ -165,8 +165,9 @@ namespace rtree {
 
 
     template<typename T>
-    std::unique_ptr<Node<T>> NewNode(T* item, size_t height, bool leaf,
-                                     std::vector<std::unique_ptr<Node<T>>>&& children) {
+    std::unique_ptr<Node<T>> NewNode(
+            T* item, size_t height, bool leaf,
+            std::vector<std::unique_ptr<Node<T>>>&& children) {
         mbr::MBR box = empty_mbr();
         if (item != nullptr) {
             box = item->bbox();

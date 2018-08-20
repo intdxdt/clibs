@@ -444,14 +444,15 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("should have chainable API") {
         auto data = rtest::data;
-        REQUIRE(NewRTree<mbr::MBR>(4)
+        REQUIRE(
+                NewRTree<mbr::MBR>(4)
                         .load_boxes(data)
                         .insert(&data[0])
                         .remove(data[0])
                         .clear()
-                        .is_empty());
+                        .is_empty()
+        );
     }
-
 }
 
 TEST_CASE("rtree 2", "[rtree util]") {

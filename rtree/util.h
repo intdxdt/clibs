@@ -55,7 +55,8 @@ namespace rtree {
     }
 
     ///std::optional<size_t>
-    template <> size_t pop(std::vector<size_t>& a) {
+    template <>
+    size_t pop(std::vector<size_t>& a) {
         assert(!a.empty());
         auto v = a.back();
         a.resize(a.size() - 1);
@@ -75,16 +76,13 @@ namespace rtree {
 
 
     ///slice index
-    inline std::optional<size_t> slice_index(
-            size_t limit, const std::function<bool(size_t)>& predicate) {
+    inline std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
         bool bln{false};
         size_t index{0};
 
         for (size_t i = 0; !bln && i < limit; ++i) {
             index = i;
             bln = predicate(i);
-            //remove branching in loop
-            //if (predicate(i)) { return i; }
         }
         return bln ? std::optional<size_t>{index} : std::nullopt;
     }
