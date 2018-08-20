@@ -414,7 +414,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     }
 
     SECTION("#remove does nothing if (nothing found)") {
-        mbr::MBR* item;
+        mbr::MBR* item = nullptr;
         auto data = rtest::data;
         auto tree = NewRTree<mbr::MBR>(0).load_boxes(data);
         auto tree2 = NewRTree<mbr::MBR>(0).load_boxes(data);
