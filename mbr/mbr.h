@@ -5,7 +5,6 @@
 #include <sstream>
 #include <functional>
 #include <optional>
-#include <iomanip>
 #include "../pt/pt.h"
 #include "../mutil/mutil.h"
 
@@ -39,15 +38,6 @@ namespace mbr {
         MBR(const std::array<double, 4>& bounds, bool raw) {
             *this = MBR(bounds[0], bounds[1], bounds[2], bounds[3], raw);
         }
-
-        double operator[](int index) const {
-            assert(index >= 0 && index < 4);
-            return index == 0 ? minx :
-                   index == 1 ? miny :
-                   index == 2 ? maxx :
-                   index == 3 ? maxy : std::nan("-9");
-        }
-
 
         MBR& bbox() { return *this; }
 
