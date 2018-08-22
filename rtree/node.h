@@ -21,24 +21,21 @@ namespace rtree {
         size_t height;
         bool leaf;
         mbr::MBR bbox;
-        std::vector<std::unique_ptr<Node>> children;
+        std::vector<std::unique_ptr<Node<T>>> children;
 
-
-        Node(T* item, size_t height, bool leaf, mbr::MBR bbox) : item(item), height(height), leaf(leaf), bbox(bbox) {
-            children = std::vector<std::unique_ptr<Node>>{};
+        Node(T* item, size_t height, bool leaf, mbr::MBR bbox) :
+                item(item), height(height), leaf(leaf), bbox(bbox) {
+            children = std::vector<std::unique_ptr<Node<T>>>{};
         };
 
-        Node(Node&& other) noexcept:
-                item(other.item),
-                height(other.height),
-                leaf(other.leaf),
-                bbox(other.bbox) {
+        Node(Node<T>&& other) noexcept :
+                item(other.item), height(other.height), leaf(other.leaf), bbox(other.bbox) {
             children = std::move(other.children);
         }
 
         ~Node() = default;
 
-        Node& operator=(Node&& other) noexcept {
+        Node& operator=(Node<T>&& other) noexcept {
             item = other.item;
             leaf = other.leaf;
             height = other.height;
@@ -47,7 +44,7 @@ namespace rtree {
             return *this;
         }
 
-        void add_child(std::unique_ptr<Node>&& child) {
+        void add_child(std::unique_ptr<Node<T>>&& child) {
             children.emplace_back(std::move(child));
         }
 

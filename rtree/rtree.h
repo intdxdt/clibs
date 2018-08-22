@@ -172,9 +172,11 @@ namespace rtree {
             if (item == nullptr) { //uninitialized object
                 return *this;
             }
-            remove_item(item->bbox(), [&](const Node<T>* node, size_t i) {
-                return node->children[i]->item == item;
-            });
+            remove_item(
+                    item->bbox(),
+                    [&](const Node<T>* node, size_t i) {
+                        return node->children[i]->item == item;
+                    });
             return *this;
         }
 
