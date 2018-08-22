@@ -233,25 +233,25 @@ TEST_CASE("rtree 1", "[rtree 1]") {
                 {-115, -55, -105, -45},
         });
 
-//        testResults(tree.search(mbr::MBR(-180, -90, 0, 90)), std::vector<mbr::MBR>{
-//                {-115, 45,  -105, 55},
-//                {-115, -55, -105, -45},
-//        });
-//
-//        testResults(tree.search(mbr::MBR(0, -90, 180, 90)), std::vector<mbr::MBR>{
-//                {105, 45,  115, 55},
-//                {105, -55, 115, -45},
-//        });
-//
-//        testResults(tree.search(mbr::MBR(-180, 0, 180, 90)), std::vector<mbr::MBR>{
-//                {-115, 45, -105, 55},
-//                {105,  45, 115,  55},
-//        });
-//
-//        testResults(tree.search(mbr::MBR(-180, -90, 180, 0)), std::vector<mbr::MBR>{
-//                {105,  -55, 115,  -45},
-//                {-115, -55, -105, -45},
-//        });
+        testResults(tree.search(mbr::MBR(-180, -90, 0, 90)), std::vector<mbr::MBR>{
+                {-115, 45,  -105, 55},
+                {-115, -55, -105, -45},
+        });
+
+        testResults(tree.search(mbr::MBR(0, -90, 180, 90)), std::vector<mbr::MBR>{
+                {105, 45,  115, 55},
+                {105, -55, 115, -45},
+        });
+
+        testResults(tree.search(mbr::MBR(-180, 0, 180, 90)), std::vector<mbr::MBR>{
+                {-115, 45, -105, 55},
+                {105,  45, 115,  55},
+        });
+
+        testResults(tree.search(mbr::MBR(-180, -90, 180, 0)), std::vector<mbr::MBR>{
+                {105,  -55, 115,  -45},
+                {-115, -55, -105, -45},
+        });
     }
 
 //    SECTION("#load uses standard insertion when given a low number of items") {
