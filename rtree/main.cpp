@@ -306,32 +306,32 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         testResults(tree2.all(), [&] { return cloneData; }());
     }
 
-//    SECTION("#search finds matching points in the tree given a bbox") {
-//        auto data = rtest::data;
-//        auto tree = NewRTree<mbr::MBR>(4).load_boxes(data);
-//        //@formatter:off
-//        testResults(tree.search(mbr::MBR(40, 20, 80, 70)), std::vector<mbr::MBR>{
-//                {70, 20, 70, 20}, {75, 25, 75, 25}, {45, 45, 45, 45},
-//                {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70},
-//                {45, 20, 45, 20}, {45, 70, 45, 70}, {75, 50, 75, 50},
-//                {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45},
-//        });
-//        //@formatter:on
-//    }
-//
-//
-//    SECTION("#collides returns true when search finds matching points") {
-//        auto data = rtest::data;
-//        auto tree = NewRTree<mbr::MBR>(4).load_boxes(data);
-//        REQUIRE(tree.collides(mbr::MBR(40, 20, 80, 70)));
-//        REQUIRE(!tree.collides(mbr::MBR(200, 200, 210, 210)));
-//    }
-//
-//    SECTION("#search returns an empty array if (nothing found") {
-//        auto data = rtest::data;
-//        auto result = NewRTree<mbr::MBR>(4).load_boxes(data).search(mbr::MBR(200, 200, 210, 210));
-//        REQUIRE(result.empty());
-//    }
+    SECTION("#search finds matching points in the tree given a bbox") {
+        auto data = rtest::data;
+        auto tree = NewRTree<mbr::MBR>(4).load_boxes(data);
+        //@formatter:off
+        testResults(tree.search(mbr::MBR(40, 20, 80, 70)), std::vector<mbr::MBR>{
+                {70, 20, 70, 20}, {75, 25, 75, 25}, {45, 45, 45, 45},
+                {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70},
+                {45, 20, 45, 20}, {45, 70, 45, 70}, {75, 50, 75, 50},
+                {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45},
+        });
+        //@formatter:on
+    }
+
+
+    SECTION("#collides returns true when search finds matching points") {
+        auto data = rtest::data;
+        auto tree = NewRTree<mbr::MBR>(4).load_boxes(data);
+        REQUIRE(tree.collides(mbr::MBR(40, 20, 80, 70)));
+        REQUIRE(!tree.collides(mbr::MBR(200, 200, 210, 210)));
+    }
+
+    SECTION("#search returns an empty array if (nothing found") {
+        auto data = rtest::data;
+        auto result = NewRTree<mbr::MBR>(4).load_boxes(data).search(mbr::MBR(200, 200, 210, 210));
+        REQUIRE(result.empty());
+    }
 //
 //    SECTION("#all <==>.Data returns all points in the tree") {
 //        auto data = rtest::data;

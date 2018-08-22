@@ -164,6 +164,139 @@ namespace rtree {
             return result;
         }
 
+        // Remove Item from RTree
+        // NOTE:if item is a bbox , then first found bbox is removed
+        RTree& remove(T* item) {
+            if (item == nullptr) { //uninitialized object
+                return *this;
+            }
+            remove_item(
+                    item->bbox(),
+                    [&](const Node<T>* node, size_t i) {
+                        return node->children[i]->item == item;
+                    });
+            return *this;
+        }
+
+        //Remove Item from RTree
+        //NOTE:if item is a bbox , then first found bbox is removed
+        RTree& remove(const mbr::MBR& item) {
+            remove_item(
+                    item,
+                    [&](const Node<T>* node, size_t i) {
+                        return node->children[i]->bbox.equals(item);
+                    });
+            return *this;
+        }
+
+        // Remove Item from RTree
+        // NOTE:if item is a bbox , then first found bbox is removed
+        RTree& remove(const Node<T>* node) {
+            remove_item(
+                    node->bbox,
+                    [&](const Node<T>* n, size_t i) {
+                        return &n->children[i] == node;
+                    });
+            return *this;
+        }
+
+        bool collides(const mbr::MBR& bbox) {
+            Node<T>* node = &data;
+            if (!intersects(bbox, node->bbox)) {
+                return false;
+            }
+
+            bool bln = false;
+            Node<T>* child;
+            std::vector<Node<T>*> searchList;
+
+            while (!bln && node != nullptr) {
+                size_t i = 0, length = node->children.size();
+                for (; !bln && i < length; ++i) {
+                    child = &node->children[i];
+                    if (intersects(bbox, child->bbox)) {
+                        bln = node->leaf || contains(bbox, child->bbox);
+                        searchList.emplace_back(child);
+                    }
+                }
+                node = pop(searchList);
+            }
+            return bln;
+        }
+
+        std::vector<T*> KNN(
+                const mbr::MBR& query, size_t limit,
+                const std::function<double(const mbr::MBR&, KObj<T>)>& score) {
+            return KNN(query, limit, score, [](KObj<T>) { return std::tuple<bool, bool>(true, false); });
+        }
+
+        std::vector<T*> KNN(
+                const mbr::MBR query, size_t limit,
+                const std::function<double(const mbr::MBR&, KObj<T>)>& score,
+                const std::function<std::tuple<bool, bool>(KObj<T>)>& predicate) {
+
+            Node<T>* node = &data;
+            std::vector<T*> result{};
+
+            Node<T>* child{nullptr};
+            std::vector<KObj<T>> queue{};
+            bool stop{false}, pred{false};
+            double dist{0};
+            auto cmp = kobj_cmp<T>();
+
+            while (!stop && (node != nullptr)) {
+                for (size_t i = 0; i < node->children.size(); i++) {
+                    child = &node->children[i];
+
+                    if (child->children.empty()) {
+                        dist = score(query, KObj<T>{child, child->bbox, true, -1});
+                    } else {
+                        dist = score(query, KObj<T>{nullptr, child->bbox, false, -1});
+                    }
+                    queue.push_back(KObj<T>{child, child->bbox, child->children.empty(), dist});
+                }
+
+                //make heap
+                std::make_heap(queue.begin(), queue.end(), cmp);
+                std::pop_heap(queue.begin(), queue.end(), cmp); //pop heap
+
+                while (!queue.empty() && queue.back().is_item) {
+
+                    auto candidate = queue.back(); //back
+                    queue.pop_back();              //pop
+
+                    auto pred_stop = predicate(candidate);
+                    pred = std::get<0>(pred_stop);
+                    stop = std::get<1>(pred_stop);
+
+                    if (pred) {
+                        result.emplace_back(candidate.node->item);
+                    }
+
+                    if (stop) {
+                        break;
+                    }
+
+                    if ((limit != 0) && (result.size() == limit)) {
+                        return result;
+                    }
+
+                    std::pop_heap(queue.begin(), queue.end(), cmp); //pop heap
+                }
+
+                if (!stop) {
+                    if (queue.empty()) {
+                        node = nullptr;
+                    } else {
+                        auto q = queue.back(); //back
+                        queue.pop_back();      //pop
+                        node = q.node;
+                    }
+                }
+            }
+            return result;
+        }
+
     private:
         // all - fetch all items from node
         void all(Node<T>* node, std::vector<Node<T>*>& result) {
@@ -502,6 +635,97 @@ namespace rtree {
             }
             return margin;
         }
+
+        // Remove Item from RTree
+        // NOTE:if item is a bbox , then first found bbox is removed
+        RTree& remove_item(const mbr::MBR& bbox, const std::function<bool(const Node<T>*, size_t)>& predicate) {
+            Node<T>* node = data.get();
+            Node<T>* parent = nullptr;
+            std::vector<Node<T>*> path;
+            std::vector<size_t> indexes;
+            std::optional<size_t> index;
+
+            size_t i = 0;
+            bool goingUp = false;
+
+            //depth-first iterative this traversal
+            while ((node != nullptr) || !path.empty()) {
+                if (node == nullptr) {
+                    //go up
+                    node = pop(path);
+                    parent = node_at_index(path, path.size() - 1);
+                    i = pop(indexes);
+                    goingUp = true;
+                }
+
+                if (node->leaf) {
+                    //check current node
+                    //index = node.children.indexOf(item)
+                    index = slice_index(node->children.size(), [&](size_t i) {
+                        return predicate(node, i);
+                    });
+
+                    //if found
+                    if (index.has_value()) {
+                        //item found, remove the item and condense this upwards
+                        //node.children.splice(index, 1)
+                        node->children.erase(node->children.begin() + index.value());
+                        path.emplace_back(node);
+                        condense(path);
+                        return *this;
+                    }
+                }
+
+                if (!goingUp && !node->leaf && contains(node->bbox, bbox)) {
+                    //go down
+                    path.emplace_back(node);
+                    indexes.emplace_back(i);
+                    i = 0;
+                    parent = node;
+                    node = node->children[0].get();
+                } else if (parent != nullptr) {
+                    //go right
+                    i++;
+                    node = node_at_index(parent->children, i);;
+                    goingUp = false;
+                } else {
+                    node = nullptr;
+                } //nothing found;
+            }
+
+            return *this;
+        }
+
+
+        //condense node and its path from the root
+        void condense(std::vector<Node<T>*>& path) {
+            Node<T>* parent{nullptr};
+            auto sentinel{static_cast<size_t>(-1)};
+            auto i{path.size() - 1};
+            //go through the path, removing empty nodes and updating bboxes
+            while (i != sentinel) {
+                if (path[i]->children.empty()) {
+                    //go through the path, removing empty nodes and updating bboxes
+                    if (i > 0) {
+                        parent = path[i - 1];
+                        auto index = slice_index(parent->children.size(), [&](size_t j) {
+                            return path[i] == parent->children[j].get();
+                        });
+                        if (index.has_value()) {
+                            parent->children.erase(parent->children.begin() + index.value());
+                        }
+                    } else {
+                        //root is empty, rest root
+                        this->clear();
+                    }
+                } else {
+                    calculate_bbox(path[i]);
+                }
+                i--;
+            }
+        }
+
+
     };
 
     template<typename T>
