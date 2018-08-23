@@ -144,9 +144,9 @@ namespace rtree {
     template<typename T>
     struct xy_node_path {
         inline bool operator()(T* a, T* b) {
-            auto d = a->bbox.minx - b->bbox.minx;
+            auto d = a->bbox().minx - b->bbox().minx;
             if (feq(d, 0)) {
-                d = a->bbox.miny - b->bbox.miny;
+                d = a->bbox().miny - b->bbox().miny;
             }
             return d < 0;
         }
@@ -216,7 +216,7 @@ namespace rtree {
 
 
     template<typename T>
-    Node<T>* node_at_index(const std::vector<Node<T>>& a, size_t i) {
+    Node<T>* node_at_index(std::vector<Node<T>>& a, size_t i) {
         if (a.empty() || (i > a.size() - 1)) {
             return nullptr;
         }
@@ -224,7 +224,7 @@ namespace rtree {
     }
 
     template<typename T>
-    Node<T>* node_at_index(const std::vector<Node<T>*>& a, size_t i) {
+    Node<T>* node_at_index(std::vector<Node<T>*>& a, size_t i) {
         if (a.empty() || (i > a.size() - 1)) {
             return nullptr;
         }

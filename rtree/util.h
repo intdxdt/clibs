@@ -1,6 +1,3 @@
-//
-// Created on 16/08/18.
-//
 #include <limits>
 #include <memory>
 #include <utility>
@@ -57,7 +54,6 @@ namespace rtree {
     ///std::optional<size_t>
     template <>
     size_t pop(std::vector<size_t>& a) {
-        assert(!a.empty());
         auto v = a.back();
         a.resize(a.size() - 1);
         return v;

@@ -123,16 +123,16 @@ namespace rtree {
         }
 
         // all items from  root node
-        std::vector<Node<T>*> all() {
-            std::vector<Node<T>*> result{};
+        std::vector<T*> all() {
+            std::vector<T*> result{};
             all(&data, result);
             return result;
         }
 
         // search item
-        std::vector<Node<T>*> search(const mbr::MBR& bbox) {
+        std::vector<T*> search(const mbr::MBR& bbox) {
             Node<T>* node = &data;
-            std::vector<Node<T>*> result;
+            std::vector<T*> result;
 
             if (!intersects(bbox, node->bbox)) {
                 return result;
@@ -147,7 +147,7 @@ namespace rtree {
 
                     if (intersects(bbox, childBBox)) {
                         if (node->leaf) {
-                            result.emplace_back(child);
+                            result.emplace_back(child->item);
                         } else if (contains(bbox, childBBox)) {
                             all(child, result);
                         } else {
@@ -172,8 +172,8 @@ namespace rtree {
             }
             remove_item(
                     item->bbox(),
-                    [&](const Node<T>* node, size_t i) {
-                        return node->children[i]->item == item;
+                    [&](Node<T>* node, size_t i) {
+                        return node->children[i].item == item;
                     });
             return *this;
         }
@@ -183,8 +183,8 @@ namespace rtree {
         RTree& remove(const mbr::MBR& item) {
             remove_item(
                     item,
-                    [&](const Node<T>* node, size_t i) {
-                        return node->children[i]->bbox.equals(item);
+                    [&](Node<T>* node, size_t i) {
+                        return node->children[i].bbox.equals(item);
                     });
             return *this;
         }
@@ -192,10 +192,14 @@ namespace rtree {
         // Remove Item from RTree
         // NOTE:if item is a bbox , then first found bbox is removed
         RTree& remove(const Node<T>* node) {
+            if (node == nullptr) {
+                return *this;
+            }
             remove_item(
                     node->bbox,
                     [&](const Node<T>* n, size_t i) {
-                        return &n->children[i] == node;
+                        return node->item == n->children[i].item &&
+                               node->bbox.equals(n->children[i].bbox);
                     });
             return *this;
         }
@@ -299,12 +303,12 @@ namespace rtree {
 
     private:
         // all - fetch all items from node
-        void all(Node<T>* node, std::vector<Node<T>*>& result) {
+        void all(Node<T>* node, std::vector<T*>& result) {
             std::vector<Node<T>*> nodesToSearch;
             while (true) {
                 if (node->leaf) {
                     for (size_t i = 0; i < node->children.size(); i++) {
-                        result.emplace_back(&node->children[i]);
+                        result.emplace_back(node->children[i].item);
                     }
                 } else {
                     for (size_t i = 0; i < node->children.size(); i++) {
@@ -390,8 +394,6 @@ namespace rtree {
             auto N1 = N2 * size_t(std::ceil(std::sqrt(M)));
             size_t i, j, right2, right3;
 
-            std::function<double(const mbr::MBR&, const mbr::MBR&)> cmpX = compare_minx;
-            std::function<double(const mbr::MBR&, const mbr::MBR&)> cmpY = compare_miny;
 
             multi_select(items, left, right, N1, compare_minx);
 
@@ -610,10 +612,8 @@ namespace rtree {
         double all_dist_margin(Node<T>* node, size_t m, size_t M, SortBy sortBy) const {
             if (sortBy == ByX) {
                 std::sort(node->children.begin(), node->children.end(), x_node_path<T>());
-                //bubbleAxis(*node.getChildren(), ByX, ByY)
             } else if (sortBy == ByY) {
                 std::sort(node->children.begin(), node->children.end(), y_node_path<T>());
-                //bubbleAxis(*node.getChildren(), ByY, ByX)
             }
 
             size_t i = 0;
@@ -638,8 +638,8 @@ namespace rtree {
 
         // Remove Item from RTree
         // NOTE:if item is a bbox , then first found bbox is removed
-        RTree& remove_item(const mbr::MBR& bbox, const std::function<bool(const Node<T>*, size_t)>& predicate) {
-            Node<T>* node = data.get();
+        RTree& remove_item(const mbr::MBR& bbox, const std::function<bool(Node<T>*, size_t)>& predicate) {
+            Node<T>* node = &data;
             Node<T>* parent = nullptr;
             std::vector<Node<T>*> path;
             std::vector<size_t> indexes;
@@ -682,7 +682,7 @@ namespace rtree {
                     indexes.emplace_back(i);
                     i = 0;
                     parent = node;
-                    node = node->children[0].get();
+                    node = &node->children[0];
                 } else if (parent != nullptr) {
                     //go right
                     i++;
@@ -709,7 +709,7 @@ namespace rtree {
                     if (i > 0) {
                         parent = path[i - 1];
                         auto index = slice_index(parent->children.size(), [&](size_t j) {
-                            return path[i] == parent->children[j].get();
+                            return path[i] == &parent->children[j];
                         });
                         if (index.has_value()) {
                             parent->children.erase(parent->children.begin() + index.value());
@@ -724,8 +724,6 @@ namespace rtree {
                 i--;
             }
         }
-
-
     };
 
     template<typename T>
