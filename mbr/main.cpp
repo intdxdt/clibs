@@ -104,6 +104,8 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     MBR m6{0, 0, 2, -2};
     MBR m7{-2, 1, 4, -2};
     MBR m8{-1, 0, 1, -1.5};
+    std::vector<MBR> vects{m1, m2, m3, m4, m5, m6, m7, m8};
+    std::sort(vects.begin(), vects.end());
 
     std::vector<double> p = {1.7, 1.5, 3.4};// POINT(1.7 1.5, 3.4)
     std::vector<double> p0 = {1.7};         // POINT(1.7 1.5)

@@ -39,6 +39,14 @@ namespace mbr {
             *this = MBR(bounds[0], bounds[1], bounds[2], bounds[3], raw);
         }
 
+        bool operator<(const MBR& other) {
+            auto d = minx - other.minx;
+            if (feq(d, 0)) {
+                d = miny - other.miny;
+            }
+            return d < 0;
+        }
+
         MBR& bbox() { return *this; }
 
         MBR clone() { return *this; }
@@ -70,7 +78,8 @@ namespace mbr {
         }
 
         std::tuple<Pt, Pt> llur() {
-            return std::tuple<Pt, Pt>{{minx, miny}, {maxx, maxy}};
+            return std::tuple<Pt, Pt>{{minx, miny},
+                                      {maxx, maxy}};
         }
 
         ///Compare equality of two minimum bounding box
