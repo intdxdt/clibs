@@ -38,10 +38,10 @@ namespace rtree {
         ~Node() = default;
 
         Node& operator=(Node<T>&& other) noexcept {
-            item   = other.item;
-            leaf   = other.leaf;
+            item = other.item;
+            leaf = other.leaf;
             height = other.height;
-            bbox   = other.bbox;
+            bbox = other.bbox;
             children = std::move(other.children);
             return *this;
         }
@@ -117,15 +117,6 @@ namespace rtree {
         }
     };
 
-    struct xy_boxes {
-        inline bool operator()(const mbr::MBR& a, const mbr::MBR& b) {
-            auto d = a.minx - b.minx;
-            if (feq(d, 0)) {
-                d = a.miny - b.miny;
-            }
-            return d < 0;
-        }
-    };
 
     template<typename T>
     struct x_node_path {
@@ -161,7 +152,6 @@ namespace rtree {
     inline double compare_miny(const mbr::MBR& a, const mbr::MBR& b) {
         return a.miny - b.miny;
     }
-
 
     template<typename T>
     Node<T> NewNode(

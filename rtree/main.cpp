@@ -35,7 +35,7 @@ namespace rtest {
 
     void testResults(std::vector<mbr::MBR*>&& nodes, std::vector<mbr::MBR>&& boxes) {
         std::sort(nodes.begin(), nodes.end(), rtree::xy_node_path<mbr::MBR>());
-        std::sort(boxes.begin(), boxes.end(), rtree::xy_boxes());
+        std::sort(boxes.begin(), boxes.end());
 
         REQUIRE(nodes.size() == boxes.size());
         for (size_t i = 0; i < nodes.size(); i++) {
@@ -256,9 +256,8 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#load uses standard insertion when given a low number of items") {
         auto data = rtest::data;
-        auto tree = NewRTree<mbr::MBR>(8).load_boxes(
-                rtest::data
-        ).load_boxes(slice(data, 0, 3));
+        auto rt = NewRTree<mbr::MBR>(8).load_boxes(rtest::data).load_boxes(slice(data, 0, 3));
+        auto tree = std::move(rt);
 
         auto tree2 = NewRTree<mbr::MBR>(8).load_boxes(rtest::data).insert(&data[0]).insert(&data[1]).insert(&data[2]);
         REQUIRE(nodeEquals(&tree.data, &tree2.data));
