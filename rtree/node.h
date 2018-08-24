@@ -85,39 +85,6 @@ namespace rtree {
         }
     };
 
-
-//    template<typename T>
-//    void destruct_node(std::unique_ptr<Node<T>>&& a) {
-//        if (a == nullptr) {
-//            return;
-//        }
-//        std::vector<Node<T>> stack;
-//        stack.reserve(a->children.size());
-//        stack.emplace_back(std::move(a));
-//
-//        while (!stack.empty()) {
-//            auto node = std::move(stack[stack.size() - 1]);
-//            stack.pop_back();
-//            //adopt children on stack and let node go out of scope
-//            for (auto& o : node->children) {
-//                stack.emplace_back(std::move(o));
-//            }
-//        }
-//    }
-
-    struct x_boxes {
-        inline bool operator()(const mbr::MBR& a, const mbr::MBR& b) {
-            return a.minx < b.minx;
-        }
-    };
-
-    struct y_boxes {
-        inline bool operator()(const mbr::MBR& a, const mbr::MBR& b) {
-            return a.miny < b.miny;
-        }
-    };
-
-
     template<typename T>
     struct x_node_path {
         inline bool operator()(Node<T>& a, Node<T>& b) {
