@@ -10,11 +10,11 @@
 #define RBSEGS_SEG_H
 
 
-bool addSegment(
+bool add_segment(
         size_t index,
-        const Segs& red,
+        const std::vector<Seg>& red,
         BruteForceList& redList,
-        const Segs& blue,
+        const std::vector<Seg>& blue,
         BruteForceList& blueList,
         const std::function<bool(size_t, size_t)>& visit,
         bool flip
@@ -35,16 +35,15 @@ bool addSegment(
 
 
     for (auto i = count; !ret && (i-- > 0);) {
-        ptr += -1;
+        ptr--;
         h1 = blueList.intervals[ptr];
-        ptr += -1;
+        ptr--;
         l1 = blueList.intervals[ptr];
 
         //Test if intervals overlap
         if (l0 <= h1 && l1 <= h0) {
-            bindex = static_cast<size_t>(blueList.index[i]);
+            bindex = blueList.index[i];
             const Seg& segb = blue[bindex];
-            //Test if segments intersect
             if (intersects(seg.a, seg.b, segb.a, segb.b)) {
                 ret = flip ? visit(bindex, index) : visit(index, bindex);
             }

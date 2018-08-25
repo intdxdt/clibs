@@ -13,8 +13,8 @@ std::vector<std::vector<Pt>> Phantom_poly;
 std::vector<std::vector<Pt>> Skull_poly;
 struct Case {
     std::string Name;
-    Segs Red;
-    Segs Blue;
+    std::vector<Seg> Red;
+    std::vector<Seg> Blue;
 };
 std::vector<Case> Cases;
 
@@ -26,8 +26,8 @@ struct lex_crossings {
     }
 };
 
-Segs clipperToGraph(std::vector<std::vector<Pt>> loops) {
-    Segs edges;
+std::vector<Seg> clipperToGraph(std::vector<std::vector<Pt>> loops) {
+    std::vector<Seg> edges;
     for (size_t i = 0; i < loops.size(); i++) {
         std::vector<Pt>& loop = loops[i];
         for (size_t j = 0; j < loop.size(); j++) {
@@ -56,13 +56,13 @@ void init_cases() {
         for (auto j = 1; j <= i; j++) {
             auto nr = std::pow(10, i);
             auto nb = std::pow(10, j);
-            Segs red;
+            std::vector<Seg> red;
             for (auto k = 0; k < int(nr); k++) {
                 red.emplace_back(Seg{{random(), random()},
                                      {random(), random()}});
             }
 
-            Segs blue;
+            std::vector<Seg> blue;
             for (auto k = 0; k < int(nb); k++) {
                 blue.emplace_back(Seg{{random(), random()},
                                       {random(), random()}});

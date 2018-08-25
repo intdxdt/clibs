@@ -5,7 +5,7 @@
 #ifndef RBSEGS_BRUTE_FORCE_H
 #define RBSEGS_BRUTE_FORCE_H
 
-std::vector<std::vector<size_t>> BruteForce(const Segs& red, const Segs& blue) {
+std::vector<std::vector<size_t>> brute_force(const std::vector<Seg>& red, const std::vector<Seg>& blue) {
     auto nr = red.size();
     auto nb = blue.size();
     std::vector<std::vector<size_t>> crossings;

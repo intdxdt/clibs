@@ -23,7 +23,6 @@ inline double snap_to_zero_or_one(double v) {
     return feq(v, 0.0) ? 0.0 : feq(v, 1.0) ? 1.0 : v;
 }
 
-
 //do two lines intersect line segments a && b with
 //vertices sa, sb, oa, ob
 bool intersects(const Pt& sa, const Pt& sb, const Pt& oa, const Pt& ob) {

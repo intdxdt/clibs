@@ -18,8 +18,6 @@ using namespace std;
 
 
 TEST_CASE("rbsegs 1", "[rbsegs 1]") {
-    auto brutal = BruteForce;
-    auto rblsi = RBIntersection;
 
     auto seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
@@ -28,8 +26,8 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
         return distribution(generator);
     };
     SECTION("should test edge case") {
-        auto red = Segs{{{224, 328}, {224, 331}}};
-        auto blue = Segs{{{224, 146}, {224, 330}}};
+        auto red = std::vector<Seg>{{{224, 328}, {224, 331}}};
+        auto blue = std::vector<Seg>{{{224, 146}, {224, 330}}};
         auto bln = false;
         auto visit = [&](int , int) {
             bln = true;
@@ -40,9 +38,10 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
     }
 
     SECTION("should test fuzzy") {
-        for (auto j = 0; j < 10; j++) {
-            Segs red;
-            for (auto i = 0; i < 10 * (j + 1); i++) {
+        for (size_t j = 0; j < 10; j++) {
+            std::vector<Seg> red;
+            red.reserve(10 * (j + 1));
+            for (size_t i = 0; i < 10 * (j + 1); i++) {
                 red.emplace_back(Seg{
                         {random(), random()},
                         {random(), random()},
@@ -50,17 +49,18 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
             }
 
 
-            Segs blue;
-            for (auto i = 0; i < 10 * (j + 1); i++) {
+            std::vector<Seg> blue;
+            blue.reserve(10 * (j + 1));
+            for (size_t i = 0; i < 10 * (j + 1); i++) {
                 blue.emplace_back(Seg{
                         {random(), random()},
                         {random(), random()},
                 });
             }
-            auto expected = brutal(red, blue);
+            auto expected = brute_force(red, blue);
             std::sort(expected.begin(), expected.end(), lex_crossings());
 
-            auto actual = rblsi(red, blue);
+            auto actual = rb_intersection(red, blue);
             std::sort(actual.begin(), actual.end(), lex_crossings());
             REQUIRE(actual == expected);
         };
@@ -70,10 +70,10 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
         init_cases();
         for (auto&& testCase : Cases) {
             cout << testCase.Name << '\n';
-            auto expected = brutal(testCase.Red, testCase.Blue);
+            auto expected = brute_force(testCase.Red, testCase.Blue);
             std::sort(expected.begin(), expected.end(), lex_crossings());
 
-            auto actual = rblsi(testCase.Red, testCase.Blue);
+            auto actual = rb_intersection(testCase.Red, testCase.Blue);
             std::sort(actual.begin(), actual.end(), lex_crossings());
             REQUIRE(actual == expected);
         }

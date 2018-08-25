@@ -11,7 +11,7 @@
 #ifndef RBSEGS_PREP_H
 #define RBSEGS_PREP_H
 
-void prepareEvents(const Segs& red, const Segs& blue, std::vector<Event>& data) {
+void prepareEvents(const std::vector<Seg>& red, const std::vector<Seg>& blue, std::vector<Event>& data) {
     size_t i = 0;
     for (auto& seg : red) {
         data.emplace_back(Event{min(seg.a.x, seg.b.x), CreateRED, i});

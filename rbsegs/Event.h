@@ -4,15 +4,11 @@
 #ifndef RBSEGS_EVENT_H
 #define RBSEGS_EVENT_H
 
-
-const size_t CreateRED  = 0;
-const size_t CreateBLUE = 1;
-const size_t RemoveRED  = 2;
-const size_t RemoveBLUE = 3;
+enum  Ev{CreateRED, CreateBLUE, RemoveRED, RemoveBLUE};
 
 struct Event {
     double val;
-    size_t ev;
+    Ev ev;
     size_t idx;
 };
 

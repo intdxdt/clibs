@@ -9,7 +9,7 @@ using namespace std;
 
 const int NUM_ITER = 100;
 const int WARM_UP = 10;
-using algorFn = std::function<std::vector<std::vector<size_t>>(Segs, Segs)>;
+using algorFn = std::function<std::vector<std::vector<size_t>>(std::vector<Seg>, std::vector<Seg>)>;
 
 struct Task {
     std::string name;
@@ -17,7 +17,7 @@ struct Task {
 };
 
 
-std::vector<double> benchmark(const Segs& red, const Segs& blue, const algorFn& algo) {
+std::vector<double> benchmark(const std::vector<Seg>& red, const std::vector<Seg>& blue, const algorFn& algo) {
     for (auto i = 0; i < WARM_UP; i++) {
         algo(red, blue);
     }
@@ -30,14 +30,13 @@ std::vector<double> benchmark(const Segs& red, const Segs& blue, const algorFn& 
     }
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    return std::vector<double>{round((duration*1e-6) / double(NUM_ITER), 6), double(count)};
+    return std::vector<double>{round((duration * 1e-6) / double(NUM_ITER), 6), double(count)};
 }
 
 int main() {
-    auto IntersectBruteForce = BruteForce;
     auto implementations = std::vector<Task>{
-            {"Brute-force", IntersectBruteForce},
-            {"RB Intersection",       RBIntersection},
+            {"Brute-Force",     brute_force},
+            {"RB-Intersection", rb_intersection},
     };
 
     init_cases();
