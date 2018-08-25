@@ -6,6 +6,7 @@
 #include <iostream>
 #include <random>
 #include <stdio.h>
+using namespace rbsegs;
 
 std::vector<std::vector<Pt>> GB_poly;
 std::vector<std::vector<Pt>> Arrow_poly;

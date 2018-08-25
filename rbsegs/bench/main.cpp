@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include "../brute_force.h"
-#include "../rbinter.h"
+#include "../rbsegs.h"
 #include "../test_cases.h"
 #include "../../mutil/mutil.h"
 

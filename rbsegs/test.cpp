@@ -9,7 +9,7 @@
 #include <iostream>
 #include <functional>
 
-#include "rbinter.h"
+#include "rbsegs.h"
 #include "brute_force.h"
 #include "test_cases.h"
 #include "../catch/catch.h"
@@ -33,7 +33,7 @@ TEST_CASE("rbsegs 1", "[rbsegs 1]") {
             bln = true;
             return false;
         };
-        RedBlueLineSegmentIntersection(red, blue, visit);
+        redblue_segment_intersection(red, blue, visit);
         REQUIRE(bln);
     }
 

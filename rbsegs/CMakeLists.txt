@@ -7,11 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 add_executable(rbsegs
         test.cpp
         util.h
-        Event.h
-        prep.h
         brute.h
-        seg.h
-        intersects.h
-        rbinter.h
         brute_force.h
+        rbsegs.h
 )
