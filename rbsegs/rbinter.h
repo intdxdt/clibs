@@ -12,38 +12,40 @@
 
 bool RedBlueLineSegmentIntersection(
         const Segs& red, const Segs& blue,
-        const std::function<bool(int, int)>& visit) {
+        const std::function<bool(size_t, size_t)>& visit) {
     auto nr = red.size();
     auto nb = blue.size();
     auto n = nr + nb;
     auto ne = 2 * n;
     auto ret = false;
+    std::vector<Event> events;
+    events.reserve(ne);
 
-    auto events = prepareEvents(red, blue);
-    auto redList = BruteForceList(nr);
-    auto blueList = BruteForceList(nb);
+    prepareEvents(red, blue, events);
+    BruteForceList redList{nr};
+    BruteForceList blueList{nb};
+    size_t ev ;
 
-    for (size_t i = 0; !ret && i < ne; i++) {
-        auto ev = events[i].ev;
-        auto index = events[i].idx;
-        if (ev == Ev::CreateRED) {
-            ret = addSegment(index, red,  redList, blue, blueList, visit, false);
-        } else if (ev == Ev::CreateBLUE) {
-            ret = addSegment(index, blue, blueList, red,  redList, visit, true);
-        } else if (ev == Ev::RemoveRED) {
-            redList.remove(index);
-        } else if (ev == Ev::RemoveBLUE) {
-            blueList.remove(index);
+    for (size_t i = 0; !ret && i < ne; ++i) {
+        ev = events[i].ev;
+        if (ev == CreateRED) {
+            ret = addSegment(events[i].idx, red, redList, blue, blueList, visit, false);
+        } else if (ev == CreateBLUE) {
+            ret = addSegment(events[i].idx, blue, blueList, red, redList, visit, true);
+        } else if (ev == RemoveRED) {
+            redList.remove(events[i].idx);
+        } else if (ev == RemoveBLUE) {
+            blueList.remove(events[i].idx);
         }
     }
 
     return ret;
 }
 
-std::vector<std::vector<int>> RBIntersection(const Segs& red, const Segs& blue) {
-    std::vector<std::vector<int>> crossings;
-    auto visit = [&](int i, int j) {
-        crossings.emplace_back(std::vector<int>{i, j});
+std::vector<std::vector<size_t>> RBIntersection(const Segs& red, const Segs& blue) {
+    std::vector<std::vector<size_t>> crossings;
+    auto visit = [&](size_t i, size_t j) {
+        crossings.emplace_back(std::vector<size_t>{i, j});
         return false;
     };
     RedBlueLineSegmentIntersection(red, blue, visit);

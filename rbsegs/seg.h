@@ -11,32 +11,30 @@
 
 
 bool addSegment(
-        int index,
-         const Segs& red,  BruteForceList& redList,
-         const Segs& blue, BruteForceList& blueList,
-         const std::function<bool(int, int)>& visit, bool flip) {
-    //Look up segment
-    Seg seg = red[index];
+        size_t index,
+        const Segs& red,
+        BruteForceList& redList,
+        const Segs& blue,
+        BruteForceList& blueList,
+        const std::function<bool(size_t, size_t)>& visit,
+        bool flip
+) {
 
-    //Get segment end points
-    Pt seg_a = seg[0];
-    Pt seg_b = seg[1];
+    const Seg& seg = red[index];
 
     //Read out components
-    double  a0 = seg_a[1];
-    double  a1 = seg_b[1];
-    double l0 = min(a0, a1);
-    double h0 = max(a0, a1);
+    double l0 = min(seg.a.y, seg.b.y);
+    double h0 = max(seg.a.y, seg.b.y);
 
     //Scan over blue intervals for point
     auto count = blueList.count;
     auto ptr = 2 * count;
     double h1, l1;
-    int bindex = 0;
+    size_t bindex = 0;
     bool ret = false;
 
 
-    for (auto i = count - 1; !ret &&  i >= 0; i--) {
+    for (auto i = count; !ret && (i-- > 0);) {
         ptr += -1;
         h1 = blueList.intervals[ptr];
         ptr += -1;
@@ -44,14 +42,11 @@ bool addSegment(
 
         //Test if intervals overlap
         if (l0 <= h1 && l1 <= h0) {
-            bindex = blueList.index[i];
+            bindex = static_cast<size_t>(blueList.index[i]);
+            const Seg& segb = blue[bindex];
             //Test if segments intersect
-            if (intersects(seg_a, seg_b, blue[bindex][0], blue[bindex][1])) {
-                if (flip) {
-                    ret = visit(bindex, index);
-                } else {
-                    ret = visit(index, bindex);
-                }
+            if (intersects(seg.a, seg.b, segb.a, segb.b)) {
+                ret = flip ? visit(bindex, index) : visit(index, bindex);
             }
         }
     }

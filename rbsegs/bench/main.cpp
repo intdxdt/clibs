@@ -9,7 +9,7 @@ using namespace std;
 
 const int NUM_ITER = 100;
 const int WARM_UP = 10;
-using algorFn = std::function<std::vector<std::vector<int>>(Segs, Segs)>;
+using algorFn = std::function<std::vector<std::vector<size_t>>(Segs, Segs)>;
 
 struct Task {
     std::string name;

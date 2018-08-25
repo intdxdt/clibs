@@ -1,13 +1,13 @@
 #include <vector>
-
-
+#include "../pt/pt.h"
 #ifndef RBSEGS_UTIL_H
 #define RBSEGS_UTIL_H
-const size_t x = 0;
-const size_t y = 1;
 
-using Pt = std::vector<double>;
-using Seg = std::vector<Pt>;
+struct Seg {
+    Pt a;
+    Pt b;
+};
+
 using Segs = std::vector<Seg>;
 
 template<typename T>

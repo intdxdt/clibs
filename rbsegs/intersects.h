@@ -1,9 +1,7 @@
-//
-// Created on 11/08/18.
-//
 #include <vector>
 #include <array>
 #include "util.h"
+
 #include "../mbr/mbr.h"
 #include "../mutil/mutil.h"
 
@@ -11,8 +9,8 @@
 #define RBSEGS_INTERSECTS_H
 
 //envelope of segment
-inline MBR bbox(const std::vector<double>& a, const std::vector<double>& b) {
-    return MBR(a[x], a[y], b[x], b[y]);
+inline mbr::MBR bbox(const Pt& a, const Pt& b) {
+    return mbr::MBR(a.x, a.y, b.x, b.y);
 }
 
 //clamp to zero if float is near zero
@@ -30,9 +28,9 @@ inline double snap_to_zero_or_one(double v) {
 //vertices sa, sb, oa, ob
 bool intersects(const Pt& sa, const Pt& sb, const Pt& oa, const Pt& ob) {
     auto bln = false;
-    auto a = ((ob[0] - oa[0]) * (sa[1] - oa[1])) - ((ob[1] - oa[1]) * (sa[0] - oa[0]));
-    auto b = ((sb[0] - sa[0]) * (sa[1] - oa[1])) - ((sb[1] - sa[1]) * (sa[0] - oa[0]));
-    auto d = ((ob[1] - oa[1]) * (sb[0] - sa[0])) - ((ob[0] - oa[0]) * (sb[1] - sa[1]));
+    auto a = ((ob.x - oa.x) * (sa.y - oa.y)) - ((ob.y - oa.y) * (sa.x - oa.x));
+    auto b = ((sb.x - sa.x) * (sa.y - oa.y)) - ((sb.y - sa.y) * (sa.x - oa.x));
+    auto d = ((ob.y - oa.y) * (sb.x - sa.x)) - ((ob.x - oa.x) * (sb.y - sa.y));
 
     //snap to zero if near -0 or 0
     a = snap_to_zero(a);

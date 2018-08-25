@@ -2,23 +2,23 @@
 
 #include <iostream>
 #include <cmath>
-#include "../catch/catch.h"
 #include "mbr.h"
+#include "../catch/catch.h"
 
 using namespace mbr;
 
 
 TEST_CASE("mbr 1", "[mbr 1]") {
     SECTION("construction") {
-        MBR m0 = {0, 0, 0.5, 0.2};
-        MBR m1 = {2, 2, -0.5, -0.2};
+        MBR m0  {0, 0, 0.5, 0.2};
+        MBR m1  {2, 2, -0.5, -0.2};
         MBR m = m0 + m1;
         REQUIRE(m.minx == -0.5);
         REQUIRE(m.miny == -0.2);
         REQUIRE(m.maxx == 2);
         REQUIRE(m.maxy == 2);
 
-        m1 = MBR{2, 2, -0.5, -0.2, true};
+        m1 = {2, 2, -0.5, -0.2, true};
         REQUIRE(m1.minx == 2);
         REQUIRE(m1.miny == 2);
         REQUIRE(m1.maxx == -0.5);
@@ -183,27 +183,11 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         REQUIRE(m1.distance(m3) == 0.0);
         REQUIRE(m1.distance_square(m3) == 0.0);
 
-        MBR a{
-                -7.703505430214746, 3.0022503796012305,
-                -5.369812194018422, 5.231449888803689
-        };
+        MBR a{-7.703505430214746, 3.0022503796012305, -5.369812194018422, 5.231449888803689};
         REQUIRE(m1.distance(a) == std::hypot(-5.369812194018422, 3.0022503796012305 - 2));
 
-        MBR b{
-                -4.742849832055231, -4.1033230559816065,
-                -1.9563504455521576, -2.292098454754609
-        };
+        MBR b{-4.742849832055231, -4.1033230559816065, -1.9563504455521576, -2.292098454754609};
         REQUIRE(m1.distance(b) == std::hypot(-1.9563504455521576, -2.292098454754609));
-
-        MBR aa{
-                56.375782597898, 56.375782597898,
-                123.375782597898, 823.375782597898
-        };
-        std::cout << "-----------------------------------------------------------------------------------" << std::endl;
-        std::cout << aa.wkt() << std::endl;
-        std::cout << b.wkt() << std::endl;
-        std::cout << "-----------------------------------------------------------------------------------" << std::endl;
-
     }
 
     SECTION("contains, disjoint , contains completely") {
