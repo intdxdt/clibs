@@ -12,17 +12,17 @@ struct Pt {
     T y;
 
     ///Operator : equals
-    inline bool equals(const Pt &other) {
+    inline bool equals(const Pt<T> &other) {
         return feq(x, other.x) && feq(y, other.y);
     }
 
     ///Operator : equals
-    inline bool operator==(const Pt &other) {
+    inline bool operator==(const Pt<T> &other) {
         return equals(other);
     }
 
     ///Operator : not equal
-    inline bool operator!=(const Pt &other) {
+    inline bool operator!=(const Pt<T> &other) {
         return !equals(other);
     }
 
@@ -39,17 +39,17 @@ struct Pt3d {
     T z;
 
     ///Operator : equals
-    inline bool equals(const Pt3d &other) {
+    inline bool equals(const Pt3d<T> &other) {
         return feq(x, other.x) && feq(y, other.y) && feq(z, other.z);
     }
 
     ///Operator : equals
-    inline bool operator==(const Pt3d &other) {
+    inline bool operator==(const Pt3d<T> &other) {
         return equals(other);
     }
 
     ///Operator : not equal
-    inline bool operator!=(const Pt3d &other) {
+    inline bool operator!=(const Pt3d<T> &other) {
         return !equals(other);
     }
 
