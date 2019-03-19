@@ -17,29 +17,31 @@ namespace rtree {
     constexpr double Inf = std::numeric_limits<double>::infinity();
     constexpr double NegInf = -std::numeric_limits<double>::infinity();
 
-    inline std::array<double, 4> empty_bounds() {
+    template<typename U>
+    inline std::array<U, 4> empty_bounds() {
         return {Inf, Inf, NegInf, NegInf};
     }
 
     //@formatter:off
-    inline mbr::MBR empty_mbr() {
-        return {empty_bounds(), true};
+    template<typename U>
+    inline mbr::MBR<U> empty_mbr() {
+        return {empty_bounds<U>(), true};
     }
 
     template<typename T>
     inline size_t len(const std::vector<T>& v) {
         return v.size();
-    };
+    }
 
     template<typename T>
     inline const T& min(const T& a, const T& b) {
         return b < a ? b : a;
-    };
+    }
 
     template<typename T>
     inline const T& max(const T& a, const T& b) {
         return b > a ? b : a;
-    };
+    }
 
     template<typename T>
     T pop(std::vector<T>& a) {
@@ -85,7 +87,8 @@ namespace rtree {
 
 
     ///extend bounding box
-    inline mbr::MBR& extend(mbr::MBR& a, const mbr::MBR& b) {
+    template<typename U>
+    inline mbr::MBR<U>& extend(mbr::MBR<U>& a, const mbr::MBR<U>& b) {
         a.minx = std::fmin(a.minx, b.minx);
         a.miny = std::fmin(a.miny, b.miny);
         a.maxx = std::fmax(a.maxx, b.maxx);
@@ -94,33 +97,40 @@ namespace rtree {
     }
 
     ///computes area of bounding box
-    inline double bbox_area(const mbr::MBR& a) {
+    template<typename U>
+    inline double bbox_area(const mbr::MBR<U>& a) {
         return (a.maxx - a.minx) * (a.maxy - a.miny);
     }
 
     ///computes box margin
-    inline double bbox_margin(const mbr::MBR& a) {
+    template<typename U>
+    inline double bbox_margin(const mbr::MBR<U>& a) {
         return (a.maxx - a.minx) + (a.maxy - a.miny);
     }
 
     ///computes enlarged area given two mbrs
-    inline double enlarged_area(const mbr::MBR& a, const mbr::MBR& b) {
+
+    template<typename U>
+    inline double enlarged_area(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
         return (std::fmax(a.maxx, b.maxx) - std::fmin(a.minx, b.minx)) *
                (std::fmax(a.maxy, b.maxy) - std::fmin(a.miny, b.miny));
     }
 
     ///contains tests whether a contains b
-    inline bool contains(const mbr::MBR& a, const mbr::MBR& b) {
+    template<typename U>
+    inline bool contains(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
         return a.contains(b);
     }
 
     ///intersects tests a intersect b (mbr)
-    inline bool intersects(const mbr::MBR& a, const mbr::MBR& b) {
+    template<typename U>
+    inline bool intersects(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
         return a.intersects(b);
     }
 
     ///computes the intersection area of two mbrs
-    inline double intersection_area(const mbr::MBR& a, const mbr::MBR& b) {
+    template<typename U>
+    inline double intersection_area(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
         if (a.disjoint(b)) {
             return 0.0;
         }

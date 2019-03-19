@@ -24,28 +24,28 @@
 #define RTREE_RTREE_H
 //RTree
 namespace rtree {
-    template<typename T>
+    template<typename T, typename U>
     struct RTree {
         size_t maxEntries{9};
         size_t minEntries{4};
-        Node<T> data = {};
+        Node<T, U> data = {};
 
         RTree() = default;
 
-        RTree(RTree& other) noexcept :
+        RTree(RTree &other) noexcept :
                 maxEntries(other.maxEntries),
                 minEntries(other.minEntries) {
             data = std::move(other.data);
         }
 
-        RTree(RTree&& other) noexcept:
+        RTree(RTree &&other) noexcept:
                 maxEntries(other.maxEntries),
                 minEntries(other.minEntries) {
             data = std::move(other.data);
         }
 
 
-        RTree& operator=(RTree&& other) noexcept {
+        RTree &operator=(RTree &&other) noexcept {
             maxEntries = other.maxEntries;
             minEntries = other.minEntries;
             data = std::move(other.data);
@@ -54,20 +54,20 @@ namespace rtree {
 
         ~RTree() = default;
 
-        RTree& clear() {
+        RTree &clear() {
             //destruct_node(std::move(data));
-            data = NewNode<T>(nullptr, 1, true);
+            data = NewNode<T,U>(nullptr, 1, true);
             return *this;
         }
 
-        RTree& insert(T* item) {
+        RTree &insert(T *item) {
             insert(item, this->data.height - 1);
             return *this;
         }
 
         // load_boxes loads bounding boxes
-        RTree& load_boxes(std::vector<mbr::MBR>& boxes) {
-            std::vector<T*> items;
+        RTree &load_boxes(std::vector<mbr::MBR<U>> &boxes) {
+            std::vector<T *> items;
             items.reserve(boxes.size());
             for (size_t i = 0; i < boxes.size(); ++i) {
                 items.emplace_back(&boxes[i]);
@@ -76,24 +76,24 @@ namespace rtree {
         }
 
         // load_boxes loads bounding boxes
-        RTree& load_boxes(std::vector<mbr::MBR>&& boxes) {
+        RTree &load_boxes(std::vector<mbr::MBR<U>> &&boxes) {
             return load_boxes(boxes);
         }
 
         // load implements bulk loading
-        RTree& load(std::vector<T*>& objects) {
+        RTree &load(std::vector<T *> &objects) {
             if (objects.empty()) {
                 return *this;
             }
 
             if (objects.size() < minEntries) {
-                for (auto& o : objects) {
+                for (auto &o : objects) {
                     insert(o);
                 }
                 return *this;
             }
 
-            std::vector<T*> objs(objects.begin(), objects.end());
+            std::vector<T *> objs(objects.begin(), objects.end());
 
             // recursively build the tree from scratch using OMT algorithm
             auto node = bulk_build(objs, 0, objs.size() - 1, 0);
@@ -101,10 +101,12 @@ namespace rtree {
             if (data.children.empty()) {
                 // save as is if tree is empty
                 data = std::move(node);
-            } else if (data.height == node.height) {
+            }
+            else if (data.height == node.height) {
                 // split root if trees have the same height
                 split_root(std::move(data), std::move(node));
-            } else {
+            }
+            else {
                 if (data.height < node.height) {
                     // swap trees if inserted one is bigger
                     std::swap(data, node);
@@ -123,34 +125,36 @@ namespace rtree {
         }
 
         // all items from  root node
-        std::vector<T*> all() {
-            std::vector<T*> result{};
+        std::vector<T *> all() {
+            std::vector<T *> result{};
             all(&data, result);
             return result;
         }
 
         // search item
-        std::vector<T*> search(const mbr::MBR& bbox) {
-            Node<T>* node = &data;
-            std::vector<T*> result;
+        std::vector<T *> search(const mbr::MBR<U> &bbox) {
+            Node<T, U> *node = &data;
+            std::vector<T *> result;
 
             if (!intersects(bbox, node->bbox)) {
                 return result;
             }
 
-            std::vector<Node<T>*> nodesToSearch;
+            std::vector<Node<T, U> *> nodesToSearch;
 
             while (true) {
                 for (size_t i = 0, length = node->children.size(); i < length; i++) {
-                    Node<T>* child = &node->children[i];
-                    const mbr::MBR& childBBox = child->bbox;
+                    Node<T, U> *child = &node->children[i];
+                    const mbr::MBR<U> &childBBox = child->bbox;
 
                     if (intersects(bbox, childBBox)) {
                         if (node->leaf) {
                             result.emplace_back(child->item);
-                        } else if (contains(bbox, childBBox)) {
+                        }
+                        else if (contains(bbox, childBBox)) {
                             all(child, result);
-                        } else {
+                        }
+                        else {
                             nodesToSearch.emplace_back(child);
                         }
                     }
@@ -166,13 +170,13 @@ namespace rtree {
 
         // Remove Item from RTree
         // NOTE:if item is a bbox , then first found bbox is removed
-        RTree& remove(T* item) {
+        RTree &remove(T *item) {
             if (item == nullptr) { //uninitialized object
                 return *this;
             }
             remove_item(
                     item->bbox(),
-                    [&](Node<T>* node, size_t i) {
+                    [&](Node<T, U> *node, size_t i) {
                         return node->children[i].item == item;
                     });
             return *this;
@@ -180,10 +184,10 @@ namespace rtree {
 
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
-        RTree& remove(const mbr::MBR& item) {
+        RTree &remove(const mbr::MBR<U> &item) {
             remove_item(
                     item,
-                    [&](Node<T>* node, size_t i) {
+                    [&](Node<T, U> *node, size_t i) {
                         return node->children[i].bbox.equals(item);
                     });
             return *this;
@@ -191,28 +195,28 @@ namespace rtree {
 
         // Remove Item from RTree
         // NOTE:if item is a bbox , then first found bbox is removed
-        RTree& remove(const Node<T>* node) {
+        RTree &remove(const Node<T, U> *node) {
             if (node == nullptr) {
                 return *this;
             }
             remove_item(
                     node->bbox,
-                    [&](const Node<T>* n, size_t i) {
+                    [&](const Node<T, U> *n, size_t i) {
                         return node->item == n->children[i].item &&
                                node->bbox.equals(n->children[i].bbox);
                     });
             return *this;
         }
 
-        bool collides(const mbr::MBR& bbox) {
-            Node<T>* node = &data;
+        bool collides(const mbr::MBR<U> &bbox) {
+            Node<T, U> *node = &data;
             if (!intersects(bbox, node->bbox)) {
                 return false;
             }
 
             bool bln = false;
-            Node<T>* child;
-            std::vector<Node<T>*> searchList;
+            Node<T, U> *child;
+            std::vector<Node<T, U> *> searchList;
 
             while (!bln && node != nullptr) {
                 size_t i = 0, length = node->children.size();
@@ -228,36 +232,37 @@ namespace rtree {
             return bln;
         }
 
-        std::vector<T*> KNN(
-                const mbr::MBR& query, size_t limit,
-                const std::function<double(const mbr::MBR&, KObj<T>)>& score) {
-            return KNN(query, limit, score, [](KObj<T>) { return std::tuple<bool, bool>(true, false); });
+        std::vector<T *> KNN(
+                const mbr::MBR<U> &query, size_t limit,
+                const std::function<double(const mbr::MBR<U> &, KObj<T, U>)> &score) {
+            return KNN(query, limit, score, [](KObj<T, U>) { return std::tuple<bool, bool>(true, false); });
         }
 
-        std::vector<T*> KNN(
-                const mbr::MBR query, size_t limit,
-                const std::function<double(const mbr::MBR&, KObj<T>)>& score,
-                const std::function<std::tuple<bool, bool>(KObj<T>)>& predicate) {
+        std::vector<T *> KNN(
+                const mbr::MBR<U> query, size_t limit,
+                const std::function<double(const mbr::MBR<U> &, KObj<T, U>)> &score,
+                const std::function<std::tuple<bool, bool>(KObj<T, U>)> &predicate) {
 
-            Node<T>* node = &data;
-            std::vector<T*> result{};
+            Node<T, U> *node = &data;
+            std::vector<T *> result{};
 
-            Node<T>* child{nullptr};
-            std::vector<KObj<T>> queue{};
+            Node<T, U> *child{nullptr};
+            std::vector<KObj<T, U>> queue{};
             bool stop{false}, pred{false};
             double dist{0};
-            auto cmp = kobj_cmp<T>();
+            auto cmp = kobj_cmp<T, U>();
 
             while (!stop && (node != nullptr)) {
                 for (size_t i = 0; i < node->children.size(); i++) {
                     child = &node->children[i];
 
                     if (child->children.empty()) {
-                        dist = score(query, KObj<T>{child, child->bbox, true, -1});
-                    } else {
-                        dist = score(query, KObj<T>{nullptr, child->bbox, false, -1});
+                        dist = score(query, KObj<T, U>{child, child->bbox, true, -1});
                     }
-                    queue.push_back(KObj<T>{child, child->bbox, child->children.empty(), dist});
+                    else {
+                        dist = score(query, KObj<T, U>{nullptr, child->bbox, false, -1});
+                    }
+                    queue.push_back(KObj<T, U>{child, child->bbox, child->children.empty(), dist});
                 }
 
                 //make heap
@@ -291,7 +296,8 @@ namespace rtree {
                 if (!stop) {
                     if (queue.empty()) {
                         node = nullptr;
-                    } else {
+                    }
+                    else {
                         auto q = queue.back(); //back
                         queue.pop_back();      //pop
                         node = q.node;
@@ -303,14 +309,15 @@ namespace rtree {
 
     private:
         // all - fetch all items from node
-        void all(Node<T>* node, std::vector<T*>& result) {
-            std::vector<Node<T>*> nodesToSearch;
+        void all(Node<T, U> *node, std::vector<T *> &result) {
+            std::vector<Node<T, U> *> nodesToSearch;
             while (true) {
                 if (node->leaf) {
                     for (size_t i = 0; i < node->children.size(); i++) {
                         result.emplace_back(node->children[i].item);
                     }
-                } else {
+                }
+                else {
                     for (size_t i = 0; i < node->children.size(); i++) {
                         nodesToSearch.emplace_back(&node->children[i]);
                     }
@@ -325,18 +332,18 @@ namespace rtree {
 
 
         // insert - private
-        void insert(T* item, size_t level) {
+        void insert(T *item, size_t level) {
             if (item == nullptr) {
                 return;
             }
             auto bbox = item->bbox();
-            std::vector<Node<T>*> insertPath{};
+            std::vector<Node<T, U> *> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
             auto node = choose_subtree(bbox, &data, level, insertPath);
 
             // put the item into the node item_bbox
-            node->add_child(new_leaf_Node(item));
+            node->add_child(new_leaf_Node<T,U>(item));
             extend(node->bbox, bbox);
 
             // split on node overflow propagate upwards if necessary
@@ -347,9 +354,9 @@ namespace rtree {
         }
 
         // insert - private
-        void insert(Node<T>&& item, size_t level) {
+        void insert(Node<T, U> &&item, size_t level) {
             auto bbox = item.bbox;
-            std::vector<Node<T>*> insertPath{};
+            std::vector<Node<T, U> *> insertPath{};
 
             // find the best node for accommodating the item, saving all nodes along the path too
             auto node = choose_subtree(bbox, &data, level, insertPath);
@@ -365,15 +372,15 @@ namespace rtree {
         }
 
         // build
-        Node<T> bulk_build(std::vector<T*>& items, size_t left, size_t right, size_t height) {
+        Node<T, U> bulk_build(std::vector<T *> &items, size_t left, size_t right, size_t height) {
             double N = double(right - left + 1);
             double M = double(maxEntries);
 
             if (N <= M) {
-                std::vector<T*> chs(items.begin() + left, items.begin() + right + 1);
+                std::vector<T *> chs(items.begin() + left, items.begin() + right + 1);
                 // reached leaf level return leaf
-                auto node = NewNode<T>(nullptr, 1, true, make_children(chs));
-                calculate_bbox(&node);
+                auto node = NewNode<T,U>(nullptr, 1, true, make_children<T,U>(chs));
+                calculate_bbox<Node<T,U>, U>(&node);
                 return node;
             }
 
@@ -386,7 +393,7 @@ namespace rtree {
             }
 
             // TODO eliminate recursion?
-            auto node = NewNode<T>(nullptr, height, false, std::vector<Node<T>>{});
+            auto node = NewNode<T, U>(nullptr, height, false, std::vector<Node<T, U>>{});
 
             // split the items into M mostly square tiles
 
@@ -395,11 +402,11 @@ namespace rtree {
             size_t i, j, right2, right3;
 
 
-            multi_select(items, left, right, N1, compare_minx);
+            multi_select(items, left, right, N1, compare_minx<U>);
 
             for (i = left; i <= right; i += N1) {
                 right2 = min(i + N1 - 1, right);
-                multi_select(items, i, right2, N2, compare_miny);
+                multi_select(items, i, right2, N2, compare_miny<U>);
 
                 for (j = i; j <= right2; j += N2) {
                     right3 = min(j + N2 - 1, right2);
@@ -407,15 +414,15 @@ namespace rtree {
                     node.add_child(bulk_build(items, j, right3, height - 1));
                 }
             }
-            calculate_bbox(&node);
+            calculate_bbox<Node<T, U>, U>(&node);
             return node;
         }
 
         // sort an array so that items come in groups of n unsorted items,
         // with groups sorted between each other and
         // combines selection algorithm with binary divide & conquer approach.
-        void multi_select(std::vector<T*>& arr, size_t left, size_t right, size_t n,
-                          const std::function<double(const mbr::MBR&, const mbr::MBR&)>& compare) {
+        void multi_select(std::vector<T *> &arr, size_t left, size_t right, size_t n,
+                          const std::function<double(const mbr::MBR<U> &, const mbr::MBR<U> &)> &compare) {
             size_t mid = 0;
             std::vector<size_t> stack{left, right};
 
@@ -437,12 +444,12 @@ namespace rtree {
         }
 
         // sort array between left and right (inclusive) so that the smallest k elements come first (unordered)
-        void select_box(std::vector<T*>& arr, size_t left, size_t right, size_t k,
-                        const std::function<double(const mbr::MBR&, const mbr::MBR&)>& compare) {
+        void select_box(std::vector<T *> &arr, size_t left, size_t right, size_t k,
+                        const std::function<double(const mbr::MBR<U> &, const mbr::MBR<U> &)> &compare) {
             size_t i{0}, j{0};
             double fn, fi, fNewLeft, fNewRight, fsn, fz, fs, fsd;
             double fLeft(left), fRight(right), fk(k);
-            T* t;
+            T *t;
 
             while (right > left) {
                 // the arbitrary constants 600 and 0.5 are used in the original
@@ -489,7 +496,8 @@ namespace rtree {
 
                 if (compare(arr[left]->bbox(), t->bbox()) == 0) {
                     swap_item(arr, left, j);
-                } else {
+                }
+                else {
                     j++;
                     swap_item(arr, j, right);
                 }
@@ -505,7 +513,7 @@ namespace rtree {
 
 
         // split on node overflow propagate upwards if necessary
-        void split_on_overflow(size_t& level, std::vector<Node<T>*>& insertPath) {
+        void split_on_overflow(size_t &level, std::vector<Node<T, U> *> &insertPath) {
             auto n = static_cast<size_t>(-1);
             while ((level != n) && (insertPath[level]->children.size() > maxEntries)) {
                 split(insertPath, level);
@@ -514,21 +522,21 @@ namespace rtree {
         }
 
         //_splitRoot splits the root of tree.
-        void split_root(Node<T>&& node, Node<T>&& newNode) {
+        void split_root(Node<T, U> &&node, Node<T, U> &&newNode) {
             // split root node
             auto root_height = node.height + 1;
 
-            std::vector<Node<T>> path;
+            std::vector<Node<T, U>> path;
             path.emplace_back(std::move(node));
             path.emplace_back(std::move(newNode));
 
-            data = NewNode<T>(nullptr, root_height, false, std::move(path));
-            calculate_bbox(&data);
+            data = NewNode<T,U>(nullptr, root_height, false, std::move(path));
+            calculate_bbox<Node<T, U>, U>(&data);
         }
 
         //split overflowed node into two
-        void split(std::vector<Node<T>*>& insertPath, size_t& level) {
-            Node<T>* node = insertPath[level];
+        void split(std::vector<Node<T, U> *> &insertPath, size_t &level) {
+            Node<T, U> *node = insertPath[level];
 
             const size_t M = node->children.size();
             size_t m = minEntries;
@@ -536,7 +544,7 @@ namespace rtree {
             choose_split_axis(node, m, M);
             const size_t at = choose_split_index(node, m, M);
 
-            auto newNode = NewNode<T>(nullptr, node->height, node->leaf);
+            auto newNode = NewNode<T,U>(nullptr, node->height, node->leaf);
             //pre allocate children space = m - index
             newNode.children.reserve(M - at);
 
@@ -546,13 +554,14 @@ namespace rtree {
             }
             node->children.resize(at);//shrink size
 
-            calculate_bbox(node);
-            calculate_bbox(&newNode);
+            calculate_bbox<Node<T, U>, U>(node);
+            calculate_bbox<Node<T, U>, U>(&newNode);
 
             if (level > 0) {
                 insertPath[level - 1]->add_child(std::move(newNode));
-            } else {
-                auto nn = Node<T>{node->item, node->height, node->leaf, node->bbox};
+            }
+            else {
+                auto nn = Node<T, U>{node->item, node->height, node->leaf, node->bbox};
                 nn.children = std::move(node->children);
                 split_root(std::move(nn), std::move(newNode));
             }
@@ -561,19 +570,19 @@ namespace rtree {
 
         //_chooseSplitAxis selects split axis : sorts node children
         //by the best axis for split.
-        void choose_split_axis(Node<T>* node, size_t m, size_t M) {
+        void choose_split_axis(Node<T, U> *node, size_t m, size_t M) {
             auto xMargin = all_dist_margin(node, m, M, ByX);
             auto yMargin = all_dist_margin(node, m, M, ByY);
 
             // if total distributions margin value is minimal for x, sort by minX,
             // otherwise it's already sorted by minY
             if (xMargin < yMargin) {
-                std::sort(node->children.begin(), node->children.end(), x_node_path<T>());
+                std::sort(node->children.begin(), node->children.end(), x_node_path<T, U>());
             }
         }
 
         //_chooseSplitIndex selects split index.
-        std::size_t choose_split_index(Node<T>* node, std::size_t m, std::size_t M) const {
+        std::size_t choose_split_index(Node<T, U> *node, std::size_t m, std::size_t M) const {
             std::size_t i = 0, index = 0;
             double overlap, area, minOverlap, minArea;
 
@@ -581,8 +590,8 @@ namespace rtree {
             minArea = std::numeric_limits<double>::infinity();
 
             for (i = m; i <= M - m; i++) {
-                auto bbox1 = dist_bbox(node, 0, i);
-                auto bbox2 = dist_bbox(node, i, M);
+                auto bbox1 = dist_bbox<Node<T, U>, U>(node, 0, i);
+                auto bbox2 = dist_bbox<Node<T, U>, U>(node, i, M);
 
                 overlap = intersection_area(bbox1, bbox2);
                 area = bbox_area(bbox1) + bbox_area(bbox2);
@@ -596,7 +605,8 @@ namespace rtree {
                         minArea = area;
                     }
 
-                } else if (overlap == minOverlap) {
+                }
+                else if (overlap == minOverlap) {
                     // otherwise choose distribution with minimum area
                     if (area < minArea) {
                         minArea = area;
@@ -609,17 +619,18 @@ namespace rtree {
 
         //all_dist_margin computes total margin of all possible split distributions.
         //Each node is at least m full.
-        double all_dist_margin(Node<T>* node, size_t m, size_t M, SortBy sortBy) const {
+        double all_dist_margin(Node<T, U> *node, size_t m, size_t M, SortBy sortBy) const {
             if (sortBy == ByX) {
-                std::sort(node->children.begin(), node->children.end(), x_node_path<T>());
-            } else if (sortBy == ByY) {
-                std::sort(node->children.begin(), node->children.end(), y_node_path<T>());
+                std::sort(node->children.begin(), node->children.end(), x_node_path<T, U>());
+            }
+            else if (sortBy == ByY) {
+                std::sort(node->children.begin(), node->children.end(), y_node_path<T, U>());
             }
 
             size_t i = 0;
 
-            auto leftBBox = dist_bbox(node, 0, m);
-            auto rightBBox = dist_bbox(node, M - m, M);
+            auto leftBBox  = dist_bbox<Node<T, U>, U>(node, 0, m);
+            auto rightBBox = dist_bbox<Node<T, U>, U>(node, M - m, M);
             auto margin = bbox_margin(leftBBox) + bbox_margin(rightBBox);
 
             for (i = m; i < M - m; i++) {
@@ -638,10 +649,10 @@ namespace rtree {
 
         // Remove Item from RTree
         // NOTE:if item is a bbox , then first found bbox is removed
-        RTree& remove_item(const mbr::MBR& bbox, const std::function<bool(Node<T>*, size_t)>& predicate) {
-            Node<T>* node = &data;
-            Node<T>* parent = nullptr;
-            std::vector<Node<T>*> path;
+        RTree &remove_item(const mbr::MBR<U> &bbox, const std::function<bool(Node<T, U> *, size_t)> &predicate) {
+            Node<T, U> *node = &data;
+            Node<T, U> *parent = nullptr;
+            std::vector<Node<T, U> *> path;
             std::vector<size_t> indexes;
             std::optional<size_t> index;
 
@@ -683,12 +694,14 @@ namespace rtree {
                     i = 0;
                     parent = node;
                     node = &node->children[0];
-                } else if (parent != nullptr) {
+                }
+                else if (parent != nullptr) {
                     //go right
                     i++;
                     node = node_at_index(parent->children, i);;
                     goingUp = false;
-                } else {
+                }
+                else {
                     node = nullptr;
                 } //nothing found;
             }
@@ -698,8 +711,8 @@ namespace rtree {
 
 
         //condense node and its path from the root
-        void condense(std::vector<Node<T>*>& path) {
-            Node<T>* parent{nullptr};
+        void condense(std::vector<Node<T, U> *> &path) {
+            Node<T, U> *parent{nullptr};
             auto sentinel{static_cast<size_t>(-1)};
             auto i{path.size() - 1};
             //go through the path, removing empty nodes and updating bboxes
@@ -714,21 +727,23 @@ namespace rtree {
                         if (index.has_value()) {
                             parent->children.erase(parent->children.begin() + index.value());
                         }
-                    } else {
+                    }
+                    else {
                         //root is empty, rest root
                         this->clear();
                     }
-                } else {
-                    calculate_bbox(path[i]);
+                }
+                else {
+                    calculate_bbox<Node<T, U>, U>(path[i]);
                 }
                 i--;
             }
         }
     };
 
-    template<typename T>
-    RTree<T> NewRTree(size_t cap) {
-        RTree<T> tree;
+    template<typename T, typename U>
+    RTree<T, U> NewRTree(size_t cap) {
+        RTree<T, U> tree;
         tree.clear();
 
         if (cap == 0) {

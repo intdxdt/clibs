@@ -15,29 +15,29 @@
 //Node
 namespace rtree {
     ///Node type for internal node
-    template<typename T>
+    template<typename T, typename U>
     struct Node {
-        T* item;
+        T *item;
         size_t height;
         bool leaf;
-        mbr::MBR bbox = empty_mbr();
-        std::vector<Node<T>> children;
+        mbr::MBR<U> bbox = empty_mbr<U>();
+        std::vector<Node<T, U>> children;
 
         Node() {};
 
-        Node(T* item, size_t height, bool leaf, mbr::MBR bbox) :
+        Node(T *item, size_t height, bool leaf, mbr::MBR<U> bbox) :
                 item(item), height(height), leaf(leaf), bbox(bbox) {
-            children = std::vector<Node<T>>{};
+            children = std::vector<Node<T, U>>{};
         };
 
-        Node(Node<T>&& other) noexcept :
+        Node(Node<T, U> &&other) noexcept :
                 item(other.item), height(other.height), leaf(other.leaf), bbox(other.bbox) {
             children = std::move(other.children);
         }
 
         ~Node() = default;
 
-        Node& operator=(Node<T>&& other) noexcept {
+        Node &operator=(Node<T, U> &&other) noexcept {
             item = other.item;
             leaf = other.leaf;
             height = other.height;
@@ -46,20 +46,20 @@ namespace rtree {
             return *this;
         }
 
-        void add_child(Node<T>&& child) {
+        void add_child(Node<T, U> &&child) {
             children.emplace_back(std::move(child));
         }
 
-        T* get_item() {
+        T *get_item() {
             return item;
         }
     };
 
     ///KObj instance struct
-    template<typename T>
+    template<typename T, typename U>
     struct KObj {
-        Node<T>* node;
-        mbr::MBR bbox;
+        Node<T, U> *node;
+        mbr::MBR<U> bbox;
         bool is_item;
         double dist;
 
@@ -67,7 +67,7 @@ namespace rtree {
             return this->dist;
         }
 
-        T* get_item() {
+        T *get_item() {
             return this->node->get_item();
         }
 
@@ -78,30 +78,30 @@ namespace rtree {
         }
     };
 
-    template<typename T>
+    template<typename T, typename U>
     struct kobj_cmp {
-        inline bool operator()(const KObj<T>& a, const KObj<T>& b) const {
+        inline bool operator()(const KObj<T, U> &a, const KObj<T, U> &b) const {
             return a.dist > b.dist;
         }
     };
 
-    template<typename T>
+    template<typename T, typename U>
     struct x_node_path {
-        inline bool operator()(Node<T>& a, Node<T>& b) {
+        inline bool operator()(Node<T, U> &a, Node<T, U> &b) {
             return a.bbox.minx < b.bbox.minx;
         }
     };
 
-    template<typename T>
+    template<typename T, typename U>
     struct y_node_path {
-        inline bool operator()(Node<T>& a, Node<T>& b) {
+        inline bool operator()(Node<T, U> &a, Node<T, U> &b) {
             return a.bbox.miny < b.bbox.miny;
         }
     };
 
     template<typename T>
     struct xy_node_path {
-        inline bool operator()(T* a, T* b) {
+        inline bool operator()(T *a, T *b) {
             auto d = a->bbox().minx - b->bbox().minx;
             if (feq(d, 0)) {
                 d = a->bbox().miny - b->bbox().miny;
@@ -111,31 +111,33 @@ namespace rtree {
     };
 
     //compareNodeMinX computes change in minimum x
-    inline double compare_minx(const mbr::MBR& a, const mbr::MBR& b) {
+    template<typename U>
+    inline double compare_minx(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
         return a.minx - b.minx;
     }
 
     //compareNodeMinY computes change in minimum y
-    inline double compare_miny(const mbr::MBR& a, const mbr::MBR& b) {
+    template<typename U>
+    inline double compare_miny(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
         return a.miny - b.miny;
     }
 
-    template<typename T>
-    Node<T> NewNode(
-            T* item, size_t height, bool leaf,
-            std::vector<Node<T>>&& children) {
-        mbr::MBR box = empty_mbr();
+    template<typename T, typename U>
+    Node<T, U> NewNode(
+            T *item, size_t height, bool leaf,
+            std::vector<Node<T, U>> &&children) {
+        mbr::MBR<U> box = empty_mbr<U>();
         if (item != nullptr) {
             box = item->bbox();
         }
-        auto node = Node<T>(item, height, leaf, box);
+        auto node = Node<T, U>(item, height, leaf, box);
         node.children = std::move(children);
-        return Node<T>(std::move(node));
+        return Node<T, U>(std::move(node));
     }
 
-    template<typename T>
-    Node<T> NewNode(T* item, size_t height, bool leaf) {
-        mbr::MBR box = empty_mbr();
+    template<typename T, typename U>
+    Node<T, U> NewNode(T *item, size_t height, bool leaf) {
+        mbr::MBR<U> box = empty_mbr<U>();
         if (item != nullptr) {
             box = item->bbox();
         }
@@ -143,28 +145,28 @@ namespace rtree {
     }
 
     //NewNode creates a new node
-    template<typename T>
-    Node<T> new_leaf_Node(T* item) {
-        return NewNode(item, 1, true, std::vector<Node<T>>{});
+    template<typename T, typename U>
+    Node<T, U> new_leaf_Node(T *item) {
+        return NewNode(item, 1, true, std::vector<Node<T, U>>{});
     }
 
     //Constructs children of node
-    template<typename T>
-    std::vector<Node<T>> make_children(std::vector<T*>& items) {
-        std::vector<Node<T>> chs;
+    template<typename T, typename U>
+    std::vector<Node<T, U>> make_children(std::vector<T *> &items) {
+        std::vector<Node<T, U>> chs;
         auto n = items.size();
         chs.reserve(n);
 
         for (size_t i = 0; i < n; ++i) {
-            chs.emplace_back(new_leaf_Node(items[i]));
+            chs.emplace_back(new_leaf_Node<T, U>(items[i]));
         }
         return chs;
     }
 
     //dist_bbox computes min bounding rectangle of node children from k to p-1.
-    template<typename T>
-    mbr::MBR dist_bbox(T* node, size_t k, size_t p) {
-        auto bbox = empty_mbr();
+    template<typename N, typename U>
+    mbr::MBR<U> dist_bbox(N *node, size_t k, size_t p) {
+        auto bbox = empty_mbr<U>();
         for (auto i = k; i < p; i++) {
             extend(bbox, node->children[i].bbox);
         }
@@ -172,16 +174,16 @@ namespace rtree {
     }
 
 
-    template<typename T>
-    Node<T>* node_at_index(std::vector<Node<T>>& a, size_t i) {
+    template<typename T, typename U>
+    Node<T, U> *node_at_index(std::vector<Node<T, U>> &a, size_t i) {
         if (a.empty() || (i > a.size() - 1)) {
             return nullptr;
         }
         return &a[i];
     }
 
-    template<typename T>
-    Node<T>* node_at_index(std::vector<Node<T>*>& a, size_t i) {
+    template<typename T, typename U>
+    Node<T, U> *node_at_index(std::vector<Node<T, U> *> &a, size_t i) {
         if (a.empty() || (i > a.size() - 1)) {
             return nullptr;
         }
@@ -189,14 +191,14 @@ namespace rtree {
     }
 
     //calculate_bbox calculates its bbox from bboxes of its children.
-    template<typename T>
-    void calculate_bbox(T* node) {
-        node->bbox = dist_bbox(node, 0, node->children.size());
+    template<typename N, typename U>
+    void calculate_bbox(N *node) {
+        node->bbox = dist_bbox<N, U>(node, 0, node->children.size());
     }
 
     // adjust bboxes along the given tree path
-    template<typename T>
-    void adjust_parent_bboxes(const mbr::MBR& bbox, std::vector<Node<T>*>& path, size_t& level) {
+    template<typename T, typename U>
+    void adjust_parent_bboxes(const mbr::MBR<U> &bbox, std::vector<Node<T, U> *> &path, size_t &level) {
         auto n = static_cast<size_t>(-1);
         for (auto i = level; i != n; i--) {
             extend(path[i]->bbox, bbox);
@@ -204,10 +206,11 @@ namespace rtree {
     }
 
     //_chooseSubtree select child of node and updates path to selected node.
-    template<typename T>
-    Node<T>* choose_subtree(const mbr::MBR& bbox, Node<T>* node, size_t& level, std::vector<Node<T>*>& path) {
-        Node<T>* child{nullptr};
-        Node<T>* targetNode{nullptr};
+    template<typename T, typename U>
+    Node<T, U> *
+    choose_subtree(const mbr::MBR<U> &bbox, Node<T, U> *node, size_t &level, std::vector<Node<T, U> *> &path) {
+        Node<T, U> *child{nullptr};
+        Node<T, U> *targetNode{nullptr};
         double minArea, minEnlargement, area, enlargement;
 
         while (true) {
@@ -218,7 +221,7 @@ namespace rtree {
             minEnlargement = std::numeric_limits<double>::infinity();
             minArea = std::numeric_limits<double>::infinity();
 
-            for (auto& o : node->children) {
+            for (auto &o : node->children) {
                 child = &o;
                 area = bbox_area(child->bbox);
                 enlargement = enlarged_area(bbox, child->bbox) - area;
@@ -230,7 +233,8 @@ namespace rtree {
                         minArea = area;
                     }
                     targetNode = child;
-                } else if (feq(enlargement, minEnlargement)) {
+                }
+                else if (feq(enlargement, minEnlargement)) {
                     // otherwise choose one with the smallest area
                     if (area < minArea) {
                         minArea = area;
