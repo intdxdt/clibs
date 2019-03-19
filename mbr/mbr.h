@@ -21,28 +21,28 @@ namespace mbr {
         T maxy;
 
         MBR(T minx, T miny, T maxx, T maxy) :
-                minx(fmin(minx, maxx)), miny(fmin(miny, maxy)),
-                maxx(fmax(minx, maxx)), maxy(fmax(miny, maxy)) {}
+                minx(min(minx, maxx)), miny(min(miny, maxy)),
+                maxx(max(minx, maxx)), maxy(max(miny, maxy)) {}
 
         MBR(T minx_, T miny_, T maxx_, T maxy_, bool raw) :
-                minx(raw ? minx_ : fmin(minx_, maxx_)),
-                miny(raw ? miny_ : fmin(miny_, maxy_)),
-                maxx(raw ? maxx_ : fmax(minx_, maxx_)),
-                maxy(raw ? maxy_ : fmax(miny_, maxy_)) {
+                minx(raw ? minx_ : min(minx_, maxx_)),
+                miny(raw ? miny_ : min(miny_, maxy_)),
+                maxx(raw ? maxx_ : max(minx_, maxx_)),
+                maxy(raw ? maxy_ : max(miny_, maxy_)) {
         }
 
         explicit MBR(const std::array<T, 4> &bounds) :
-                minx(fmin(bounds[0], bounds[2])),
-                miny(fmin(bounds[1], bounds[3])),
-                maxx(fmax(bounds[0], bounds[2])),
-                maxy(fmax(bounds[1], bounds[3])) {
+                minx(min(bounds[0], bounds[2])),
+                miny(min(bounds[1], bounds[3])),
+                maxx(max(bounds[0], bounds[2])),
+                maxy(max(bounds[1], bounds[3])) {
         }
 
         MBR(const std::array<T, 4> &bounds, bool raw) {
             *this = MBR(bounds[0], bounds[1], bounds[2], bounds[3], raw);
         }
 
-        bool operator<(const MBR &other) {
+        bool operator<(const MBR<T> &other) {
             auto d = minx - other.minx;
             if (feq(d, 0)) {
                 d = miny - other.miny;
@@ -50,9 +50,9 @@ namespace mbr {
             return d < 0;
         }
 
-        MBR &bbox() { return *this; }
+        MBR<T> &bbox() { return *this; }
 
-        MBR clone() { return *this; }
+        MBR<T> clone() { return *this; }
 
         T width() const { return maxx - minx; }
 
@@ -80,13 +80,15 @@ namespace mbr {
             };
         }
 
-        std::tuple<Pt, Pt> llur() {
-            return std::tuple<Pt, Pt>{{minx, miny},
-                                      {maxx, maxy}};
+        std::tuple<Pt<T>, Pt<T>> llur() {
+            return std::tuple<Pt<T>, Pt<T>>{
+                    {minx, miny},
+                    {maxx, maxy}
+            };
         }
 
         ///Compare equality of two minimum bounding box
-        bool equals(const MBR &other) const {
+        bool equals(const MBR<T> &other) const {
             return eqls(maxx, other.maxx) &&
                    eqls(maxy, other.maxy) &&
                    eqls(minx, other.minx) &&
@@ -101,7 +103,7 @@ namespace mbr {
 
         ///Contains bonding box
         ///is true if mbr completely contains other, boundaries may touch
-        bool contains(const MBR &other) const {
+        bool contains(const MBR<T> &other) const {
             return (other.minx >= minx) &&
                    (other.miny >= miny) &&
                    (other.maxx <= maxx) &&
@@ -119,7 +121,7 @@ namespace mbr {
         ///Completely contains bonding box
         ///is true if mbr completely contains other
         /// without touching boundary
-        bool completely_contains(const MBR &other) const {
+        bool completely_contains(const MBR<T> &other) const {
             return (other.minx > minx) &&
                    (other.miny > miny) &&
                    (other.maxx < maxx) &&
@@ -136,17 +138,17 @@ namespace mbr {
         }
 
         ///Create new bounding box by translating by dx and dy.
-        MBR translate(T dx, T dy) const {
+        MBR<T> translate(T dx, T dy) const {
             return {minx + dx, miny + dy, maxx + dx, maxy + dy};
         }
 
         ///Computes the center of minimum bounding box - (x, y)
-        Pt center() const {
+        Pt<T> center() const {
             return {(minx + maxx) / 2.0, (miny + maxy) / 2.0};
         }
 
         ///Checks if bounding box intersects other
-        bool intersects(const MBR &other) const {
+        bool intersects(const MBR<T> &other) const {
             //not disjoint
             return !(other.minx > maxx ||
                      other.maxx < minx ||
@@ -160,7 +162,7 @@ namespace mbr {
         }
 
         ///intersects point
-        bool intersects(const Pt &pt1, const Pt &pt2) const {
+        bool intersects(const Pt<T> &pt1, const Pt<T> &pt2) const {
             auto minq = min(pt1.x, pt2.x);
             auto maxq = max(pt1.x, pt2.x);
 
@@ -176,12 +178,12 @@ namespace mbr {
         }
 
         ///Test for disjoint between two mbrs
-        bool disjoint(const MBR &other) const {
+        bool disjoint(const MBR<T> &other) const {
             return !intersects(other);
         }
 
         ///Computes the intersection of two bounding box
-        std::optional<MBR> intersection(const MBR &other) {
+        std::optional<MBR<T>> intersection(const MBR<T> &other) {
             if (disjoint(other)) {
                 return std::nullopt;
             }
@@ -189,12 +191,12 @@ namespace mbr {
             auto miny_ = miny > other.miny ? miny : other.miny;
             auto maxx_ = maxx < other.maxx ? maxx : other.maxx;
             auto maxy_ = maxy < other.maxy ? maxy : other.maxy;
-            return MBR{minx_, miny_, maxx_, maxy_};
+            return MBR<T>{minx_, miny_, maxx_, maxy_};
         }
 
 
         ///Expand include other bounding box
-        MBR &expand_to_include(const MBR &other) {
+        MBR<T> &expand_to_include(const MBR<T> &other) {
             minx = min(other.minx, minx);
             miny = min(other.miny, miny);
 
@@ -205,7 +207,7 @@ namespace mbr {
 
 
         ///Expand to include x,y
-        MBR &expand_to_include(double x, T y) {
+        MBR<T> &expand_to_include(T x, T y) {
             if (x < minx) {
                 minx = x;
             }
@@ -223,7 +225,7 @@ namespace mbr {
         }
 
         ///Expand by delta in x and y
-        MBR &expand_by_delta(T dx, T dy) {
+        MBR<T> &expand_by_delta(T dx, T dy) {
             auto minx_ = minx - dx, miny_ = miny - dy;
             auto maxx_ = maxx + dx, maxy_ = maxy + dy;
 
@@ -237,9 +239,9 @@ namespace mbr {
 
 
         ///computes dx and dy for computing hypot
-        Pt distance_dxdy(const MBR &other) const {
-            T dx{};
-            T dy{};
+        Pt<T> distance_dxdy(const MBR<T> &other) const {
+            T dx{0};
+            T dy{0};
 
             // find closest edge by x
             if (maxx < other.minx) {
@@ -257,12 +259,12 @@ namespace mbr {
                 dy = miny - other.maxy;
             }
 
-            return Pt{dx, dy};
+            return Pt<T>{dx, dy};
         }
 
 
         ///Distance computes the distance between two mbrs
-        double distance(const MBR &other) const {
+        double distance(const MBR<T> &other) const {
             if (intersects(other)) {
                 return 0.0;
             }
@@ -272,7 +274,7 @@ namespace mbr {
 
         ///distance square computes the squared distance
         ///between bounding boxes
-        double distance_square(const MBR &other) {
+        double distance_square(const MBR<T> &other) {
             if (intersects(other)) {
                 return 0.0;
             }
@@ -294,7 +296,7 @@ namespace mbr {
         }
 
         ///Operator : +
-        MBR operator+(const MBR &other) {
+        MBR<T> operator+(const MBR<T> &other) {
             return {
                     min(other.minx, minx),
                     min(other.miny, miny),
@@ -305,22 +307,22 @@ namespace mbr {
         }
 
         ///Operator : | or +
-        MBR operator|(const MBR &other) {
+        MBR<T> operator|(const MBR<T> &other) {
             return *this + other;
         }
 
         ///Operator : & : intersection
-        std::optional<MBR> operator&(const MBR &other) {
+        std::optional<MBR<T>> operator&(const MBR<T> &other) {
             return intersection(other);
         }
 
         ///Operator : equals
-        bool operator==(const MBR &other) {
+        bool operator==(const MBR<T> &other) {
             return equals(other);
         }
 
         ///Operator : not equal
-        bool operator!=(const MBR &other) {
+        bool operator!=(const MBR<T> &other) {
             return !(*this == other);
         }
 
@@ -337,7 +339,7 @@ namespace mbr {
         }
 
         template<typename U>
-        auto min(U a, U b) const {
+        U min(U a, U b) const {
             if constexpr (std::is_integral<T>::value) {
                 return b < a ? b : a;
             }
@@ -347,7 +349,7 @@ namespace mbr {
         }
 
         template<typename U>
-        auto max(U a, U b) const {
+        U max(U a, U b) const {
             if constexpr (std::is_integral<T>::value) {
                 return b > a ? b : a;
             }
@@ -358,7 +360,7 @@ namespace mbr {
 
 
         template<typename U>
-        auto eqls(U a, U b) const {
+        bool eqls(U a, U b) const {
             if constexpr (std::is_integral<T>::value) {
                 return a == b;
             }

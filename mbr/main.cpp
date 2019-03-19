@@ -267,10 +267,10 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     }
 
     SECTION("contains, disjoint , contains completely") {
-        Pt p1{-5.95, 9.28};
-        Pt p2{-0.11, 12.56};
-        Pt p3{3.58, 11.79};
-        Pt p4{-1.16, 14.71};
+        Pt<double> p1{-5.95, 9.28};
+        Pt<double> p2{-0.11, 12.56};
+        Pt<double> p3{3.58, 11.79};
+        Pt<double> p4{-1.16, 14.71};
 
         MBR<double> mp12 = {p1.x, p1.y, p2.x, p2.y};
         MBR<double> mp34 = {p3.x, p3.y, p4.x, p4.y};
@@ -278,7 +278,7 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         // intersects but segment are disjoint
         REQUIRE(mp12.intersects(mp34));
         REQUIRE(mp12.intersects(p3, p4));
-        REQUIRE(!mp12.intersects(Pt{m1.minx, m1.miny}, Pt{m1.maxx, m1.maxy}));
+        REQUIRE(!mp12.intersects(Pt<double>{m1.minx, m1.miny}, Pt<double>{m1.maxx, m1.maxy}));
         REQUIRE(!mp12.intersects(p3.x, p3.y));
         REQUIRE(m1.contains(1, 1));
 
@@ -313,11 +313,7 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         md.expand_to_include(mb);
 
         std::array<double, 4> arr{0, 0, 5, 9};
-        std::vector<std::vector<double>> polyarr{{0, 0},
-                                                 {0, 9},
-                                                 {5, 9},
-                                                 {5, 0},
-                                                 {0, 0}};
+        std::vector<std::vector<double>> polyarr{{0, 0}, {0, 9}, {5, 9}, {5, 0}, {0, 0}};
         REQUIRE(ma.as_array() == arr);  //ma modified by expand
         REQUIRE(ma.as_poly_array() == polyarr); //ma modified by expand
         arr = {1.7, 1.5, 5, 9};
@@ -335,9 +331,9 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         auto m1c = m1.center();
         auto mtc = mt.center();
 
-        auto pt = Pt{1, 1};
+        auto pt = Pt<double>{1, 1};
         REQUIRE(m1c == pt);
-        pt = Pt{2, 2};
+        pt = Pt<double>{2, 2};
         REQUIRE(mtc == pt);
         arr = {{1, 1, 3, 3}};
         REQUIRE(mt.as_array() == arr);

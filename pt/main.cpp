@@ -4,8 +4,8 @@
 using namespace std;
 
 int main() {
-    Pt a = {3, 4};
-    Pt3d b = {5, 6, 7};
+    Pt<int> a = {3, 4};
+    Pt3d<int> b = {5, 6, 7};
     std::cout << a.x << std::endl;
     std::cout << b.z << std::endl;
     std::cout << b.x << ", " << b.y << ", " << b.z << std::endl;
