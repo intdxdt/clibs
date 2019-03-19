@@ -10,9 +10,9 @@ using namespace mbr;
 
 TEST_CASE("mbr 1", "[mbr 1]") {
     SECTION("construction") {
-        MBR m0  {0, 0, 0.5, 0.2};
-        MBR m1  {2, 2, -0.5, -0.2};
-        MBR m = m0 + m1;
+        MBR<double> m0{0, 0, 0.5, 0.2};
+        MBR<double> m1{2, 2, -0.5, -0.2};
+        MBR<double> m = m0 + m1;
         REQUIRE(m.minx == -0.5);
         REQUIRE(m.miny == -0.2);
         REQUIRE(m.maxx == 2);
@@ -24,8 +24,8 @@ TEST_CASE("mbr 1", "[mbr 1]") {
         REQUIRE(m1.maxx == -0.5);
         REQUIRE(m1.maxy == -0.2);
 
-        m = MBR{-0.5, -0.2, 2, 2, true};
-        m1 = MBR{2, 2, -0.5, -0.2, false};
+        m = MBR<double>{-0.5, -0.2, 2, 2, true};
+        m1 = MBR<double>{2, 2, -0.5, -0.2, false};
         REQUIRE(m == m1);
 
 
@@ -36,11 +36,11 @@ TEST_CASE("mbr 1", "[mbr 1]") {
         REQUIRE(m.maxy == 2.0);
 
         std::array<double, 4> bounds = {2, 2, 0.5, 0.2};
-        auto marr = MBR(bounds);
+        auto marr = MBR<double>(bounds);
         REQUIRE(m.equals(marr));
-        marr = MBR(bounds, false);
+        marr = MBR<double>(bounds, false);
         REQUIRE(m.equals(marr));
-        marr = MBR(bounds, true);
+        marr = MBR<double>(bounds, true);
 
         REQUIRE(marr.minx == 2);
         REQUIRE(marr.miny == 2);
@@ -49,7 +49,7 @@ TEST_CASE("mbr 1", "[mbr 1]") {
     }
 
     SECTION("methods") {
-        auto m = MBR{2, 2, 0.5, 0.2};
+        auto m = MBR<double>{2, 2, 0.5, 0.2};
         REQUIRE(m.height() == 1.8);
         REQUIRE(m.width() == 1.5);
         REQUIRE(m.area() == 1.5 * 1.8);
@@ -86,31 +86,107 @@ TEST_CASE("mbr 1", "[mbr 1]") {
     }
 }
 
-TEST_CASE("mbr 2", "[mbr 2]") {
-    MBR m00{0, 0, 0, 0};
+TEST_CASE("mbr int 2", "[mbr int 2]") {
+    MBR<int> m00{0, 0, 0, 0};
     m00.expand_to_include(2, 2);
 
-    MBR n00{0, 0, 0, 0};
+    MBR<int> n00{0, 0, 0, 0};
     n00.expand_to_include(-2, -2);
 
-    auto m0 = MBR(1, 1, 1, 1);
+    auto m0 = MBR<int>(1, 1, 1, 1);
     m0.expand_by_delta(1, 1);
 
-    MBR m1{0, 0, 2, 2};
-    MBR m2{4, 5, 8, 9};
-    MBR m3{1.7, 1.5, 5, 9};
-    MBR m4{5, 0, 8, 2};
-    MBR m5{5, 11, 8, 9};
-    MBR m6{0, 0, 2, -2};
-    MBR m7{-2, 1, 4, -2};
-    MBR m8{-1, 0, 1, -1.5};
-    std::vector<MBR> vects{m1, m2, m3, m4, m5, m6, m7, m8};
+    MBR<int> m1{0, 0, 2, 2};
+    MBR<int> m2{4, 5, 8, 9};
+    MBR<int> m4{5, 0, 8, 2};
+    MBR<int> m5{5, 11, 8, 9};
+    MBR<int> m6{0, 0, 2, -2};
+    MBR<int> m7{-2, 1, 4, -2};
+    std::vector<MBR<int>> vects{m1, m2, m4, m5, m6, m7};
+    std::sort(vects.begin(), vects.end());
+
+
+    MBR<int> m0123{0, 2, 1, 3};
+    auto clone_m0123 = m0123;
+
+    const int x1 = 0;
+    const int y1 = 1;
+
+
+    SECTION("ops") {
+        std::array<int, 4> r1{{0, 0, 2, 2}};
+        REQUIRE(m1.as_array() == r1);
+        REQUIRE(clone_m0123 == m0123);
+        REQUIRE(m0.equals(m1));
+        REQUIRE(m0.bbox() == m0);
+        REQUIRE(m00.equals(m1));
+        REQUIRE(m1 != m2);
+
+
+        REQUIRE(m00.intersects(n00));
+        auto nm00 = m00.intersection(n00);
+        REQUIRE(nm00 != std::nullopt);
+
+        auto bln1 = (nm00.value().minx == 0.0 && nm00.value().miny == 0.0);
+        auto bln2 = (nm00.value().maxx == 0.0 && nm00.value().maxy == 0.0);
+        REQUIRE(bln1);
+        REQUIRE(bln2);
+        REQUIRE(nm00.value().is_point());
+
+        REQUIRE(!m1.intersects(m2));
+        auto null_mbr = m1.intersection(m2);
+        REQUIRE(!null_mbr.has_value());
+
+        std::array<double, 4> _m13{1.7, 1.5, 2, 2};
+        std::array<double, 4> _m23{4, 5, 5, 9};
+
+
+        REQUIRE(m2.intersects(m5));
+        REQUIRE(m7.intersects(m6));
+        REQUIRE(m6.intersects(m7));
+
+        auto m67 = m6.intersection(m7);
+        auto m76 = m7.intersection(m6);
+
+        REQUIRE(m67.value().equals(m6));
+        REQUIRE(m67.value().equals(m76.value()));
+
+        auto m25 = m2.intersection(m5);
+
+        REQUIRE(m25.value().width() == m5.width());
+        REQUIRE(m25.value().height() == 0.0);
+
+        auto d = std::hypot(2, 3);
+        REQUIRE(m1.distance(m2) == d);
+        REQUIRE(m1.distance_square(m2) == round(d * d, 12));
+    }
+}
+
+TEST_CASE("mbr 2", "[mbr 2]") {
+    MBR<double> m00{0, 0, 0, 0};
+    m00.expand_to_include(2, 2);
+
+    MBR<double> n00{0, 0, 0, 0};
+    n00.expand_to_include(-2, -2);
+
+    auto m0 = MBR<double>(1, 1, 1, 1);
+    m0.expand_by_delta(1, 1);
+
+    MBR<double> m1{0, 0, 2, 2};
+    MBR<double> m2{4, 5, 8, 9};
+    MBR<double> m3{1.7, 1.5, 5, 9};
+    MBR<double> m4{5, 0, 8, 2};
+    MBR<double> m5{5, 11, 8, 9};
+    MBR<double> m6{0, 0, 2, -2};
+    MBR<double> m7{-2, 1, 4, -2};
+    MBR<double> m8{-1, 0, 1, -1.5};
+    std::vector<MBR<double>> vects{m1, m2, m3, m4, m5, m6, m7, m8};
     std::sort(vects.begin(), vects.end());
 
     std::vector<double> p = {1.7, 1.5, 3.4};// POINT(1.7 1.5, 3.4)
     std::vector<double> p0 = {1.7};         // POINT(1.7 1.5)
 
-    MBR m0123{0, 2, 1, 3};
+    MBR<double> m0123{0, 2, 1, 3};
     auto clone_m0123 = m0123;
 
     const int x1 = 0;
@@ -183,10 +259,10 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         REQUIRE(m1.distance(m3) == 0.0);
         REQUIRE(m1.distance_square(m3) == 0.0);
 
-        MBR a{-7.703505430214746, 3.0022503796012305, -5.369812194018422, 5.231449888803689};
+        MBR<double> a{-7.703505430214746, 3.0022503796012305, -5.369812194018422, 5.231449888803689};
         REQUIRE(m1.distance(a) == std::hypot(-5.369812194018422, 3.0022503796012305 - 2));
 
-        MBR b{-4.742849832055231, -4.1033230559816065, -1.9563504455521576, -2.292098454754609};
+        MBR<double> b{-4.742849832055231, -4.1033230559816065, -1.9563504455521576, -2.292098454754609};
         REQUIRE(m1.distance(b) == std::hypot(-1.9563504455521576, -2.292098454754609));
     }
 
@@ -196,8 +272,8 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         Pt p3{3.58, 11.79};
         Pt p4{-1.16, 14.71};
 
-        MBR mp12 = {p1.x, p1.y, p2.x, p2.y};
-        MBR mp34 = {p3.x, p3.y, p4.x, p4.y};
+        MBR<double> mp12 = {p1.x, p1.y, p2.x, p2.y};
+        MBR<double> mp34 = {p3.x, p3.y, p4.x, p4.y};
 
         // intersects but segment are disjoint
         REQUIRE(mp12.intersects(mp34));
@@ -206,10 +282,10 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         REQUIRE(!mp12.intersects(p3.x, p3.y));
         REQUIRE(m1.contains(1, 1));
 
-        MBR mbr11{1, 1, 1.5, 1.5};
-        MBR mbr12{1, 1, 2, 2};
-        MBR mbr13{1, 1, 2.000045, 2.00001};
-        MBR mbr14{2.000045, 2.00001, 4.000045, 4.00001};
+        MBR<double> mbr11{1, 1, 1.5, 1.5};
+        MBR<double> mbr12{1, 1, 2, 2};
+        MBR<double> mbr13{1, 1, 2.000045, 2.00001};
+        MBR<double> mbr14{2.000045, 2.00001, 4.000045, 4.00001};
 
         REQUIRE(m1.contains(mbr11));
         REQUIRE(m1.contains(mbr12));
@@ -229,10 +305,10 @@ TEST_CASE("mbr 2", "[mbr 2]") {
     }
 
     SECTION("translate, expand by, area") {
-        MBR ma = {0, 0, 2, 2};
-        MBR mb = {-1, -1, 1.5, 1.9};
-        MBR mc = {1.7, 1.5, 5, 9};
-        MBR md = ma;
+        MBR<double> ma = {0, 0, 2, 2};
+        MBR<double> mb = {-1, -1, 1.5, 1.9};
+        MBR<double> mc = {1.7, 1.5, 5, 9};
+        MBR<double> md = ma;
         ma.expand_to_include(mc);
         md.expand_to_include(mb);
 

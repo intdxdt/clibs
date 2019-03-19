@@ -1,12 +1,8 @@
-//06/06/18.
 #include "geometry.h"
-#include "coords.h" //includes point
-#include "line.h"
-#include "wkt.h"
+#include "point.h"
+#include "linestring.h"
 
 #ifndef GEOM_GEOM_H
 #define GEOM_GEOM_H
-namespace geom {
 
-}
 #endif //GEOM_GEOM_H

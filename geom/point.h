@@ -2,13 +2,14 @@
 //06/06/18.
 //
 #include "util.h"
+#include "geometry.h"
 #include "../mutil/mutil.h"
 
 #ifndef GEOM_POINT_H
 #define GEOM_POINT_H
 
 namespace geom {
-    struct Point {
+    struct Point : Geometry {
         double x;
         double y;
         double z;
@@ -46,13 +47,6 @@ namespace geom {
             return true;
         }
 
-        ///indexing
-        double operator[](std::size_t index) const {
-            assert(index >= 0 && index < 2);
-            return index == 0 ? x :
-                   index == 1 ? y :
-                   index == 2 ? z : std::nan("-9");
-        }
 
         ///compare equality in 2d
         bool equals_2d(const Point& other) const {

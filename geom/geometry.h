@@ -8,11 +8,11 @@
 
 namespace geom {
     struct Geometry {
-        virtual MBR BBox() {
-            return MBR{std::nan("0"), std::nan("0"), std::nan("0"), std::nan("0"), true};
+        virtual mbr::MBR BBox() {
+            return mbr::MBR{std::nan("0"), std::nan("0"), std::nan("0"), std::nan("0"), true};
         }
 
-        virtual std::vector<Pt2D> AsLinear() {
+        virtual std::vector<Pt> AsLinear() {
             return {};
         }
 
@@ -20,7 +20,7 @@ namespace geom {
             return false;
         }
 
-        virtual std::vector<Pt2D> Intersection(Geometry) {
+        virtual std::vector<Pt> Intersection(Geometry) {
             return {};
         }
 
