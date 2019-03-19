@@ -14,12 +14,22 @@ namespace rtree {
     using SortBy = std::size_t;
     constexpr SortBy ByX = 0;
     constexpr SortBy ByY = 1;
-    constexpr double Inf = std::numeric_limits<double>::infinity();
-    constexpr double NegInf = -std::numeric_limits<double>::infinity();
 
     template<typename U>
-    inline std::array<U, 4> empty_bounds() {
-        return {Inf, Inf, NegInf, NegInf};
+    std::array<U, 4> empty_bounds() {
+        if constexpr (std::is_integral<U>::value) {
+            return {
+                    std::numeric_limits<U>::max(), std::numeric_limits<U>::max(),
+                    std::numeric_limits<U>::min(), std::numeric_limits<U>::min()
+            };
+        }
+        else {
+            return {
+                    std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(),
+                    -std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()
+            };
+        };
+
     }
 
     //@formatter:off
@@ -29,22 +39,32 @@ namespace rtree {
     }
 
     template<typename T>
-    inline size_t len(const std::vector<T>& v) {
+    inline size_t len(const std::vector<T> &v) {
         return v.size();
     }
 
     template<typename T>
-    inline const T& min(const T& a, const T& b) {
-        return b < a ? b : a;
+    const T min(const T a, const T b) {
+        if constexpr (std::is_integral<T>::value) {
+            return b < a ? b : a;
+        }
+        else {
+            return std::fmin(a, b);
+        };
     }
 
     template<typename T>
-    inline const T& max(const T& a, const T& b) {
-        return b > a ? b : a;
+    const T max(const T a, const T b) {
+        if constexpr (std::is_integral<T>::value) {
+            return b > a ? b : a;
+        }
+        else {
+            return std::fmax(a, b);
+        };
     }
 
     template<typename T>
-    T pop(std::vector<T>& a) {
+    T pop(std::vector<T> &a) {
         if (a.empty()) {
             return nullptr;
         }
@@ -54,27 +74,27 @@ namespace rtree {
     }
 
     ///std::optional<size_t>
-    template <>
-    size_t pop(std::vector<size_t>& a) {
+    template<>
+    size_t pop(std::vector<size_t> &a) {
         auto v = a.back();
         a.resize(a.size() - 1);
         return v;
     }
 
     template<typename T>
-    std::vector<T> slice(const std::vector<T>& v, size_t i = 0, size_t j = 0) {
+    std::vector<T> slice(const std::vector<T> &v, size_t i = 0, size_t j = 0) {
         std::vector<T> s(v.begin() + i, v.begin() + j);
         return std::move(s);
     }
 
-    template <typename T>
-    inline void swap_item(std::vector<T*>& arr, size_t i, size_t j) {
+    template<typename T>
+    inline void swap_item(std::vector<T *> &arr, size_t i, size_t j) {
         std::swap(arr[i], arr[j]);
     }
 
 
     ///slice index
-    inline std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)>& predicate) {
+    std::optional<size_t> slice_index(size_t limit, const std::function<bool(size_t)> &predicate) {
         bool bln{false};
         size_t index{0};
 
@@ -88,49 +108,49 @@ namespace rtree {
 
     ///extend bounding box
     template<typename U>
-    inline mbr::MBR<U>& extend(mbr::MBR<U>& a, const mbr::MBR<U>& b) {
-        a.minx = std::fmin(a.minx, b.minx);
-        a.miny = std::fmin(a.miny, b.miny);
-        a.maxx = std::fmax(a.maxx, b.maxx);
-        a.maxy = std::fmax(a.maxy, b.maxy);
+    mbr::MBR<U> &extend(mbr::MBR<U> &a, const mbr::MBR<U> &b) {
+        a.minx = min(a.minx, b.minx);
+        a.miny = min(a.miny, b.miny);
+        a.maxx = max(a.maxx, b.maxx);
+        a.maxy = max(a.maxy, b.maxy);
         return a;
     }
 
     ///computes area of bounding box
     template<typename U>
-    inline double bbox_area(const mbr::MBR<U>& a) {
+    double bbox_area(const mbr::MBR<U> &a) {
         return (a.maxx - a.minx) * (a.maxy - a.miny);
     }
 
     ///computes box margin
     template<typename U>
-    inline double bbox_margin(const mbr::MBR<U>& a) {
+    double bbox_margin(const mbr::MBR<U> &a) {
         return (a.maxx - a.minx) + (a.maxy - a.miny);
     }
 
     ///computes enlarged area given two mbrs
 
     template<typename U>
-    inline double enlarged_area(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
-        return (std::fmax(a.maxx, b.maxx) - std::fmin(a.minx, b.minx)) *
-               (std::fmax(a.maxy, b.maxy) - std::fmin(a.miny, b.miny));
+    double enlarged_area(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
+        return (max(a.maxx, b.maxx) - min(a.minx, b.minx)) *
+               (max(a.maxy, b.maxy) - min(a.miny, b.miny));
     }
 
     ///contains tests whether a contains b
     template<typename U>
-    inline bool contains(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
+    bool contains(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
         return a.contains(b);
     }
 
     ///intersects tests a intersect b (mbr)
     template<typename U>
-    inline bool intersects(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
+    bool intersects(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
         return a.intersects(b);
     }
 
     ///computes the intersection area of two mbrs
     template<typename U>
-    inline double intersection_area(const mbr::MBR<U>& a, const mbr::MBR<U>& b) {
+    double intersection_area(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
         if (a.disjoint(b)) {
             return 0.0;
         }

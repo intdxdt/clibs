@@ -23,6 +23,14 @@ namespace rtest {
                               {0, 50, 0, 50}, {10, 60, 10, 60}, {20, 70, 20, 70}, {25, 50, 25, 50}, {35, 60, 35, 60}, {45, 70, 45, 70}, {0, 75, 0, 75}, {10, 85, 10, 85},
                               {20, 95, 20, 95}, {25, 75, 25, 75}, {35, 85, 35, 85}, {45, 95, 45, 95}, {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70}, {75, 50, 75, 50},
                               {85, 60, 85, 60}, {95, 70, 95, 70}, {50, 75, 50, 75}, {60, 85, 60, 85}, {70, 95, 70, 95}, {75, 75, 75, 75}, {85, 85, 85, 85}, {95, 95, 95, 95}};
+
+    std::vector<mbr::MBR<int>> int_data = {{0, 0, 0, 0}, {10, 10, 10, 10}, {20, 20, 20, 20}, {25, 0, 25, 0}, {35, 10, 35, 10}, {45, 20, 45, 20}, {0, 25, 0, 25}, {10, 35, 10, 35},
+                              {20, 45, 20, 45}, {25, 25, 25, 25}, {35, 35, 35, 35}, {45, 45, 45, 45}, {50, 0, 50, 0}, {60, 10, 60, 10}, {70, 20, 70, 20}, {75, 0, 75, 0},
+                              {85, 10, 85, 10}, {95, 20, 95, 20}, {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45}, {75, 25, 75, 25}, {85, 35, 85, 35}, {95, 45, 95, 45},
+                              {0, 50, 0, 50}, {10, 60, 10, 60}, {20, 70, 20, 70}, {25, 50, 25, 50}, {35, 60, 35, 60}, {45, 70, 45, 70}, {0, 75, 0, 75}, {10, 85, 10, 85},
+                              {20, 95, 20, 95}, {25, 75, 25, 75}, {35, 85, 35, 85}, {45, 95, 45, 95}, {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70}, {75, 50, 75, 50},
+                              {85, 60, 85, 60}, {95, 70, 95, 70}, {50, 75, 50, 75}, {60, 85, 60, 85}, {70, 95, 70, 95}, {75, 75, 75, 75}, {85, 85, 85, 85}, {95, 95, 95, 95}};
+
     //@formatter:on
     std::vector<mbr::MBR<double>> someData(size_t n) {
         std::vector<mbr::MBR<double>> data;
@@ -43,7 +51,8 @@ namespace rtest {
         }
     }
 
-    bool nodeEquals(rtree::Node<mbr::MBR<double>, double>* a, rtree::Node<mbr::MBR<double>, double>* b) {
+    template <typename T>
+    bool nodeEquals(rtree::Node<mbr::MBR<T>, T>* a, rtree::Node<mbr::MBR<T>, T>* b) {
         auto bln = a->bbox.equals(b->bbox);
         if (a->item != nullptr && b->item != nullptr) {
             bln = bln && a->item->bbox().equals(b->item->bbox());
@@ -262,6 +271,27 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         auto tree2 = NewRTree<mbr::MBR<double>,double>(8).load_boxes(rtest::data).insert(&data[0]).insert(&data[1]).insert(&data[2]);
         REQUIRE(nodeEquals(&tree.data, &tree2.data));
     }
+
+    SECTION(" [int] #load uses standard insertion when given a low number of items") {
+        auto data = rtest::int_data;
+        auto rt = NewRTree<mbr::MBR<int>,int>(8).load_boxes(rtest::int_data).load_boxes(slice(data, 0, 3));
+        auto tree = std::move(rt);
+
+        auto tree2 = NewRTree<mbr::MBR<int>,int>(8).load_boxes(rtest::int_data).insert(&data[0]).insert(&data[1]).insert(&data[2]);
+        REQUIRE(nodeEquals(&tree.data, &tree2.data));
+    }
+
+
+    SECTION("[size_t] #load does nothing if (loading empty data)") {
+        std::vector<mbr::MBR<size_t>*> data{};
+        auto tree = NewRTree<mbr::MBR<size_t>,size_t>(0).load(data);
+        REQUIRE(tree.is_empty());
+        auto box = mbr::MBR<size_t>{105,  45,  115,  55};
+        tree.insert(&box);
+        REQUIRE(!tree.is_empty());
+    }
+
+
     SECTION("#load does nothing if (loading empty data)") {
         std::vector<mbr::MBR<double>*> data{};
         auto tree = NewRTree<mbr::MBR<double>,double>(0).load(data);

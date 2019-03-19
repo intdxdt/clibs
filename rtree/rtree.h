@@ -373,8 +373,8 @@ namespace rtree {
 
         // build
         Node<T, U> bulk_build(std::vector<T *> &items, size_t left, size_t right, size_t height) {
-            double N = double(right - left + 1);
-            double M = double(maxEntries);
+            auto N = static_cast<double>(right - left + 1);
+            auto M = static_cast<double>(maxEntries);
 
             if (N <= M) {
                 std::vector<T *> chs(items.begin() + left, items.begin() + right + 1);

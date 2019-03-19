@@ -344,7 +344,7 @@ namespace mbr {
                 return b < a ? b : a;
             }
             else {
-                return fmin(a, b);
+                return std::fmin(a, b);
             };
         }
 
@@ -354,7 +354,7 @@ namespace mbr {
                 return b > a ? b : a;
             }
             else {
-                return fmax(a, b);
+                return std::fmax(a, b);
             };
         }
 
