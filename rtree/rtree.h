@@ -76,10 +76,6 @@ namespace rtree {
             return load(items);
         }
 
-        // load_boxes loads bounding boxes
-        RTree &load_boxes(std::vector<mbr::MBR<U>> &&boxes) {
-            return load_boxes(boxes);
-        }
 
         // load implements bulk loading
         RTree &load(std::vector<T *> &objects) {

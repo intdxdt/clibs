@@ -57,7 +57,7 @@ namespace rtest {
         if (a->item != nullptr && b->item != nullptr) {
             bln = bln && a->item->bbox().equals(b->item->bbox());
         }
-        if (a->item && a->item->miny ==32516){
+        if (a->item && a->item->miny == 32516) {
             std::cout << '\n';
         }
 
@@ -224,13 +224,16 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     using namespace rtree;
 
     SECTION("should test load 9 & 10") {
-        auto tree0 = rtree::NewRTree<mbr::MBR<double>, double>(0).load_boxes(someData(0));
+        auto data = someData(0);
+        auto tree0 = rtree::NewRTree<mbr::MBR<double>, double>(0).load_boxes(data);
         REQUIRE(tree0.data.height == 1);
 
-        auto tree1 = NewRTree<mbr::MBR<double>, double>(9).load_boxes(someData(9));
+        auto data2 = someData(9);
+        auto tree1 = NewRTree<mbr::MBR<double>, double>(9).load_boxes(data2);
         REQUIRE(tree1.data.height == 1);
 
-        auto tree2 = NewRTree<mbr::MBR<double>, double>(9).load_boxes(someData(10));
+        auto data3 = someData(10);
+        auto tree2 = NewRTree<mbr::MBR<double>, double>(9).load_boxes(data3);
         REQUIRE(tree2.data.height == 2);
     }
 
@@ -273,23 +276,26 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#load uses standard insertion when given a low number of items") {
         auto data = rtest::test_input_data<double>();
+        auto subslice = slice(data, 0, 3);
         auto rt = NewRTree<mbr::MBR<double>, double>(8)
-                .load_boxes(rtest::test_input_data<double>())
-                .load_boxes(slice(data, 0, 3));
+                .load_boxes(data)
+                .load_boxes(subslice);
         auto tree = std::move(rt);
 
+        auto data2 = rtest::test_input_data<double>();
         auto tree2 = NewRTree<mbr::MBR<double>, double>(8)
-                .load_boxes(rtest::test_input_data<double>())
-                .insert(&data[0])
-                .insert(&data[1])
-                .insert(&data[2]);
+                .load_boxes(data2)
+                .insert(&data2[0])
+                .insert(&data2[1])
+                .insert(&data2[2]);
         REQUIRE(nodeEquals(&tree.data, &tree2.data));
     }
 
     SECTION(" [int] #load uses standard insertion when given a low number of items") {
         auto data = rtest::test_input_data<int>();
+        auto subslice = slice(data, 0, 3);
         rtree::RTree rt = NewRTree<mbr::MBR<int>, int>(8);
-        rt.load_boxes(data).load_boxes(slice(data, 0, 3));
+        rt.load_boxes(data).load_boxes(subslice);
 
         auto tree = std::move(rt);
 
@@ -508,12 +514,14 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#remove does nothing if (nothing found)") {
         mbr::MBR<double> *item = nullptr;
+        auto data = rtest::test_input_data<double>();
 
         auto tree = NewRTree<mbr::MBR<double>, double>(0)
-                .load_boxes(rtest::test_input_data<double>());
+                .load_boxes(data);
 
+        auto data2 = rtest::test_input_data<double>();
         auto tree2 = NewRTree<mbr::MBR<double>, double>(0)
-                .load_boxes(rtest::test_input_data<double>());
+                .load_boxes(data2);
 
         tree2.remove(mbr::MBR<double>(13, 13, 13, 13));
         REQUIRE(nodeEquals(&tree.data, &tree2.data));
@@ -535,8 +543,9 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     }
 
     SECTION("#clear should clear all the data in the tree") {
+        auto data = rtest::test_input_data<double>();
         auto tree = NewRTree<mbr::MBR<double>, double>(4)
-                .load_boxes(rtest::test_input_data<double>())
+                .load_boxes(data)
                 .clear();
         REQUIRE(tree.is_empty());
     }
@@ -544,8 +553,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     SECTION("should have chainable API") {
         auto data = rtest::test_input_data<double>();
         auto rt = NewRTree<mbr::MBR<double>, double>(4);
-        REQUIRE(
-                rt.load_boxes(data)
+        REQUIRE(rt.load_boxes(data)
                         .insert(&data[0])
                         .remove(data[0])
                         .clear()
