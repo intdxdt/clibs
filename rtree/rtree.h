@@ -1,5 +1,5 @@
 /**
- (c) 2015, Titus Tienaah;
+ (c) 2019, Titus Tienaah;
  A library for 2D spatial indexing of points and rectangles.;
  https://github.com/mourner/rbush;
  @after  (c) 2015, Vladimir Agafonkin;
@@ -32,6 +32,7 @@ namespace rtree {
 
         RTree() = default;
 
+
         RTree(RTree &other) noexcept :
                 maxEntries(other.maxEntries),
                 minEntries(other.minEntries) {
@@ -56,7 +57,7 @@ namespace rtree {
 
         RTree &clear() {
             //destruct_node(std::move(data));
-            data = NewNode<T,U>(nullptr, 1, true);
+            data = NewNode<T, U>(nullptr, 1, true);
             return *this;
         }
 
@@ -343,7 +344,7 @@ namespace rtree {
             auto node = choose_subtree(bbox, &data, level, insertPath);
 
             // put the item into the node item_bbox
-            node->add_child(new_leaf_Node<T,U>(item));
+            node->add_child(new_leaf_Node<T, U>(item));
             extend(node->bbox, bbox);
 
             // split on node overflow propagate upwards if necessary
@@ -379,8 +380,8 @@ namespace rtree {
             if (N <= M) {
                 std::vector<T *> chs(items.begin() + left, items.begin() + right + 1);
                 // reached leaf level return leaf
-                auto node = NewNode<T,U>(nullptr, 1, true, make_children<T,U>(chs));
-                calculate_bbox<Node<T,U>, U>(&node);
+                auto node = NewNode<T, U>(nullptr, 1, true, make_children<T, U>(chs));
+                calculate_bbox<Node<T, U>, U>(&node);
                 return node;
             }
 
@@ -530,7 +531,7 @@ namespace rtree {
             path.emplace_back(std::move(node));
             path.emplace_back(std::move(newNode));
 
-            data = NewNode<T,U>(nullptr, root_height, false, std::move(path));
+            data = NewNode<T, U>(nullptr, root_height, false, std::move(path));
             calculate_bbox<Node<T, U>, U>(&data);
         }
 
@@ -544,7 +545,7 @@ namespace rtree {
             choose_split_axis(node, m, M);
             const size_t at = choose_split_index(node, m, M);
 
-            auto newNode = NewNode<T,U>(nullptr, node->height, node->leaf);
+            auto newNode = NewNode<T, U>(nullptr, node->height, node->leaf);
             //pre allocate children space = m - index
             newNode.children.reserve(M - at);
 
@@ -629,7 +630,7 @@ namespace rtree {
 
             size_t i = 0;
 
-            auto leftBBox  = dist_bbox<Node<T, U>, U>(node, 0, m);
+            auto leftBBox = dist_bbox<Node<T, U>, U>(node, 0, m);
             auto rightBBox = dist_bbox<Node<T, U>, U>(node, M - m, M);
             auto margin = bbox_margin(leftBBox) + bbox_margin(rightBBox);
 

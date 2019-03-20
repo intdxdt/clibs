@@ -84,7 +84,7 @@ namespace rtree {
     template<typename T>
     std::vector<T> slice(const std::vector<T> &v, size_t i = 0, size_t j = 0) {
         std::vector<T> s(v.begin() + i, v.begin() + j);
-        return std::move(s);
+        return s;
     }
 
     template<typename T>

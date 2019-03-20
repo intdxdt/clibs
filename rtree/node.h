@@ -18,12 +18,12 @@ namespace rtree {
     template<typename T, typename U>
     struct Node {
         T *item;
-        size_t height;
-        bool leaf;
+        size_t height{};
+        bool leaf{};
         mbr::MBR<U> bbox = empty_mbr<U>();
         std::vector<Node<T, U>> children;
 
-        Node() {};
+        Node() = default;
 
         Node(T *item, size_t height, bool leaf, mbr::MBR<U> bbox) :
                 item(item), height(height), leaf(leaf), bbox(bbox) {
@@ -249,6 +249,5 @@ namespace rtree {
 
 
 }
-
 
 #endif //RTREE_CPP_NODE_H
