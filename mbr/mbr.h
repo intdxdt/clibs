@@ -156,7 +156,8 @@ namespace mbr {
         }
 
         ///Checks if bounding box intersects other
-        bool intersects(const MBR<T> &other) const {
+        [[using gnu : const, always_inline, hot]]
+        inline bool intersects(const MBR<T> &other) const {
             //not disjoint
             return !(other.minx > maxx ||
                      other.maxx < minx ||
@@ -165,11 +166,13 @@ namespace mbr {
         }
 
         ///intersects point
+        [[using gnu : const, always_inline, hot]]
         bool intersects(T x, T y) const {
             return contains(x, y);
         }
 
         ///intersects point
+        [[using gnu : const, always_inline, hot]]
         bool intersects(const Pt<T> &pt1, const Pt<T> &pt2) const {
             auto minq = min(pt1.x, pt2.x);
             auto maxq = max(pt1.x, pt2.x);
@@ -186,6 +189,7 @@ namespace mbr {
         }
 
         ///Test for disjoint between two mbrs
+        [[using gnu : const, always_inline, hot]]
         bool disjoint(const MBR<T> &other) const {
             return !intersects(other);
         }

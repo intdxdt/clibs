@@ -138,13 +138,15 @@ namespace rtree {
 
     ///contains tests whether a contains b
     template<typename U>
-    bool contains(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
+    [[using gnu : const, always_inline, hot]]
+    inline bool contains(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
         return a.contains(b);
     }
 
     ///intersects tests a intersect b (mbr)
     template<typename U>
-    bool intersects(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
+    [[using gnu : const, always_inline, hot]]
+    inline bool intersects(const mbr::MBR<U> &a, const mbr::MBR<U> &b) {
         return a.intersects(b);
     }
 
