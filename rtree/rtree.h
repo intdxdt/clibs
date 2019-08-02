@@ -22,6 +22,7 @@
 
 #ifndef RTREE_RTREE_H
 #define RTREE_RTREE_H
+
 //RTree
 namespace rtree {
     template<typename T, typename U>
@@ -753,4 +754,5 @@ namespace rtree {
     }
 
 }
+
 #endif //RTREE_RTREE_H

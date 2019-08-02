@@ -148,6 +148,11 @@ TEST_CASE("mbr int 2", "[mbr int 2]") {
         auto m67 = m6.intersection(m7);
         auto m76 = m7.intersection(m6);
 
+        if (m67.has_value()) {
+            auto v = m67.value();
+            REQUIRE(v.area()> 0);
+        }
+
         REQUIRE(m67.value().equals(m6));
         REQUIRE(m67.value().equals(m76.value()));
 

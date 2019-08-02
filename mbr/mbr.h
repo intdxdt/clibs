@@ -50,15 +50,20 @@ namespace mbr {
             return d < 0;
         }
 
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         MBR<T> &bbox() { return *this; }
 
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         MBR<T> clone() { return *this; }
 
-        T width() const { return maxx - minx; }
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
+        inline T width() const { return maxx - minx; }
 
-        T height() const { return maxy - miny; }
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
+        inline T height() const { return maxy - miny; }
 
-        T area() const { return height() * width(); }
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
+        inline T area() const { return height() * width(); }
 
         std::vector<std::vector<T>> as_poly_array() {
             return {
@@ -88,6 +93,7 @@ namespace mbr {
         }
 
         ///Compare equality of two minimum bounding box
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         bool equals(const MBR<T> &other) const {
             return eqls(maxx, other.maxx) &&
                    eqls(maxy, other.maxy) &&
@@ -97,6 +103,7 @@ namespace mbr {
 
         ///Checks if bounding box can be represented as a point,
         /// has both width and height as 0.
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         bool is_point() const {
             return feq(height(), 0) && feq(width(), 0);
         }
@@ -111,6 +118,7 @@ namespace mbr {
         }
 
         ///contains x, y
+        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         bool contains(T x, T y) const {
             return (x >= minx) &&
                    (x <= maxx) &&
