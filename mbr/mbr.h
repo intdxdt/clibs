@@ -42,6 +42,18 @@ namespace mbr {
             *this = MBR(bounds[0], bounds[1], bounds[2], bounds[3], raw);
         }
 
+        template<typename U>
+        MBR<U> as() {
+            auto bounds = *this;
+            return MBR<U>{
+                    static_cast<U>(bounds.minx),
+                    static_cast<U>(bounds.miny),
+                    static_cast<U>(bounds.maxx),
+                    static_cast<U>(bounds.maxy),
+                    true};
+        }
+
+
         bool operator<(const MBR<T> &other) {
             auto d = minx - other.minx;
             if (feq(d, 0)) {

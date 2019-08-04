@@ -79,7 +79,7 @@ namespace rtree {
 
 
         // load implements bulk loading
-        RTree &load(std::vector<T *> &objects) {
+        RTree &load(const std::vector<T *> &objects) {
             if (objects.empty()) {
                 return *this;
             }
