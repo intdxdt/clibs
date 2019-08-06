@@ -7,55 +7,12 @@
 #include <functional>
 #include <iostream>
 #include <random>
-#include "json.hpp"
 #include "../catch/catch.h"
 #include "../mbr/mbr.h"
 #include "rtree.h"
 
 
 using namespace std;
-
-template<typename T>
-std::vector<std::array<T, 4>> box_array(std::vector<rtree::Item<T>> items) {
-    std::vector<std::array<T, 4>> boxes;
-    boxes.reserve(items.size());
-    for (rtree::Item<T>& item : items) {
-        boxes.emplace_back(item.box.as_array());
-    }
-    return boxes;
-}
-
-
-template<typename T>
-std::vector<rtree::Id> id_array(std::vector<rtree::Item<T>> items) {
-    std::vector<rtree::Id> ids;
-    ids.reserve(items.size());
-    for (const auto &item : items) {
-        ids.emplace_back(item.id);
-    }
-    return ids;
-}
-
-nlohmann::json json_object(std::vector<rtree::Item<double>> data) {
-    nlohmann::json obj;
-    obj["ids"] = id_array(data);
-    obj["boxes"] = box_array(data);
-    return obj;
-}
-
-
-void write_to_file(const std::string &fpath, const std::string &data) {
-    std::ofstream fid(fpath);
-    fid << data;
-}
-
-void dump_tracks_to_json_file(std::vector<rtree::Item<double>> small, std::vector<rtree::Item<double>> large,
-                              const std::string &output_filename) {
-    nlohmann::json obj;
-    obj["small"] = json_object(small);
-    obj["large"] = json_object(large);
-    write_to_file(output_filename, obj.dump());
-}
 
 
 namespace rtest {
