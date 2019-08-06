@@ -12,8 +12,10 @@
 #define RTREE_CPP_UTIL_H
 namespace rtree {
     using SortBy = std::size_t;
-    constexpr SortBy ByX = 0;
-    constexpr SortBy ByY = 1;
+    constexpr SortBy by_x = 0;
+    constexpr SortBy by_y = 1;
+    using Id = std::size_t;
+    static const Id null_id = static_cast<Id>(-1);
 
     template<typename U>
     std::array<U, 4> empty_bounds() {
@@ -44,7 +46,7 @@ namespace rtree {
     }
 
     template<typename T>
-    const T min(const T a, const T b) {
+    T min(const T a, const T b) {
         if constexpr (std::is_integral<T>::value) {
             return b < a ? b : a;
         }
@@ -54,7 +56,7 @@ namespace rtree {
     }
 
     template<typename T>
-    const T max(const T a, const T b) {
+    T max(const T a, const T b) {
         if constexpr (std::is_integral<T>::value) {
             return b > a ? b : a;
         }
@@ -88,7 +90,7 @@ namespace rtree {
     }
 
     template<typename T>
-    inline void swap_item(std::vector<T *> &arr, size_t i, size_t j) {
+    inline void swap_item(std::vector<T> &arr, size_t i, size_t j) {
         std::swap(arr[i], arr[j]);
     }
 

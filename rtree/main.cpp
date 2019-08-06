@@ -13,14 +13,22 @@
 
 using namespace std;
 
+
 namespace rtest {
     size_t N = size_t(1e6);
     size_t maxFill = 64;
 
+
+    template<typename K, typename V>
+    inline bool has_key(const std::map<K, V> &dict, const K &x) {
+        return dict.find(x) != dict.end();
+    }
+
+
     //@formatter:off
     template<typename T>
-    std::vector<mbr::MBR<T>> test_input_data(){
-         return std::vector<mbr::MBR<T>>{
+    std::vector<rtree::Item<T>> test_input_data(){
+         auto boxes =  std::vector<mbr::MBR<T>>{
                 {0, 0, 0, 0}, {10, 10, 10, 10}, {20, 20, 20, 20}, {25, 0, 25, 0}, {35, 10, 35, 10}, {45, 20, 45, 20}, {0, 25, 0, 25}, {10, 35, 10, 35},
                 {20, 45, 20, 45}, {25, 25, 25, 25}, {35, 35, 35, 35}, {45, 45, 45, 45}, {50, 0, 50, 0}, {60, 10, 60, 10}, {70, 20, 70, 20}, {75, 0, 75, 0},
                 {85, 10, 85, 10}, {95, 20, 95, 20}, {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45}, {75, 25, 75, 25}, {85, 35, 85, 35}, {95, 45, 95, 45},
@@ -28,41 +36,71 @@ namespace rtest {
                 {20, 95, 20, 95}, {25, 75, 25, 75}, {35, 85, 35, 85}, {45, 95, 45, 95}, {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70}, {75, 50, 75, 50},
                 {85, 60, 85, 60}, {95, 70, 95, 70}, {50, 75, 50, 75}, {60, 85, 60, 85}, {70, 95, 70, 95}, {75, 75, 75, 75}, {85, 85, 85, 85}, {95, 95, 95, 95}
          };
+         size_t id{0};
+         std::vector<rtree::Item<T>> items ; 
+         for (auto & box : boxes){
+             items.emplace_back(rtree::Item{
+                 id++ , box 
+             });
+         }
+         return items; 
     }
     //@formatter:on
 
-    std::vector<mbr::MBR<double>> someData(size_t n) {
-        std::vector<mbr::MBR<double>> data;
+    std::vector<rtree::Item<double>> someData(size_t n, rtree::Id id = 0) {
+        //mbr::MBR<double>
+        std::vector<rtree::Item<double>> data;
         data.reserve(n);
         for (size_t i = 0; i < n; i++) {
-            data.emplace_back(mbr::MBR{double(i), double(i), double(i), double(i)});
+            data.emplace_back(
+                    rtree::Item{
+                            id++,
+                            mbr::MBR{double(i), double(i), double(i), double(i)}
+                    }
+            );
         }
+
         return data;
     }
 
     template<typename T>
-    void testResults(std::vector<mbr::MBR<T> *> &&nodes, std::vector<mbr::MBR<T>> &&boxes) {
-        std::sort(nodes.begin(), nodes.end(), rtree::xy_node_path<mbr::MBR<T>>());
+    void testResults(std::vector<rtree::Item<T>> nodes, std::vector<rtree::Item<T>> boxes, bool just_boxes = false) {
+        std::sort(nodes.begin(), nodes.end());
         std::sort(boxes.begin(), boxes.end());
 
         REQUIRE(nodes.size() == boxes.size());
-        for (size_t i = 0; i < nodes.size(); i++) {
-            REQUIRE(nodes[i]->bbox().equals(boxes[i]));
+        if (just_boxes) {
+            for (size_t i = 0; i < nodes.size(); i++) {
+                if (!nodes[i].bbox().equals(boxes[i].bbox())) {
+                    cout << "hey...\n";
+                }
+                REQUIRE(nodes[i].bbox().equals(boxes[i].bbox()));
+            }
+            return;
+        }
+
+        std::map<size_t, rtree::Item<T>> node_dict;
+        for (auto &o : nodes) {
+            if (has_key(node_dict, o.id)) {
+                cout << o.id << '\n';
+                cout << node_dict.at(o.id).box.wkt();
+            }
+            REQUIRE(!has_key(node_dict, o.id));
+            node_dict[o.id] = o;
+        }
+
+        for (auto &o : boxes) {
+            REQUIRE(has_key(node_dict, o.id));
+            auto node_item = node_dict.at(o.id);
+            REQUIRE(node_item.bbox().equals(o.bbox()));
         }
     }
 
     template<typename T>
-    bool nodeEquals(rtree::Node<mbr::MBR<T>, T> *a, rtree::Node<mbr::MBR<T>, T> *b) {
+    bool nodeEquals(rtree::Node<T> *a, rtree::Node<T> *b) {
         auto bln = a->bbox.equals(b->bbox);
-        if (a->item != nullptr && b->item != nullptr) {
-            bln = bln && a->item->bbox().equals(b->item->bbox());
-        }
-        if (a->item && a->item->miny == 32516) {
-            std::cout << '\n';
-        }
-
-        if (!bln) {
-            std::cout << '\n';
+        if (a->item.id != rtree::null_id && b->item.id != rtree::null_id) {
+            bln = bln && a->item.bbox().equals(b->item.bbox());
         }
 
         bln = bln &&
@@ -87,10 +125,7 @@ namespace rtest {
         return {x, y, x + size * rnd(), y + size * rnd()};
     }
 
-    std::vector<mbr::MBR<double>> GenDataItems(size_t N, double size) {
-        std::vector<mbr::MBR<double>> data;
-        data.reserve(N);
-
+    std::vector<rtree::Item<double>> GenDataItems(size_t N, double size, size_t id = 0) {
         auto seed = std::chrono::system_clock::now().time_since_epoch().count();
         std::default_random_engine generator(seed);
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -98,8 +133,10 @@ namespace rtest {
             return distribution(generator);
         };
 
+        std::vector<rtree::Item<double>> data;
+        data.reserve(N);
         for (size_t i = 0; i < N; ++i) {
-            data.emplace_back(RandBox(size, rnd));
+            data.emplace_back(rtree::Item{id++, RandBox(size, rnd)});
         }
         return data;
     }
@@ -122,9 +159,9 @@ namespace rtest {
     // auto bboxes100 = GenDataItems(1000, 100*std::sqrt(0.1));
     // auto bboxes10 = GenDataItems(1000, 10);
     // auto bboxes1 = GenDataItems(1000, 1);
-    // auto tree = NewRTree(maxFill).Load(BenchData);
+    // auto tree = NewRTree(maxFill).load(BenchData);
     template<typename T>
-    std::vector<mbr::MBR<T>> init_knn() {
+    std::vector<rtree::Item<T>> init_knn() {
         //@formatter:off
         std::vector<mbr::MBR<T>>  knn_data = {
             {87, 55, 87, 56}, {38, 13, 39, 16}, {7, 47, 8, 47}, {89, 9, 91, 12}, {4, 58, 5, 60}, {0, 11, 1, 12}, {0, 5, 0, 6}, {69, 78, 73, 78},
@@ -142,7 +179,13 @@ namespace rtest {
             {99, 3, 103, 5}, {41, 92, 44, 96}, {79, 40, 79, 41}, {29, 2, 29, 4},
         };
         //@formatter:on
-        return knn_data;
+
+        size_t id{0};
+        std::vector<rtree::Item<T>> data;
+        for (auto &box : knn_data) {
+            data.emplace_back(rtree::Item{id++, box});
+        }
+        return data;
     }
 
     bool found_in(const mbr::MBR<double> &needle, const std::vector<mbr::MBR<double>> &haystack) {
@@ -157,8 +200,11 @@ namespace rtest {
     }
 
     struct RichData {
-        mbr::MBR<double> box;
-        int version;
+        mbr::MBR<double> box = rtree::empty_mbr<double>();
+        int version{-1};
+
+        explicit RichData(mbr::MBR<double> _box, int _version) : box(_box), version(_version) {
+        }
 
         mbr::MBR<double> &bbox() {
             return box.bbox();
@@ -178,7 +224,7 @@ namespace rtest {
                 {2.5, 4, 2.5, 4},
         };
         for (size_t i = 0; i < data.size(); i++) {
-            richData.emplace_back(RichData{data[i], int(i) + 1});
+            richData.emplace_back(RichData(data[i], int(i) + 1));
         }
         return richData;
     }
@@ -188,14 +234,14 @@ namespace rtest {
         std::vector<std::string> children{};
     };
 
-    template<typename T, typename U>
-    std::vector<Parent> print_RTree(std::unique_ptr<rtree::Node<T, U>> &a) {
+    template<typename U>
+    std::vector<Parent> print_RTree(std::unique_ptr<rtree::Node<U>> &a) {
         std::vector<Parent> tokens;
         if (a == nullptr) {
             return tokens;
         }
 
-        std::vector<rtree::Node<T, U> *> stack;
+        std::vector<rtree::Node<U> *> stack;
         stack.reserve(a->children.size());
         stack.emplace_back(a.get());
         while (!stack.empty()) {
@@ -225,260 +271,280 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("should test load 9 & 10") {
         auto data = someData(0);
-        auto tree0 = rtree::NewRTree<mbr::MBR<double>, double>(0).load_boxes(data);
+        auto tree0 = rtree::NewRTree<double>(0);
+        tree0.load(data);
         REQUIRE(tree0.data.height == 1);
 
         auto data2 = someData(9);
-        auto tree1 = NewRTree<mbr::MBR<double>, double>(9).load_boxes(data2);
+        auto tree1 = NewRTree<double>(9);
+        tree1.load(data2);
         REQUIRE(tree1.data.height == 1);
 
         auto data3 = someData(10);
-        auto tree2 = NewRTree<mbr::MBR<double>, double>(9).load_boxes(data3);
+        auto tree2 = NewRTree<double>(9);
+        tree2.load(data3);
         REQUIRE(tree2.data.height == 2);
     }
 
     SECTION("tests search with some other") {
-        vector<mbr::MBR<double>> data{{-115, 45,  -105, 55},
-                                      {105,  45,  115,  55},
-                                      {105,  -55, 115,  -45},
-                                      {-115, -55, -105, -45},};
-        auto tree = NewRTree<mbr::MBR<double>, double>(4);
-        tree.load_boxes(data);
+        vector<rtree::Item<double>> data{
+                {1, {-115, 45,  -105, 55}},
+                {2, {105,  45,  115,  55}},
+                {3, {105,  -55, 115,  -45}},
+                {4, {-115, -55, -105, -45}},
+        };
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
         auto res = tree.search({-180, -90, 180, 90});
 
-        testResults(std::move(res), std::vector<mbr::MBR<double>>{
-                {-115, 45,  -105, 55},
-                {105,  45,  115,  55},
-                {105,  -55, 115,  -45},
-                {-115, -55, -105, -45},
-        });
+        testResults(std::move(res), std::vector<rtree::Item<double>>{
+                {1, {-115, 45,  -105, 55}},
+                {2, {105,  45,  115,  55}},
+                {3, {105,  -55, 115,  -45}},
+                {4, {-115, -55, -105, -45}},
+        }, true);
 
-        testResults(tree.search(mbr::MBR<double>(-180, -90, 0, 90)), std::vector<mbr::MBR<double>>{
-                {-115, 45,  -105, 55},
-                {-115, -55, -105, -45},
-        });
+        testResults(tree.search(mbr::MBR<double>(-180, -90, 0, 90)), std::vector<rtree::Item<double>>{
+                {1, {-115, 45,  -105, 55}},
+                {2, {-115, -55, -105, -45}},
+        }, true);
 
-        testResults(tree.search(mbr::MBR<double>(0, -90, 180, 90)), std::vector<mbr::MBR<double>>{
-                {105, 45,  115, 55},
-                {105, -55, 115, -45},
-        });
+        testResults(tree.search(mbr::MBR<double>(0, -90, 180, 90)), std::vector<rtree::Item<double>>{
+                {1, {105, 45,  115, 55}},
+                {2, {105, -55, 115, -45}},
+        }, true);
 
-        testResults(tree.search(mbr::MBR<double>(-180, 0, 180, 90)), std::vector<mbr::MBR<double>>{
-                {-115, 45, -105, 55},
-                {105,  45, 115,  55},
-        });
+        testResults(tree.search(mbr::MBR<double>(-180, 0, 180, 90)), std::vector<rtree::Item<double>>{
+                {1, {-115, 45, -105, 55}},
+                {2, {105,  45, 115,  55}},
+        }, true);
 
-        testResults(tree.search(mbr::MBR<double>(-180, -90, 180, 0)), std::vector<mbr::MBR<double>>{
-                {105,  -55, 115,  -45},
-                {-115, -55, -105, -45},
-        });
+        testResults(tree.search(mbr::MBR<double>(-180, -90, 180, 0)), std::vector<rtree::Item<double>>{
+                {1, {105,  -55, 115,  -45}},
+                {2, {-115, -55, -105, -45}},
+        }, true);
     }
 
     SECTION("#load uses standard insertion when given a low number of items") {
         auto data = rtest::test_input_data<double>();
         auto subslice = slice(data, 0, 3);
-        auto rt = NewRTree<mbr::MBR<double>, double>(8)
-                .load_boxes(data)
-                .load_boxes(subslice);
+        auto rt = NewRTree<double>(8);
+        rt.load(data);
+        rt.load(subslice);
+
         auto tree = std::move(rt);
 
         auto data2 = rtest::test_input_data<double>();
-        auto tree2 = NewRTree<mbr::MBR<double>, double>(8)
-                .load_boxes(data2)
-                .insert(&data2[0])
-                .insert(&data2[1])
-                .insert(&data2[2]);
+        auto tree2 = NewRTree<double>(8);
+        tree2.load(data2);
+        tree2.insert(data2[0]);
+        tree2.insert(data2[1]);
+        tree2.insert(data2[2]);
         REQUIRE(nodeEquals(&tree.data, &tree2.data));
     }
 
     SECTION(" [int] #load uses standard insertion when given a low number of items") {
         auto data = rtest::test_input_data<int>();
         auto subslice = slice(data, 0, 3);
-        rtree::RTree rt = NewRTree<mbr::MBR<int>, int>(8);
-        rt.load_boxes(data).load_boxes(subslice);
+        rtree::RTree rt = NewRTree<int>(8);
+        rt.load(data);
+        rt.load(subslice);
 
         auto tree = std::move(rt);
 
         auto data2 = rtest::test_input_data<int>();
-        rtree::RTree tree2 = NewRTree<mbr::MBR<int>, int>(8);
-        tree2.load_boxes(data2)
-                .insert(&data2[0])
-                .insert(&data2[1])
-                .insert(&data2[2]);
+        rtree::RTree tree2 = NewRTree<int>(8);
+        tree2.load(data2);
+        tree2.insert(data2[0]);
+        tree2.insert(data2[1]);
+        tree2.insert(data2[2]);
         REQUIRE(nodeEquals(&tree.data, &tree2.data));
     }
 
 
     SECTION("[size_t] #load does nothing if (loading empty data)") {
-        std::vector<mbr::MBR<size_t> *> data{};
-        auto tree = NewRTree<mbr::MBR<size_t>, size_t>(0).load(data);
+        std::vector<rtree::Item<size_t>> data{};
+        auto tree = NewRTree<size_t>(0);
+        tree.load(data);
         REQUIRE(tree.is_empty());
-        auto box = mbr::MBR<size_t>{105, 45, 115, 55};
-        tree.insert(&box);
+        auto box = rtree::Item{0, mbr::MBR<size_t>{105, 45, 115, 55}};
+        tree.insert(box);
         REQUIRE(!tree.is_empty());
     }
 
 
     SECTION("#load does nothing if (loading empty data)") {
-        std::vector<mbr::MBR<double> *> data{};
-        auto tree = NewRTree<mbr::MBR<double>, double>(0).load(data);
+        std::vector<rtree::Item<double>> data{};
+        auto tree = NewRTree<double>(0);
+        tree.load(data);
         REQUIRE(tree.is_empty());
     }
 
     SECTION("#load properly splits tree root when merging trees of the same height") {
         auto data = rtest::test_input_data<double>();
-        std::vector<mbr::MBR<double>> cloneData(data.begin(), data.end());
-        std::vector<mbr::MBR<double>> _cloneData(data.begin(), data.end());
+        std::vector<rtree::Item<double>> cloneData(data.begin(), data.end());
+        std::vector<rtree::Item<double>> _cloneData(data.begin(), data.end());
         cloneData.insert(cloneData.end(), _cloneData.begin(), _cloneData.end());
-        auto tree = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data).load_boxes(data);
-        testResults(tree.all(), std::move(cloneData));
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
+        tree.load(data);
+        testResults(tree.all(), cloneData, true);
     }
 
     SECTION("#load properly merges data of smaller or bigger tree heights") {
         auto data = rtest::test_input_data<double>();
-        auto smaller = someData(10);
+        auto smaller = someData(10, data.back().id + 100);
 
-        std::vector<mbr::MBR<double>> cloneData(data.begin(), data.end());
+        std::vector<rtree::Item<double>> cloneData(data.begin(), data.end());
         cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
 
-        auto tree1 = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data).load_boxes(smaller);
-        auto tree2 = NewRTree<mbr::MBR<double>, double>(4).load_boxes(smaller).load_boxes(data);
+        auto tree1 = NewRTree<double>(4);
+        tree1.load(data);
+        tree1.load(smaller);
+        auto tree2 = NewRTree<double>(4);
+        tree2.load(smaller);
+        tree2.load(data);
         REQUIRE(tree1.data.height == tree2.data.height);
-        testResults(tree1.all(), [&] { return cloneData; }());
-        testResults(tree2.all(), [&] { return cloneData; }());
+        testResults(tree1.all(), cloneData);
+        testResults(tree2.all(), cloneData);
     }
 
     SECTION("#load properly merges data of smaller or bigger tree heights 2") {
-        auto N = 8020ul;
-        std::vector<mbr::MBR<double>> smaller = GenDataItems(N, 1);
-        std::vector<mbr::MBR<double>> larger = GenDataItems(2 * N, 1);
-        std::vector<mbr::MBR<double>> cloneData(larger.begin(), larger.end());
-        cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
+//        auto N = 8020ul;
+        for (int i = 0; i < 100; i++) {
+            auto N = 10UL;
 
-        auto tree1 = NewRTree<mbr::MBR<double>, double>(64).load_boxes(larger).load_boxes(smaller);
-        auto tree2 = NewRTree<mbr::MBR<double>, double>(64).load_boxes(smaller).load_boxes(larger);
-        REQUIRE(tree1.data.height == tree2.data.height);
-        testResults(tree1.all(), [&] { return cloneData; }());
-        testResults(tree2.all(), [&] { return cloneData; }());
+            std::vector<rtree::Item<double>> smaller = GenDataItems(N, 1, 0);
+            std::vector<rtree::Item<double>> larger = GenDataItems(2 * N, 1, smaller.back().id + 100);
+            std::vector<rtree::Item<double>> cloneData(larger.begin(), larger.end());
+            cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
+
+            auto tree1 = NewRTree<double>(4);
+            tree1.load(larger);
+            tree1.load(smaller);
+
+            auto tree2 = NewRTree<double>(4);
+            tree2.load(smaller);
+            tree2.load(larger);
+
+            REQUIRE(tree1.data.height == tree2.data.height);
+            testResults(tree1.all(), cloneData);
+            testResults(tree2.all(), cloneData);
+        }
     }
 
     SECTION("#search finds matching points in the tree given a bbox") {
         auto data = rtest::test_input_data<double>();
-        auto tree = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data);
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
         //@formatter:off
-        testResults(tree.search(mbr::MBR<double>(40, 20, 80, 70)), std::vector<mbr::MBR<double>>{
-                {70, 20, 70, 20}, {75, 25, 75, 25}, {45, 45, 45, 45},
-                {50, 50, 50, 50}, {60, 60, 60, 60}, {70, 70, 70, 70},
-                {45, 20, 45, 20}, {45, 70, 45, 70}, {75, 50, 75, 50},
-                {50, 25, 50, 25}, {60, 35, 60, 35}, {70, 45, 70, 45},
-        });
+        testResults(tree.search(mbr::MBR<double>(40, 20, 80, 70)), std::vector<rtree::Item<double>>{
+                {1,{70, 20, 70, 20}}, {5,{75, 25, 75, 25}}, {9,{45, 45, 45, 45}},
+                {2,{50, 50, 50, 50}}, {6,{60, 60, 60, 60}}, {10,{70, 70, 70, 70}},
+                {3,{45, 20, 45, 20}}, {7,{45, 70, 45, 70}}, {11,{75, 50, 75, 50}},
+                {4,{50, 25, 50, 25}}, {8,{60, 35, 60, 35}}, {12,{70, 45, 70, 45}},
+        }, true);
         //@formatter:on
     }
 
 
     SECTION("#collides returns true when search finds matching points") {
         auto data = rtest::test_input_data<double>();
-        auto tree = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data);
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
         REQUIRE(tree.collides(mbr::MBR<double>(40, 20, 80, 70)));
         REQUIRE(!tree.collides(mbr::MBR<double>(200, 200, 210, 210)));
     }
 
     SECTION("#search returns an empty array if (nothing found") {
         auto data = rtest::test_input_data<double>();
-        auto result = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data).search(
-                mbr::MBR<double>(200, 200, 210, 210));
+        auto rt = NewRTree<double>(4);
+        rt.load(data);
+        auto result = rt.search(
+                mbr::MBR<double>(200, 200, 210, 210)
+        );
         REQUIRE(result.empty());
     }
 
     SECTION("#all <==>.Data returns all points in the tree") {
         auto data = rtest::test_input_data<double>();
-        std::vector<mbr::MBR<double>> cloneData(data.begin(), data.end());
-        auto tree = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data);
+        std::vector<rtree::Item<double>> cloneData(data.begin(), data.end());
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
         auto result = tree.search(mbr::MBR<double>(0, 0, 100, 100));
-        testResults(std::move(result), std::move(cloneData));
+        testResults(result, cloneData);
     }
 
     SECTION("#all <==>.Data returns all points in the tree") {
-        std::vector<mbr::MBR<double>> data = {{0, 0, 0, 0},
-                                              {2, 2, 2, 2},
-                                              {1, 1, 1, 1}};
-        auto tree = NewRTree<mbr::MBR<double>, double>(4);
-        tree.load_boxes(data);
-        auto box3333 = mbr::MBR<double>{3, 3, 3, 3};
-        tree.insert(&box3333);
+        std::vector<rtree::Item<double>> data = {
+                {1, {0, 0, 0, 0}},
+                {2, {2, 2, 2, 2}},
+                {3, {1, 1, 1, 1}},
+        };
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
+        auto box3333 = rtree::Item<double>{3333, {3, 3, 3, 3}};
+        tree.insert(box3333);
         REQUIRE(tree.data.leaf);
         REQUIRE(tree.data.height == 1);
         REQUIRE(tree.data.bbox.equals(mbr::MBR<double>{0, 0, 3, 3}));
-        std::vector<mbr::MBR<double>> expects{{0, 0, 0, 0},
-                                              {1, 1, 1, 1},
-                                              {2, 2, 2, 2},
-                                              {3, 3, 3, 3}};
+        std::vector<rtree::Item<double>> expects{
+                {1,    {0, 0, 0, 0}},
+                {2,    {2, 2, 2, 2}},
+                {3,    {1, 1, 1, 1}},
+                {3333, {3, 3, 3, 3}}
+        };
         REQUIRE(tree.data.children.size() == expects.size());
         testResults(
                 [&] {
-                    std::vector<mbr::MBR<double> *> items;
+                    std::vector<rtree::Item<double>> items;
                     for (auto &i : tree.data.children) {
-                        items.emplace_back(&i.bbox);
+                        items.emplace_back(i.item);
                     }
                     return items;
                 }(),
-                [&] {
-                    return expects;
-                }()
+                expects
         );
     }
 
     SECTION("[int]#insert forms a valid tree if (items are inserted one by one") {
         auto data = rtest::test_input_data<int>();
-        auto tree = NewRTree<mbr::MBR<int>, int>(4);
+        auto tree = NewRTree<int>(4);
 
         for (auto &o : data) {
-            tree.insert(&o);
+            tree.insert(o);
         }
 
-        auto tree2 = NewRTree<mbr::MBR<int>, int>(4).load_boxes(data);
+        auto tree2 = NewRTree<int>(4);
+        tree2.load(data);
         REQUIRE(tree.data.height - tree2.data.height <= 1);
-
-        std::vector<mbr::MBR<int>> boxes2;
-        boxes2.reserve(data.size() + 4);
-
-        auto all2 = tree2.all();
-        for (auto &o : all2) {
-            boxes2.emplace_back(o->bbox());
-        }
-        testResults(tree.all(), std::move(boxes2));
+        testResults(tree.all(), tree2.all());
     }
 
     SECTION("#insert forms a valid tree if (items are inserted one by one") {
         auto data = rtest::test_input_data<double>();
-        auto tree = NewRTree<mbr::MBR<double>, double>(4);
+        auto tree = NewRTree<double>(4);
 
         for (auto &o : data) {
-            tree.insert(&o);
+            tree.insert(o);
         }
 
-        auto tree2 = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data);
+        auto tree2 = NewRTree<double>(4);
+        tree2.load(data);
         REQUIRE(tree.data.height - tree2.data.height <= 1);
-
-        std::vector<mbr::MBR<double>> boxes2;
-        boxes2.reserve(data.size() + 4);
-
-        auto all2 = tree2.all();
-        for (auto &o : all2) {
-            boxes2.emplace_back(o->bbox());
-        }
-        testResults(tree.all(), std::move(boxes2));
+        testResults(tree.all(), tree2.all());
     }
 
     SECTION("[size_t]#remove removes items correctly") {
         auto data = rtest::test_input_data<int>();
         auto N = len(data);
-        std::vector<mbr::MBR<int> *> boxes;
+        std::vector<rtree::Item<int>> boxes;
         boxes.reserve(N);
         for (size_t i = 0; i < N; ++i) {
-            boxes.emplace_back(&data[i]);
+            boxes.emplace_back(data[i]);
         }
-        auto tree = NewRTree<mbr::MBR<int>, int>(4).load(boxes);
+        auto tree = NewRTree<int>(4);
+        tree.load(boxes);
         tree.remove(data[0]);
         tree.remove(data[1]);
         tree.remove(data[2]);
@@ -487,41 +553,42 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         tree.remove(boxes[N - 2]);
         tree.remove(boxes[N - 3]);
 
-        std::vector<mbr::MBR<int>> cloneData(data.begin() + 3, data.end() - 3);
-        testResults(tree.all(), std::move(cloneData));
+        std::vector<rtree::Item<int>> cloneData(data.begin() + 3, data.end() - 3);
+        testResults(tree.all(), cloneData);
     }
 
     SECTION("#remove removes items correctly") {
         auto data = rtest::test_input_data<double>();
         auto N = len(data);
-        std::vector<mbr::MBR<double> *> boxes;
-        boxes.reserve(N);
+        std::vector<rtree::Item<double>> items{};
+        items.reserve(N);
         for (size_t i = 0; i < N; ++i) {
-            boxes.emplace_back(&data[i]);
+            items.emplace_back(data[i]);
         }
-        auto tree = NewRTree<mbr::MBR<double>, double>(4).load(boxes);
+        auto tree = NewRTree<double>(4);
+        tree.load(items);
         tree.remove(data[0]);
         tree.remove(data[1]);
         tree.remove(data[2]);
 
-        tree.remove(boxes[N - 1]);
-        tree.remove(boxes[N - 2]);
-        tree.remove(boxes[N - 3]);
+        tree.remove(items[N - 1]);
+        tree.remove(items[N - 2]);
+        tree.remove(items[N - 3]);
 
-        std::vector<mbr::MBR<double>> cloneData(data.begin() + 3, data.end() - 3);
-        testResults(tree.all(), std::move(cloneData));
+        std::vector<rtree::Item<double>> cloneData(data.begin() + 3, data.end() - 3);
+        testResults(tree.all(), cloneData);
     }
 
     SECTION("#remove does nothing if (nothing found)") {
-        mbr::MBR<double> *item = nullptr;
+        rtree::Item<double> item{};
         auto data = rtest::test_input_data<double>();
 
-        auto tree = NewRTree<mbr::MBR<double>, double>(0)
-                .load_boxes(data);
+        auto tree = NewRTree<double>(0);
+        tree.load(data);
 
         auto data2 = rtest::test_input_data<double>();
-        auto tree2 = NewRTree<mbr::MBR<double>, double>(0)
-                .load_boxes(data2);
+        auto tree2 = NewRTree<double>(0);
+        tree2.load(data2);
 
         tree2.remove(mbr::MBR<double>(13, 13, 13, 13));
         REQUIRE(nodeEquals(&tree.data, &tree2.data));
@@ -532,7 +599,8 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#remove brings the tree to a clear state when removing everything one by one") {
         auto data = rtest::test_input_data<double>();
-        auto tree = NewRTree<mbr::MBR<double>, double>(4).load_boxes(data);
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
         auto result = tree.search(mbr::MBR<double>(0, 0, 100, 100));
 
         for (size_t i = 0; i < len(result); i++) {
@@ -544,21 +612,20 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#clear should clear all the data in the tree") {
         auto data = rtest::test_input_data<double>();
-        auto tree = NewRTree<mbr::MBR<double>, double>(4)
-                .load_boxes(data)
-                .clear();
+        auto tree = NewRTree<double>(4);
+        tree.load(data);
+        tree.clear();
         REQUIRE(tree.is_empty());
     }
 
     SECTION("should have chainable API") {
         auto data = rtest::test_input_data<double>();
-        auto rt = NewRTree<mbr::MBR<double>, double>(4);
-        REQUIRE(rt.load_boxes(data)
-                        .insert(&data[0])
-                        .remove(data[0])
-                        .clear()
-                        .is_empty()
-        );
+        auto rt = NewRTree<double>(4);
+        rt.load(data);
+        rt.insert(data[0]);
+        rt.remove(data[0]);
+        rt.clear();
+        REQUIRE(rt.is_empty());
     }
 }
 
@@ -567,14 +634,14 @@ TEST_CASE("rtree 2", "[rtree util]") {
     using namespace rtest;
 
     SECTION("tests pop nodes") {
-        auto abox = empty_mbr<double>();
-        auto bbox = empty_mbr<double>();
-        auto cbox = empty_mbr<double>();
-        auto a = NewNode<mbr::MBR<double>>(&abox, 0, true, std::vector<Node<mbr::MBR<double>, double>>{});
-        auto b = NewNode<mbr::MBR<double>>(&bbox, 1, true, std::vector<Node<mbr::MBR<double>, double>>{});
-        auto c = NewNode<mbr::MBR<double>>(&cbox, 1, true, std::vector<Node<mbr::MBR<double>, double>>{});
-        std::vector<Node<mbr::MBR<double>, double> *> nodes;
-        Node<mbr::MBR<double>, double> *n;
+        auto abox = rtree::Item<double>{};
+        auto bbox = rtree::Item<double>{};
+        auto cbox = rtree::Item<double>{};
+        auto a = NewNode<double>(abox, 0, true, std::vector<Node<double>>{});
+        auto b = NewNode<double>(bbox, 1, true, std::vector<Node<double>>{});
+        auto c = NewNode<double>(cbox, 1, true, std::vector<Node<double>>{});
+        std::vector<Node<double> *> nodes;
+        Node<double> *n;
 
         n = pop(nodes);
         REQUIRE(n == nullptr);
@@ -636,9 +703,10 @@ TEST_CASE("rtree knn", "[rtree knn]") {
 
     SECTION("finds n neighbours") {
         auto knn_data = rtest::init_knn<double>();
-        auto rt = NewRTree<mbr::MBR<double>, double>(9).load_boxes(knn_data);
+        auto rt = NewRTree<double>(9);
+        rt.load(knn_data);
         auto nn = rt.KNN(mbr::MBR<double>(40, 40, 40, 40), 10,
-                         [](const mbr::MBR<double> &query, KObj<mbr::MBR<double>, double> obj) {
+                         [](const mbr::MBR<double> &query, KObj<double> obj) {
                              return query.distance(obj.bbox);
                          });
         //@formatter:off
@@ -651,7 +719,7 @@ TEST_CASE("rtree knn", "[rtree knn]") {
         REQUIRE(len(nn) == len(result));
         //@formatter:on
         for (auto &n : nn) {
-            REQUIRE(rtest::found_in(n->bbox(), result));
+            REQUIRE(rtest::found_in(n.bbox(), result));
         }
     }
 
@@ -659,12 +727,12 @@ TEST_CASE("rtree knn", "[rtree knn]") {
         auto knn_data = rtest::init_knn<double>();
         std::vector<mbr::MBR<double>> predicate_mbr;
 
-        auto scoreFunc = [](const mbr::MBR<double> &query, KObj<mbr::MBR<double>, double> obj) {
+        auto scoreFunc = [](const mbr::MBR<double> &query, KObj<double> obj) {
             return query.distance(obj.bbox);
         };
 
         auto createPredicate = [&](double dist) {
-            return [=, &predicate_mbr](KObj<mbr::MBR<double>, double> candidate) {
+            return [=, &predicate_mbr](KObj<double> candidate) {
                 REQUIRE(candidate.is_item);
                 if (candidate.score() <= dist) {
                     predicate_mbr.emplace_back(candidate.bbox);
@@ -673,7 +741,8 @@ TEST_CASE("rtree knn", "[rtree knn]") {
                 return std::tuple<bool, bool>(false, true);
             };
         };
-        auto rt = NewRTree<mbr::MBR<double>, double>(9).load_boxes(knn_data);
+        auto rt = NewRTree<double>(9);
+        rt.load(knn_data);
         auto prefFn = createPredicate(6);
         auto query = mbr::MBR<double>(
                 74.88825108886668, 82.678427498132,
@@ -684,26 +753,28 @@ TEST_CASE("rtree knn", "[rtree knn]") {
 
         REQUIRE(len(res) == 2);
         for (size_t i = 0; i < res.size(); i++) {
-            REQUIRE(res[i]->bbox() == predicate_mbr[i]);
+            REQUIRE(res[i].bbox() == predicate_mbr[i]);
         }
     }
 
     SECTION("find n neighbours that do satisfy a given predicate") {
         auto knn_data = rtest::init_knn<double>();
-        auto dat = fn_rich_data();
-        std::vector<RichData *> objects;
-        for (auto &i : dat) {
-            objects.emplace_back(&i);
+        auto rich_data = fn_rich_data();
+        std::vector<rtree::Item<double>> objects;
+        size_t id{0};;
+        for (auto &d : rich_data) {
+            objects.emplace_back(rtree::Item{id++, d.box});
         }
-        auto rt = NewRTree<RichData, double>(9).load(objects);
+        auto rt = NewRTree<double>(9);
+        rt.load(objects);
 
-        auto scoreFn = [](mbr::MBR<double> query, KObj<RichData, double> boxer) {
+        auto scoreFn = [](mbr::MBR<double> query, KObj<double> boxer) {
             return query.distance(boxer.bbox);
         };
 
-        auto predicate = [](KObj<RichData, double> v) {
-            auto o = v.get_item();
-            return std::tuple<bool, bool>(o->version < 5, false);
+        auto predicate = [&](KObj<double> v) {
+            auto &o = rich_data[v.get_item().id];
+            return std::tuple<bool, bool>(o.version < 5, false);
         };
 
         auto result = rt.KNN(mbr::MBR<double>(2, 4, 2, 4), 1, scoreFn, predicate);
@@ -714,8 +785,8 @@ TEST_CASE("rtree knn", "[rtree knn]") {
         auto expects_mbr = mbr::MBR<double>{3, 3, 3, 3};
         auto expects_version = 2;
 
-        REQUIRE(v->box == expects_mbr);
-        REQUIRE(v->version == expects_version);
+        REQUIRE(v.box == expects_mbr);
+        REQUIRE(rich_data.at(v.id).version == expects_version);
     }
 }
 
@@ -737,28 +808,26 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
       //@formatter:on
 
         size_t node_size = 0;
-        auto oneT = NewRTree<mbr::MBR<double>, double>(9);
-        auto one_defT = NewRTree<mbr::MBR<double>, double>(node_size);
-        auto bulkT = NewRTree<mbr::MBR<double>, double>(9);
+        auto oneT = NewRTree<double>(9);
+        auto one_defT = NewRTree<double>(node_size);
+        auto bulkT = NewRTree<double>(9);
         //one by one
-        std::vector<mbr::MBR<double>> data_oneByone(data.begin(), data.end());
-        for (auto &i : data_oneByone) {
-            oneT.insert(&i);
+        std::vector<rtree::Item<double>> data_oneByone{};
+        for (size_t i = 0; i < data.size(); i++) {
+            data_oneByone.emplace_back(rtree::Item{i, data[i]});
         }
+        for (auto &d : data_oneByone) { oneT.insert(d); }
 
         //fill zero size
-        for (auto &i : data_oneByone) {
-            one_defT.insert(&i);
-        }
+        for (auto &d : data_oneByone) { one_defT.insert(d); }
 
         auto one_mbr = oneT.data.bbox;
         auto one_def_mbr = one_defT.data.bbox;
 
         //bulkload
-        std::vector<mbr::MBR<double>> data_bulkLoad(data.begin(), data.end());
-        std::vector<mbr::MBR<double> *> bulk_items;
-        for (auto &i : data_bulkLoad) {
-            bulk_items.emplace_back(&i);
+        std::vector<rtree::Item<double>> bulk_items;
+        for (size_t i = 0; i < data.size(); i++) {
+            bulk_items.emplace_back(rtree::Item{i + 222222, data[i]});
         }
         bulkT.load(bulk_items);
         auto buk_mbr = bulkT.data.bbox;
@@ -791,10 +860,10 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
             //@formatter:on
         mbr::MBR<double> query = {0., 0., 100, 100};
 
-        auto tree = NewRTree<mbr::MBR<double>, double>(0);
-        std::vector<mbr::MBR<double>> data_oneByone(data.begin(), data.end());
-        for (auto &i : data_oneByone) {
-            tree.insert(&i);
+        auto tree = NewRTree<double>(0);
+        std::vector<rtree::Item<double>> data_oneByone{};
+        for (size_t i = 0; i < data.size(); i++) {
+            data_oneByone.emplace_back(rtree::Item{i, data[i]});
         }
 
         auto res = tree.search(query);
@@ -821,22 +890,23 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
         auto query5 = mbr::MBR<double>{0., 0., 100, 100};
         auto query6 = mbr::MBR<double>{182.17619056720642, 15.748541593521262, 205.43811579298725, 65.97783146157896};
 
-        auto tree = NewRTree<mbr::MBR<double>, double>(9);
-        auto bulk_tree = NewRTree<mbr::MBR<double>, double>(9);
+        auto tree = NewRTree<double>(9);
+        auto bulk_tree = NewRTree<double>(9);
 
-        std::vector<mbr::MBR<double>> data_oneByone(data.begin(), data.end());
-        std::vector<mbr::MBR<double>> data_bulkLoad(data.begin(), data.end());
-        std::vector<mbr::MBR<double> *> bulk_items;
-        bulk_items.reserve(data_bulkLoad.size());
-
-        for (auto &i : data_bulkLoad) {
-            bulk_items.emplace_back(&i);
+        std::vector<rtree::Item<double>> bulk_items;
+        for (size_t i = 0; i < data.size(); i++) {
+            bulk_items.emplace_back(rtree::Item{i + 222222, data[i]});
         }
         bulk_tree.load(bulk_items);
 
-        for (auto &i : data_oneByone) {
-            tree.insert(&i);
+        std::vector<rtree::Item<double>> data_oneByone{};
+        for (size_t i = 0; i < data.size(); i++) {
+            data_oneByone.emplace_back(rtree::Item{i, data[i]});
         }
+        for (auto item : data_oneByone) {
+            tree.insert(item);
+        }
+
         auto res1 = tree.search(query1);
         auto res2 = tree.search(query2);
         auto res3 = tree.search(query3);
