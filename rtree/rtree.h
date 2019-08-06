@@ -467,7 +467,7 @@ namespace rtree {
                                compare);
                 }
 
-                Item<U> &t = arr[k];
+                Item<U> t = arr[k];
                 i = left;
                 j = right;
 
@@ -478,7 +478,6 @@ namespace rtree {
 
                 while (i < j) {
                     swap_item(arr, i, j);
-//                    printf("i : %ld, j = %ld \n", i, j);
                     i++;
                     j--;
                     while (compare(arr[i].bbox(), t.bbox()) < 0) {

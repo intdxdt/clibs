@@ -7,11 +7,55 @@
 #include <functional>
 #include <iostream>
 #include <random>
+#include "json.hpp"
 #include "../catch/catch.h"
 #include "../mbr/mbr.h"
 #include "rtree.h"
 
+
 using namespace std;
+
+template<typename T>
+std::vector<std::array<T, 4>> box_array(std::vector<rtree::Item<T>> items) {
+    std::vector<std::array<T, 4>> boxes;
+    boxes.reserve(items.size());
+    for (rtree::Item<T>& item : items) {
+        boxes.emplace_back(item.box.as_array());
+    }
+    return boxes;
+}
+
+
+template<typename T>
+std::vector<rtree::Id> id_array(std::vector<rtree::Item<T>> items) {
+    std::vector<rtree::Id> ids;
+    ids.reserve(items.size());
+    for (const auto &item : items) {
+        ids.emplace_back(item.id);
+    }
+    return ids;
+}
+
+nlohmann::json json_object(std::vector<rtree::Item<double>> data) {
+    nlohmann::json obj;
+    obj["ids"] = id_array(data);
+    obj["boxes"] = box_array(data);
+    return obj;
+}
+
+
+void write_to_file(const std::string &fpath, const std::string &data) {
+    std::ofstream fid(fpath);
+    fid << data;
+}
+
+void dump_tracks_to_json_file(std::vector<rtree::Item<double>> small, std::vector<rtree::Item<double>> large,
+                              const std::string &output_filename) {
+    nlohmann::json obj;
+    obj["small"] = json_object(small);
+    obj["large"] = json_object(large);
+    write_to_file(output_filename, obj.dump());
+}
 
 
 namespace rtest {
@@ -327,7 +371,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("#load uses standard insertion when given a low number of items") {
         auto data = rtest::test_input_data<double>();
-        auto subslice = slice(data, 0, 3);
+        auto subslice = rtree::slice(data, 0, 3);
         auto rt = NewRTree<double>(8);
         rt.load(data);
         rt.load(subslice);
@@ -345,7 +389,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION(" [int] #load uses standard insertion when given a low number of items") {
         auto data = rtest::test_input_data<int>();
-        auto subslice = slice(data, 0, 3);
+        auto subslice = rtree::slice(data, 0, 3);
         rtree::RTree rt = NewRTree<int>(8);
         rt.load(data);
         rt.load(subslice);
@@ -410,12 +454,13 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     }
 
     SECTION("#load properly merges data of smaller or bigger tree heights 2") {
-//        auto N = 8020ul;
-        for (int i = 0; i < 100; i++) {
-            auto N = 10UL;
+
+        auto N = 8020UL;
 
             std::vector<rtree::Item<double>> smaller = GenDataItems(N, 1, 0);
             std::vector<rtree::Item<double>> larger = GenDataItems(2 * N, 1, smaller.back().id + 100);
+//            dump_tracks_to_json_file(smaller, larger, "debug.txt");
+
             std::vector<rtree::Item<double>> cloneData(larger.begin(), larger.end());
             cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
 
@@ -430,7 +475,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
             REQUIRE(tree1.data.height == tree2.data.height);
             testResults(tree1.all(), cloneData);
             testResults(tree2.all(), cloneData);
-        }
+
     }
 
     SECTION("#search finds matching points in the tree given a bbox") {
