@@ -410,7 +410,6 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         auto N = static_cast<size_t > (1e6);
         std::vector<rtree::Item<double>> smaller = GenDataItems(N, 1, 0);
         std::vector<rtree::Item<double>> larger = GenDataItems(2 * N, 1, smaller.back().id + 100);
-//            dump_tracks_to_json_file(smaller, larger, "debug.txt");
 
         std::vector<rtree::Item<double>> cloneData(larger.begin(), larger.end());
         cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
