@@ -16,10 +16,6 @@ using namespace std;
 
 
 namespace rtest {
-    size_t N = size_t(1e6);
-    size_t maxFill = 64;
-
-
     template<typename K, typename V>
     inline bool has_key(const std::map<K, V> &dict, const K &x) {
         return dict.find(x) != dict.end();
@@ -411,27 +407,25 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     }
 
     SECTION("#load properly merges data of smaller or bigger tree heights 2") {
-
-        auto N = 8020UL;
-
-            std::vector<rtree::Item<double>> smaller = GenDataItems(N, 1, 0);
-            std::vector<rtree::Item<double>> larger = GenDataItems(2 * N, 1, smaller.back().id + 100);
+        auto N = static_cast<size_t > (1e6);
+        std::vector<rtree::Item<double>> smaller = GenDataItems(N, 1, 0);
+        std::vector<rtree::Item<double>> larger = GenDataItems(2 * N, 1, smaller.back().id + 100);
 //            dump_tracks_to_json_file(smaller, larger, "debug.txt");
 
-            std::vector<rtree::Item<double>> cloneData(larger.begin(), larger.end());
-            cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
+        std::vector<rtree::Item<double>> cloneData(larger.begin(), larger.end());
+        cloneData.insert(cloneData.end(), smaller.begin(), smaller.end());
 
-            auto tree1 = NewRTree<double>(4);
-            tree1.load(larger);
-            tree1.load(smaller);
+        auto tree1 = NewRTree<double>(4);
+        tree1.load(larger);
+        tree1.load(smaller);
 
-            auto tree2 = NewRTree<double>(4);
-            tree2.load(smaller);
-            tree2.load(larger);
+        auto tree2 = NewRTree<double>(4);
+        tree2.load(smaller);
+        tree2.load(larger);
 
-            REQUIRE(tree1.data.height == tree2.data.height);
-            testResults(tree1.all(), cloneData);
-            testResults(tree2.all(), cloneData);
+        REQUIRE(tree1.data.height == tree2.data.height);
+        testResults(tree1.all(), cloneData);
+        testResults(tree2.all(), cloneData);
 
     }
 
