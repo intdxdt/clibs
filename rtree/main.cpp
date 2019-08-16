@@ -12,8 +12,95 @@
 #include "rtree.h"
 
 
-using namespace std;
+double get_time_nano() {
+    std::chrono::steady_clock::time_point current_time = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(current_time.time_since_epoch()).count();
+}
 
+mbr::MBR<double> RandBox(double size, const std::function<double()> &rnd) {
+    auto x = rnd() * (100.0 - size);
+    auto y = rnd() * (100.0 - size);
+    return {x, y, x + size * rnd(), y + size * rnd()};
+}
+
+std::vector<rtree::Item<double>> GenDataItems(size_t N, double size, size_t id = 0) {
+    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator(seed);
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    auto rnd = [&]() {
+        return distribution(generator);
+    };
+
+    std::vector<rtree::Item<double>> data;
+    data.reserve(N);
+    for (size_t i = 0; i < N; ++i) {
+        data.emplace_back(rtree::Item{id++, RandBox(size, rnd)});
+    }
+    return data;
+}
+
+
+namespace bench {
+    auto N = size_t(1e6);
+    auto maxFill = 64UL;
+    std::vector<rtree::Item<double>> BenchData;//= GenDataItems(N, 1);
+    std::vector<rtree::Item<double>> bboxes100;//= GenDataItems(1000, 100 * std::sqrt(0.1));
+    std::vector<rtree::Item<double>> bboxes10;//= GenDataItems(1000, 10);
+    std::vector<rtree::Item<double>> bboxes1;//= GenDataItems(1000, 1);
+    double box_area{0};
+    int foundTotal{0};
+
+    void gen_bench_data() {
+        std::cout << "Generating Bench Data\n";
+        BenchData = GenDataItems(N, 1);
+        bboxes100 = GenDataItems(1000, 100 * std::sqrt(0.1));
+        bboxes10 = GenDataItems(1000, 10);
+        bboxes1 = GenDataItems(1000, 1);
+        std::cout << "Done ! Generating Bench Data\n";
+    }
+
+    void run_bench(std::string name, const std::function<void()> &func) {
+        auto BN = 100UL;
+        double times{0};
+        for (size_t i = 0; i < 5; i++) { func(); }
+        for (size_t i = 0; i < BN; i++) {
+            auto t0 = get_time_nano();
+            func();
+            auto t1 = get_time_nano();
+            times += (t1 - t0);
+        }
+        std::cout << "Bench : " << name << " : " << times / BN << " nano\n";
+    }
+
+    void Benchmark_Insert_OneByOne_SmallBigData() {
+        auto tree = rtree::NewRTree<double>(maxFill);
+        auto n = BenchData.size();
+        for (size_t i = 0; i < n; i++) {
+            tree.insert(BenchData[i]);
+        }
+        box_area = tree.data.bbox.bbox().area();
+    }
+
+
+    void Benchmark_Load_Data() {
+        auto tree = rtree::NewRTree<double>(maxFill);
+        tree.load(BenchData);
+        box_area = tree.data.bbox.bbox().area();
+    }
+
+    TEST_CASE("bench-data", "[bench 1]") {
+    }
+
+    TEST_CASE("bench0", "[bench 0]") {
+        gen_bench_data();
+        run_bench("Benchmark_Insert_OneByOne_SmallBigData", Benchmark_Insert_OneByOne_SmallBigData);
+    }
+
+    TEST_CASE("bench1", "[bench 1]") {
+        gen_bench_data();
+        run_bench("Benchmark_Load_Data", Benchmark_Load_Data);
+    }
+}
 
 namespace rtest {
     template<typename K, typename V>
@@ -69,7 +156,7 @@ namespace rtest {
         if (just_boxes) {
             for (size_t i = 0; i < nodes.size(); i++) {
                 if (!nodes[i].bbox().equals(boxes[i].bbox())) {
-                    cout << "hey...\n";
+                    std::cout << "hey...\n";
                 }
                 REQUIRE(nodes[i].bbox().equals(boxes[i].bbox()));
             }
@@ -79,8 +166,8 @@ namespace rtest {
         std::map<size_t, rtree::Item<T>> node_dict;
         for (auto &o : nodes) {
             if (has_key(node_dict, o.id)) {
-                cout << o.id << '\n';
-                cout << node_dict.at(o.id).box.wkt();
+                std::cout << o.id << '\n';
+                std::cout << node_dict.at(o.id).box.wkt();
             }
             REQUIRE(!has_key(node_dict, o.id));
             node_dict[o.id] = o;
@@ -113,29 +200,6 @@ namespace rtest {
         }
 
         return bln;
-    }
-
-
-    mbr::MBR<double> RandBox(double size, const std::function<double()> &rnd) {
-        auto x = rnd() * (100.0 - size);
-        auto y = rnd() * (100.0 - size);
-        return {x, y, x + size * rnd(), y + size * rnd()};
-    }
-
-    std::vector<rtree::Item<double>> GenDataItems(size_t N, double size, size_t id = 0) {
-        auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-        std::default_random_engine generator(seed);
-        std::uniform_real_distribution<double> distribution(0.0, 1.0);
-        auto rnd = [&]() {
-            return distribution(generator);
-        };
-
-        std::vector<rtree::Item<double>> data;
-        data.reserve(N);
-        for (size_t i = 0; i < N; ++i) {
-            data.emplace_back(rtree::Item{id++, RandBox(size, rnd)});
-        }
-        return data;
     }
 
 
@@ -268,23 +332,20 @@ TEST_CASE("rtree 1", "[rtree 1]") {
 
     SECTION("should test load 9 & 10") {
         auto data = someData(0);
-        auto tree0 = rtree::NewRTree<double>(0);
-        tree0.load(data);
+        auto tree0 = rtree::NewRTree<double>(0).load(data);
         REQUIRE(tree0.data.height == 1);
 
         auto data2 = someData(9);
-        auto tree1 = NewRTree<double>(9);
-        tree1.load(data2);
+        auto tree1 = NewRTree<double>(9).load(data2);
         REQUIRE(tree1.data.height == 1);
 
         auto data3 = someData(10);
-        auto tree2 = NewRTree<double>(9);
-        tree2.load(data3);
+        auto tree2 = NewRTree<double>(9).load(data3);
         REQUIRE(tree2.data.height == 2);
     }
 
     SECTION("tests search with some other") {
-        vector<rtree::Item<double>> data{
+        std::vector<rtree::Item<double>> data{
                 {1, {-115, 45,  -105, 55}},
                 {2, {105,  45,  115,  55}},
                 {3, {105,  -55, 115,  -45}},
@@ -407,7 +468,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
     }
 
     SECTION("#load properly merges data of smaller or bigger tree heights 2") {
-        auto N = static_cast<size_t > (1e6);
+        auto N = static_cast<size_t > (8020);
         std::vector<rtree::Item<double>> smaller = GenDataItems(N, 1, 0);
         std::vector<rtree::Item<double>> larger = GenDataItems(2 * N, 1, smaller.back().id + 100);
 
@@ -540,13 +601,8 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         }
         auto tree = NewRTree<int>(4);
         tree.load(boxes);
-        tree.remove(data[0]);
-        tree.remove(data[1]);
-        tree.remove(data[2]);
-
-        tree.remove(boxes[N - 1]);
-        tree.remove(boxes[N - 2]);
-        tree.remove(boxes[N - 3]);
+        tree.remove(data[0]).remove(data[1]).remove(data[2]);
+        tree.remove(boxes[N - 1]).remove(boxes[N - 2]).remove(boxes[N - 3]);
 
         std::vector<rtree::Item<int>> cloneData(data.begin() + 3, data.end() - 3);
         testResults(tree.all(), cloneData);
@@ -562,9 +618,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         }
         auto tree = NewRTree<double>(4);
         tree.load(items);
-        tree.remove(data[0]);
-        tree.remove(data[1]);
-        tree.remove(data[2]);
+        tree.remove(data[0]).remove(data[1]).remove(data[2]);
 
         tree.remove(items[N - 1]);
         tree.remove(items[N - 2]);

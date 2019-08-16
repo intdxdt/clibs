@@ -247,4 +247,5 @@ namespace rtree {
     }
 }
 
+
 #endif //RTREE_CPP_NODE_H

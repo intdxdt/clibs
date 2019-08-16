@@ -63,32 +63,18 @@ namespace rtree {
         }
 
         RTree &insert(Item<U> item) {
-            insert(item, this->data.height - 1);
-            return *this;
+            return insert(item, this->data.height - 1);
         }
 
-        // load_boxes loads bounding boxes
-//        RTree &load_boxes(std::vector<mbr::MBR<U>> &boxes) {
-//            std::vector<Item<U>> items;
-//            items.reserve(boxes.size());
-//            for (size_t i = 0; i < boxes.size(); ++i) {
-//                items.emplace_back(&boxes[i]);
-//            }
-//            return load(items);
-//        }
-
-
         // load implements bulk loading
-        void load(const std::vector<Item<U>> &objects) {
+        RTree &load(const std::vector<Item<U>> &objects) {
             if (objects.empty()) {
-                return;
+                return *this;
             }
 
             if (objects.size() < minEntries) {
-                for (auto &o : objects) {
-                    insert(o);
-                }
-                return;
+                for (auto &o : objects) { insert(o); }
+                return *this;
             }
 
             std::vector<Item<U>> objs(objects.begin(), objects.end());
@@ -114,7 +100,7 @@ namespace rtree {
                 // insert the small tree into the large tree at appropriate level
                 insert(std::move(node), nlevel);
             }
-
+            return *this;
         }
 
         bool is_empty() {
@@ -167,11 +153,11 @@ namespace rtree {
 
         // Remove Item from RTree
         // NOTE:if item is a bbox , then first found bbox is removed
-        void remove(Item<U> item) {
+        RTree &remove(Item<U> item) {
             if (item.id == null_id) { //uninitialized object
-                return ;
+                return *this;
             }
-            remove_item(
+            return remove_item(
                     item.bbox(),
                     [&](Node<U> *node, size_t i) {
                         return node->children[i].item.id == item.id;
@@ -180,19 +166,18 @@ namespace rtree {
 
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
-        void remove(const mbr::MBR<U> &item) {
-            remove_item(
+        RTree &remove(const mbr::MBR<U> &item) {
+            return remove_item(
                     item,
                     [&](Node<U> *node, size_t i) {
                         return node->children[i].bbox.equals(item);
                     });
         }
 
-        // Remove Item from RTree
-        // NOTE:if item is a bbox , then first found bbox is removed
+        // Remove Node from RTree
         void remove(const Node<U> *node) {
             if (node == nullptr) {
-                return ;
+                return;
             }
             remove_item(
                     node->bbox,
@@ -326,9 +311,9 @@ namespace rtree {
 
 
         // insert - private
-        void insert(Item<U> item, size_t level) {
+        RTree &insert(Item<U> item, size_t level) {
             if (item.id == null_id) {
-                return;
+                return *this;
             }
             auto bbox = item.bbox();
             std::vector<Node<U> *> insertPath{};
@@ -345,10 +330,11 @@ namespace rtree {
 
             // adjust bboxes along the insertion path
             adjust_parent_bboxes(bbox, insertPath, level);
+            return *this;
         }
 
         // insert - private
-        void insert(Node<U> &&item, size_t level) {
+        RTree &insert(Node<U> &&item, size_t level) {
             auto bbox = item.bbox;
             std::vector<Node<U> *> insertPath{};
 
@@ -363,6 +349,7 @@ namespace rtree {
 
             // adjust bboxes along the insertion path
             adjust_parent_bboxes(bbox, insertPath, level);
+            return *this;
         }
 
         // build
@@ -442,7 +429,7 @@ namespace rtree {
                         const std::function<double(const mbr::MBR<U> &, const mbr::MBR<U> &)> &compare) {
             int i{0}, j{0};
             double fn{0}, fi{0}, fNewLeft{0}, fNewRight{0}, fsn{0}, fz{0}, fs{0}, fsd{0};
-            double fLeft=left, fRight=right, fk=k;
+            double fLeft = left, fRight = right, fk = k;
 
 
             while (right > left) {
@@ -645,10 +632,10 @@ namespace rtree {
         // NOTE:if item is a bbox , then first found bbox is removed
         RTree &remove_item(const mbr::MBR<U> &bbox, const std::function<bool(Node<U> *, size_t)> &predicate) {
             Node<U> *node = &data;
-            Node<U> *parent = nullptr;
-            std::vector<Node<U> *> path;
-            std::vector<size_t> indexes;
-            std::optional<size_t> index;
+            Node<U> *parent{nullptr};
+            std::vector<Node<U> *> path{};
+            std::vector<size_t> indexes{};
+            std::optional<size_t> index{};
 
             size_t i = 0;
             bool goingUp = false;

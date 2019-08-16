@@ -50,7 +50,8 @@ namespace mbr {
                     static_cast<U>(bounds.miny),
                     static_cast<U>(bounds.maxx),
                     static_cast<U>(bounds.maxy),
-                    true};
+                    true
+            };
         }
 
 
