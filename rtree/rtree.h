@@ -57,7 +57,6 @@ namespace rtree {
         ~RTree() = default;
 
         RTree &clear() {
-            //destruct_node(std::move(data));
             data = NewNode<U>({}, 1, true);
             return *this;
         }
@@ -66,7 +65,6 @@ namespace rtree {
             return insert(item, this->data.height - 1);
         }
 
-        // load implements bulk loading
         RTree &load(const std::vector<Item<U>> &objects) {
             if (objects.empty()) {
                 return *this;
@@ -83,8 +81,7 @@ namespace rtree {
             auto node = bulk_build(objs, 0, objs.size() - 1, 0);
 
             if (data.children.empty()) {
-                // save as is if tree is empty
-                data = std::move(node);
+                data = std::move(node); // save as is if tree is empty
             }
             else if (data.height == node.height) {
                 // split root if trees have the same height
@@ -157,21 +154,17 @@ namespace rtree {
             if (item.id == null_id) { //uninitialized object
                 return *this;
             }
-            return remove_item(
-                    item.bbox(),
-                    [&](Node<U> *node, size_t i) {
-                        return node->children[i].item.id == item.id;
-                    });
+            return remove_item(item.bbox(), [&](Node<U> *node, size_t i) {
+                return node->children[i].item.id == item.id;
+            });
         }
 
         //Remove Item from RTree
         //NOTE:if item is a bbox , then first found bbox is removed
         RTree &remove(const mbr::MBR<U> &item) {
-            return remove_item(
-                    item,
-                    [&](Node<U> *node, size_t i) {
-                        return node->children[i].bbox.equals(item);
-                    });
+            return remove_item(item, [&](Node<U> *node, size_t i) {
+                return node->children[i].bbox.equals(item);
+            });
         }
 
         // Remove Node from RTree
@@ -377,7 +370,6 @@ namespace rtree {
             auto node = NewNode<U>({}, height, false, std::vector<Node<U>>{});
 
             // split the items into M mostly square tiles
-
             auto N2 = int(std::ceil(N / M));
             auto N1 = N2 * int(std::ceil(std::sqrt(M)));
             int i, j, right2, right3;
@@ -628,8 +620,7 @@ namespace rtree {
             return margin;
         }
 
-        // Remove Item from RTree
-        // NOTE:if item is a bbox , then first found bbox is removed
+        /// Remove BBox from RTree; removes first found matching bbox.
         RTree &remove_item(const mbr::MBR<U> &bbox, const std::function<bool(Node<U> *, size_t)> &predicate) {
             Node<U> *node = &data;
             Node<U> *parent{nullptr};
@@ -735,7 +726,5 @@ namespace rtree {
         tree.minEntries = max(2UL, static_cast<size_t>(std::ceil(cap * 0.4)));
         return tree;
     }
-
 }
-
 #endif //RTREE_RTREE_H
