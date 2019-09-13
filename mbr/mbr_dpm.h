@@ -1,17 +1,8 @@
-#include <cmath>
-#include <cassert>
-#include <array>
-#include <vector>
-#include <sstream>
-#include <optional>
-#include <iomanip>
-#include <functional>
+// Copyright (c) DeepMetrics. All rights reserved.
+#include "pt.h"
 
-#include "../pt/pt.h"
-#include "../mutil/mutil.h"
-
-#ifndef MBR_MBR_H
-#define MBR_MBR_H
+#ifndef TRACKER_MBR_H
+#define TRACKER_MBR_H
 namespace mbr {
     template<typename T>
     struct MBR {
@@ -58,7 +49,7 @@ namespace mbr {
         template<typename U>
         MBR<U> as() {
             auto bounds = *this;
-            return MBR<U>{
+            return MBR<U> {
                     static_cast<U>(bounds.minx),
                     static_cast<U>(bounds.miny),
                     static_cast<U>(bounds.maxx),
@@ -74,19 +65,17 @@ namespace mbr {
             return d < 0;
         }
 
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         MBR<T> &bbox() { return *this; }
 
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
-        MBR<T> clone() { return *this; }
+        MBR<T> clone() const { return *this; }
 
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
+        [[using gnu : const, always_inline, hot]]
         inline T width() const { return maxx - minx; }
 
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
+        [[using gnu : const, always_inline, hot]]
         inline T height() const { return maxy - miny; }
 
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
+        [[using gnu : const, always_inline, hot]]
         inline T area() const { return height() * width(); }
 
         std::vector<Pt<T>> as_poly_array() {
@@ -117,7 +106,6 @@ namespace mbr {
         }
 
         ///Compare equality of two minimum bounding box
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         bool equals(const MBR<T> &other) const {
             return eqls(maxx, other.maxx) &&
                    eqls(maxy, other.maxy) &&
@@ -127,7 +115,6 @@ namespace mbr {
 
         ///Checks if bounding box can be represented as a point,
         /// has both width and height as 0.
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         bool is_point() const {
             return feq(height(), 0) && feq(width(), 0);
         }
@@ -142,7 +129,6 @@ namespace mbr {
         }
 
         ///contains x, y
-        [[using gnu : const, always_inline, hot]] [[nodiscard]]
         bool contains(T x, T y) const {
             return (x >= minx) &&
                    (x <= maxx) &&
@@ -181,8 +167,7 @@ namespace mbr {
         }
 
         ///Checks if bounding box intersects other
-        [[using gnu : const, always_inline, hot]]
-        inline bool intersects(const MBR<T> &other) const {
+        bool intersects(const MBR<T> &other) const {
             //not disjoint
             return !(other.minx > maxx ||
                      other.maxx < minx ||
@@ -191,13 +176,11 @@ namespace mbr {
         }
 
         ///intersects point
-        [[using gnu : const, always_inline, hot]]
         bool intersects(T x, T y) const {
             return contains(x, y);
         }
 
         ///intersects point
-        [[using gnu : const, always_inline, hot]]
         bool intersects(const Pt<T> &pt1, const Pt<T> &pt2) const {
             auto minq = min(pt1.x, pt2.x);
             auto maxq = max(pt1.x, pt2.x);
@@ -214,13 +197,12 @@ namespace mbr {
         }
 
         ///Test for disjoint between two mbrs
-        [[using gnu : const, always_inline, hot]]
         bool disjoint(const MBR<T> &other) const {
             return !intersects(other);
         }
 
         ///Computes the intersection of two bounding box
-        std::optional<MBR<T>> intersection(const MBR<T> &other) {
+        std::optional<MBR<T>> intersection(const MBR<T> &other) const {
             if (disjoint(other)) {
                 return std::nullopt;
             }
@@ -381,7 +363,7 @@ namespace mbr {
                 return b < a ? b : a;
             }
             else {
-                return std::fmin(a, b);
+                return fmin(a, b);
             };
         }
 
@@ -391,7 +373,7 @@ namespace mbr {
                 return b > a ? b : a;
             }
             else {
-                return std::fmax(a, b);
+                return fmax(a, b);
             };
         }
 
@@ -408,4 +390,4 @@ namespace mbr {
 
     };
 }
-#endif //MBR_MBR_H
+#endif //TRACKER_MBR_H

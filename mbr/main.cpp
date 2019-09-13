@@ -57,12 +57,12 @@ TEST_CASE("mbr 1", "[mbr 1]") {
         std::tuple<double, double, double, double> tup = {0.5, 0.2, 2.0, 2.0};
         REQUIRE(m.as_tuple() == tup);
 
-        std::vector<std::vector<double>> b = m.as_poly_array();
-        std::vector<double> b0 = {0.5, 0.2};
-        std::vector<double> b1 = {0.5, 2};
-        std::vector<double> b2 = {2, 2};
-        std::vector<double> b3 = {2, 0.2};
-        std::vector<double> b4 = {0.5, 0.2};
+        std::vector<Pt<double>> b = m.as_poly_array();
+        Pt<double> b0 {0.5, 0.2};
+        Pt<double> b1 {0.5, 2};
+        Pt<double> b2 {2, 2};
+        Pt<double> b3 {2, 0.2};
+        Pt<double> b4 {0.5, 0.2};
 
         REQUIRE(b.size() == 5);
         REQUIRE(b[0] == b0);
@@ -318,9 +318,14 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         md.expand_to_include(mb);
 
         std::array<double, 4> arr{0, 0, 5, 9};
-        std::vector<std::vector<double>> polyarr{{0, 0}, {0, 9}, {5, 9}, {5, 0}, {0, 0}};
+        std::vector<Pt<double>> polyarr{{0, 0}, {0, 9}, {5, 9}, {5, 0}, {0, 0}};
         REQUIRE(ma.as_array() == arr);  //ma modified by expand
-        REQUIRE(ma.as_poly_array() == polyarr); //ma modified by expand
+        size_t i {0};
+        for (auto o : ma.as_poly_array()){
+            REQUIRE( o == polyarr[i]); //ma modified by expand
+            i++;
+        }
+
         arr = {1.7, 1.5, 5, 9};
         REQUIRE(mc.as_array() == arr); //should not be touched
         arr = {-1, -1, 2, 2};
