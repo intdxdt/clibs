@@ -58,11 +58,11 @@ TEST_CASE("mbr 1", "[mbr 1]") {
         REQUIRE(m.as_tuple() == tup);
 
         std::vector<Pt<double>> b = m.as_poly_array();
-        Pt<double> b0 {0.5, 0.2};
-        Pt<double> b1 {0.5, 2};
-        Pt<double> b2 {2, 2};
-        Pt<double> b3 {2, 0.2};
-        Pt<double> b4 {0.5, 0.2};
+        Pt<double> b0{0.5, 0.2};
+        Pt<double> b1{0.5, 2};
+        Pt<double> b2{2, 2};
+        Pt<double> b3{2, 0.2};
+        Pt<double> b4{0.5, 0.2};
 
         REQUIRE(b.size() == 5);
         REQUIRE(b[0] == b0);
@@ -150,7 +150,7 @@ TEST_CASE("mbr int 2", "[mbr int 2]") {
 
         if (m67.has_value()) {
             auto v = m67.value();
-            REQUIRE(v.area()> 0);
+            REQUIRE(v.area() > 0);
         }
 
         REQUIRE(m67.value().equals(m6));
@@ -241,9 +241,9 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         REQUIRE(m7.intersects(m6));
         REQUIRE(m6.intersects(m7));
 
-        auto m67 = m6.intersection(m7);
-        auto m76 = m7.intersection(m6);
-        auto m78 = m7.intersection(m8);
+        auto m67 = m6 & m7;
+        auto m76 = m7 & m6;
+        auto m78 = m7 & m8;
 
         REQUIRE(m67.value().equals(m6));
         REQUIRE(m67.value().equals(m76.value()));
@@ -314,15 +314,25 @@ TEST_CASE("mbr 2", "[mbr 2]") {
         MBR<double> mb = {-1, -1, 1.5, 1.9};
         MBR<double> mc = {1.7, 1.5, 5, 9};
         MBR<double> md = ma;
+        auto ma_mc = ma + mc;
+        auto ma__mc = ma | mc;
+        auto md__mb = md | mb;
+        REQUIRE(ma_mc.equals(ma__mc));
         ma.expand_to_include(mc);
         md.expand_to_include(mb);
+        REQUIRE(ma.equals(ma__mc));
+        REQUIRE(md.equals(md__mb));
 
         std::array<double, 4> arr{0, 0, 5, 9};
-        std::vector<Pt<double>> polyarr{{0, 0}, {0, 9}, {5, 9}, {5, 0}, {0, 0}};
+        std::vector<Pt<double>> polyarr{{0, 0},
+                                        {0, 9},
+                                        {5, 9},
+                                        {5, 0},
+                                        {0, 0}};
         REQUIRE(ma.as_array() == arr);  //ma modified by expand
-        size_t i {0};
-        for (auto o : ma.as_poly_array()){
-            REQUIRE( o == polyarr[i]); //ma modified by expand
+        size_t i{0};
+        for (auto o : ma.as_poly_array()) {
+            REQUIRE(o == polyarr[i]); //ma modified by expand
             i++;
         }
 

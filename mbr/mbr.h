@@ -109,11 +109,8 @@ namespace mbr {
             };
         }
 
-        std::tuple<Pt<T>, Pt<T>> llur() {
-            return std::tuple<Pt<T>, Pt<T>>{
-                    {minx, miny},
-                    {maxx, maxy}
-            };
+        std::pair<Pt<T>, Pt<T>> llur() {
+            return std::make_pair<Pt<T>, Pt<T>>({minx, miny}, {maxx, maxy});
         }
 
         ///Compare equality of two minimum bounding box
@@ -220,7 +217,7 @@ namespace mbr {
         }
 
         ///Computes the intersection of two bounding box
-        std::optional<MBR<T>> intersection(const MBR<T> &other) {
+        std::optional<MBR<T>> intersection(const MBR<T> &other) const{
             if (disjoint(other)) {
                 return std::nullopt;
             }
@@ -354,17 +351,17 @@ namespace mbr {
         }
 
         ///Operator : equals
-        bool operator==(const MBR<T> &other) {
+        inline bool operator==(const MBR<T> &other) {
             return equals(other);
         }
 
         ///Operator : not equal
         bool operator!=(const MBR<T> &other) {
-            return !(*this == other);
+            return !(this->equals(other));
         }
 
     private:
-        std::string f2str(double f, int precision = 12) const {
+        [[nodiscard]] std::string f2str(double f, int precision = 12) const {
             std::stringstream ss;
             ss << std::fixed << std::setprecision(precision) << f;
             auto s = ss.str();
