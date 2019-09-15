@@ -317,7 +317,7 @@ namespace mbr {
         }
 
         ///WKT : wkt string of mbr as polygon
-        std::string wkt() const {
+        [[nodiscard]] std::string wkt() const {
             std::ostringstream ss;
             ss << "POLYGON (("
                << f2str(minx) << " " << f2str(miny) << ", "

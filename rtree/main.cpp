@@ -92,13 +92,13 @@ namespace bench {
     }
 
     TEST_CASE("bench0", "[bench 0]") {
-        gen_bench_data();
-        run_bench("Benchmark_Insert_OneByOne_SmallBigData", Benchmark_Insert_OneByOne_SmallBigData);
+//        gen_bench_data();
+//        run_bench("Benchmark_Insert_OneByOne_SmallBigData", Benchmark_Insert_OneByOne_SmallBigData);
     }
 
     TEST_CASE("bench1", "[bench 1]") {
-        gen_bench_data();
-        run_bench("Benchmark_Load_Data", Benchmark_Load_Data);
+//        gen_bench_data();
+//        run_bench("Benchmark_Load_Data", Benchmark_Load_Data);
     }
 }
 

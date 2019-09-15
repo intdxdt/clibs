@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(mbr)
 set(CMAKE_CXX_STANDARD 17)
 
-
+#install c/c++ coverage plugin for CLion
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
     add_link_options(-fprofile-instr-generate)
