@@ -556,7 +556,7 @@ namespace rtree {
 
         //_chooseSplitIndex selects split index.
         std::size_t choose_split_index(Node<U> *node, std::size_t m, std::size_t M) const {
-            std::size_t i = 0, index = 0;
+            std::size_t i, index = 0;
             double overlap, area, minOverlap, minArea;
 
             minOverlap = std::numeric_limits<double>::infinity();
@@ -587,6 +587,10 @@ namespace rtree {
                     }
                 }
             }
+
+            if (index == 0) {
+                 return M - m;
+            }
             return index;
         }
 
@@ -600,7 +604,7 @@ namespace rtree {
                 std::sort(node->children.begin(), node->children.end(), y_node_path<U>());
             }
 
-            size_t i = 0;
+            size_t i;
 
             auto leftBBox = dist_bbox<Node<U>, U>(node, 0, m);
             auto rightBBox = dist_bbox<Node<U>, U>(node, M - m, M);

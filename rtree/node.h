@@ -29,7 +29,7 @@ namespace rtree {
             children = std::vector<Node<U>>{};
         };
 
-        Node(Node<U> &&other) noexcept :
+        Node(Node<U> &&other) noexcept:
                 item(other.item), height(other.height), leaf(other.leaf), bbox(other.bbox) {
             children = std::move(other.children);
         }
@@ -100,7 +100,7 @@ namespace rtree {
 
     template<typename T>
     struct xy_node_path {
-        inline bool operator()(T& a, T&b) {
+        inline bool operator()(T &a, T &b) {
             auto d = a.bbox().minx - b.bbox().minx;
             if (feq(d, 0)) {
                 d = a.bbox().miny - b.bbox().miny;
@@ -220,7 +220,7 @@ namespace rtree {
             minEnlargement = std::numeric_limits<double>::infinity();
             minArea = std::numeric_limits<double>::infinity();
 
-            for (auto &o : node->children) {
+            for (auto &o: node->children) {
                 child = &o;
                 area = bbox_area(child->bbox);
                 enlargement = enlarged_area(bbox, child->bbox) - area;
@@ -241,7 +241,8 @@ namespace rtree {
                     }
                 }
             }
-            node = targetNode;
+
+            node = (targetNode == nullptr) ? &(node->children[0]) : targetNode;
         }
         return node;
     }

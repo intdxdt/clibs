@@ -123,11 +123,28 @@ namespace rtest {
          size_t id{0};
          std::vector<rtree::Item<T>> items ; 
          for (auto & box : boxes){
-             items.emplace_back(rtree::Item{
-                 id++ , box 
-             });
+             items.emplace_back(rtree::Item{id++ , box});
          }
          return items; 
+    }
+
+    template<typename T>
+    std::vector<rtree::Item<T>> test_input_empty_data(){
+         auto infinity  = std::numeric_limits<double>::infinity();
+         auto boxes =  std::vector<mbr::MBR<T>>{
+            {-infinity, -infinity, infinity, infinity},
+            {-infinity, -infinity, infinity, infinity},
+            {-infinity, -infinity, infinity, infinity},
+            {-infinity, -infinity, infinity, infinity},
+            {-infinity, -infinity, infinity, infinity},
+            {-infinity, -infinity, infinity, infinity},
+         };
+         size_t id{0};
+         std::vector<rtree::Item<T>> items ;
+         for (auto & box : boxes){
+             items.emplace_back(rtree::Item{id++ , box});
+         }
+         return items;
     }
     //@formatter:on
 
@@ -164,7 +181,7 @@ namespace rtest {
         }
 
         std::map<size_t, rtree::Item<T>> node_dict;
-        for (auto &o : nodes) {
+        for (auto &o: nodes) {
             if (has_key(node_dict, o.id)) {
                 std::cout << o.id << '\n';
                 std::cout << node_dict.at(o.id).box.wkt();
@@ -173,7 +190,7 @@ namespace rtest {
             node_dict[o.id] = o;
         }
 
-        for (auto &o : boxes) {
+        for (auto &o: boxes) {
             REQUIRE(has_key(node_dict, o.id));
             auto node_item = node_dict.at(o.id);
             REQUIRE(node_item.bbox().equals(o.bbox()));
@@ -243,7 +260,7 @@ namespace rtest {
 
         size_t id{0};
         std::vector<rtree::Item<T>> data;
-        for (auto &box : knn_data) {
+        for (auto &box: knn_data) {
             data.emplace_back(rtree::Item{id++, box});
         }
         return data;
@@ -251,7 +268,7 @@ namespace rtest {
 
     bool found_in(const mbr::MBR<double> &needle, const std::vector<mbr::MBR<double>> &haystack) {
         auto found = false;
-        for (auto &hay :  haystack) {
+        for (auto &hay: haystack) {
             found = needle.equals(hay);
             if (found) {
                 break;
@@ -310,7 +327,7 @@ namespace rtest {
             stack.pop_back();
             auto parent = Parent{node->bbox.wkt()};
             //adopt children on stack and let node go out of scope
-            for (auto &o : node->children) {
+            for (auto &o: node->children) {
                 auto n = o.get();
                 if (!n->children.empty()) {
                     stack.emplace_back(n);
@@ -438,6 +455,26 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         REQUIRE(tree.is_empty());
     }
 
+    SECTION("#load handles the insertion of maxEntries + 2 empty bboxes") {
+        auto emptyData = test_input_empty_data<double>();
+        auto tree = NewRTree<double>(4);
+        tree.load(emptyData);
+        REQUIRE(tree.data.height == 2);
+        testResults(tree.all(), emptyData);
+    }
+
+    SECTION("#load handles the insertion of maxEntries + 2 empty bboxes") {
+        auto emptyData = test_input_empty_data<double>();
+        auto tree = NewRTree<double>(4);
+        for (auto & i : emptyData) {
+            tree.insert(i);
+        }
+        REQUIRE(tree.data.height == 2);
+        testResults(tree.all(), emptyData);
+        REQUIRE(tree.data.children[0].children.size() == 4);
+        REQUIRE(tree.data.children[1].children.size() == 2);
+    }
+
     SECTION("#load properly splits tree root when merging trees of the same height") {
         auto data = rtest::test_input_data<double>();
         std::vector<rtree::Item<double>> cloneData(data.begin(), data.end());
@@ -554,7 +591,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         testResults(
                 [&] {
                     std::vector<rtree::Item<double>> items;
-                    for (auto &i : tree.data.children) {
+                    for (auto &i: tree.data.children) {
                         items.emplace_back(i.item);
                     }
                     return items;
@@ -567,7 +604,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         auto data = rtest::test_input_data<int>();
         auto tree = NewRTree<int>(4);
 
-        for (auto &o : data) {
+        for (auto &o: data) {
             tree.insert(o);
         }
 
@@ -581,7 +618,7 @@ TEST_CASE("rtree 1", "[rtree 1]") {
         auto data = rtest::test_input_data<double>();
         auto tree = NewRTree<double>(4);
 
-        for (auto &o : data) {
+        for (auto &o: data) {
             tree.insert(o);
         }
 
@@ -767,7 +804,7 @@ TEST_CASE("rtree knn", "[rtree knn]") {
 
         REQUIRE(len(nn) == len(result));
         //@formatter:on
-        for (auto &n : nn) {
+        for (auto &n: nn) {
             REQUIRE(rtest::found_in(n.bbox(), result));
         }
     }
@@ -811,7 +848,7 @@ TEST_CASE("rtree knn", "[rtree knn]") {
         auto rich_data = fn_rich_data();
         std::vector<rtree::Item<double>> objects;
         size_t id{0};;
-        for (auto &d : rich_data) {
+        for (auto &d: rich_data) {
             objects.emplace_back(rtree::Item{id++, d.box});
         }
         auto rt = NewRTree<double>(9);
@@ -865,10 +902,10 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
         for (size_t i = 0; i < data.size(); i++) {
             data_oneByone.emplace_back(rtree::Item{i, data[i]});
         }
-        for (auto &d : data_oneByone) { oneT.insert(d); }
+        for (auto &d: data_oneByone) { oneT.insert(d); }
 
         //fill zero size
-        for (auto &d : data_oneByone) { one_defT.insert(d); }
+        for (auto &d: data_oneByone) { one_defT.insert(d); }
 
         auto one_mbr = oneT.data.bbox;
         auto one_def_mbr = one_defT.data.bbox;
@@ -952,7 +989,7 @@ TEST_CASE("rtree build - bulkload", "[rtree build - bulkload]") {
         for (size_t i = 0; i < data.size(); i++) {
             data_oneByone.emplace_back(rtree::Item{i, data[i]});
         }
-        for (auto item : data_oneByone) {
+        for (auto item: data_oneByone) {
             tree.insert(item);
         }
 
